@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+boot_mode_human() {
+  case "${1:-}" in
+    uefi) echo "UEFI" ;;
+    bios) echo "Legacy (BIOS/CSM)" ;;
+    *) echo "$1" ;;
+  esac
+}
+
 ui_pick_boot_mode() {
   local detected="$1"
   local default_key="auto"
@@ -14,10 +22,10 @@ ui_pick_boot_mode() {
   pick=$(dialog --clear \
     --backtitle "OVH VPS Rescue Installer" \
     --title "Boot mode" \
-    --radiolist "Detected (heuristic): ${detected}\n\nChoose boot mode for installation:" 14 74 4 \
-      "auto" "Use detected (${detected})" "${auto_on}" \
+    --radiolist "Detected (heuristic): $(boot_mode_human "$detected")\n\nChoose boot mode for installation:" 14 74 4 \
+      "auto" "Use detected ($(boot_mode_human "$detected"))" "${auto_on}" \
       "uefi" "Force UEFI (ESP + grub-efi)" "${uefi_on}" \
-      "bios" "Force BIOS/Legacy (bios_grub + grub-pc)" "${bios_on}" \
+      "bios" "Force Legacy (BIOS/CSM) (bios_grub + grub-pc)" "${bios_on}" \
     3>&1 1>&2 2>&3)
 
   case "$pick" in
@@ -51,11 +59,11 @@ Continue forcing UEFI anyway?" 15 86
           --backtitle "OVH VPS Rescue Installer" \
           --title "Warning: UEFI detected in Rescue" \
           --yesno \
-"You selected FORCE BIOS/Legacy, but this Rescue environment exposes UEFI.
+"You selected FORCE Legacy (BIOS/CSM), but this Rescue environment exposes UEFI.
 
-If the VPS is configured to boot only in UEFI mode, BIOS/Legacy installation may not boot.
+If the VPS is configured to boot only in UEFI mode, Legacy (BIOS/CSM) installation may not boot.
 
-Continue forcing BIOS/Legacy anyway?" 14 86
+Continue forcing Legacy (BIOS/CSM) anyway?" 14 86
         if [[ $? -ne 0 ]]; then
           # user chose "No" -> fallback to detected
           echo "$detected"
@@ -71,10 +79,6 @@ Continue forcing BIOS/Legacy anyway?" 14 86
   esac
 }
 
-has_uefi_rescue() {
-  [[ -d /sys/firmware/efi ]]
-}
-
 ui_welcome() {
   local boot_mode="$1"
   dialog --clear --backtitle "OVH VPS Rescue Installer" --title "Welcome"     --msgbox "Boot mode detected: ${boot_mode}
@@ -84,6 +88,12 @@ All data will be destroyed.
 
 Log: ${LOG_FILE}" 15 84
 }
+
+has_uefi_rescue() {
+  [[ -d /sys/firmware/efi ]]
+}
+
+
 
 ui_pick_disk() {
   local items=()
@@ -222,7 +232,7 @@ ui_done_and_reboot() {
   local boot_mode="$1" lvm_mode="$2" net_mode="$3" iface="$4" backend="$5"
   dialog --clear --backtitle "OVH VPS Rescue Installer" --title "Done" --msgbox "Completed.
 
-Boot: ${boot_mode}
+Boot: $(boot_mode_human "$boot_mode")
 LVM:  ${lvm_mode}
 Net:  ${net_mode} (${iface})
 Cfg:  ${backend}
