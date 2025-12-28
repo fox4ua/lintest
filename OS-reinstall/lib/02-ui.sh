@@ -1,6 +1,64 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+ui_center_block() {
+  local width="${1:?width}"; shift
+  local text="${1-}"
+  local out="" line len pad
+
+  while IFS= read -r line; do
+    # пустую строку оставляем пустой
+    if [[ -z "$line" ]]; then
+      out+=$'\n'
+      continue
+    fi
+
+    len=${#line}
+    if (( len >= width )); then
+      out+="${line}"$'\n'
+    else
+      pad=$(( (width - len) / 2 ))
+      out+="$(printf '%*s%s\n' "$pad" "" "$line")"
+    fi
+  done <<< "$text"
+
+  printf '%s' "$out"
+}
+
+ui_welcome() {
+  local _boot_mode="${1-}" # параметр оставляем, но не показываем
+
+  local msg
+  msg=$(
+    cat <<EOF
+RUN ONLY IN RESCUE MODE.
+
+All data will be destroyed.
+
+Log: ${LOG_FILE}
+EOF
+  )
+
+  dialog --clear \
+    --backtitle "OVH VPS Rescue Installer" \
+    --title "Welcome" \
+    --no-collapse --cr-wrap \
+    --yes-label "Continue" \
+    --no-label "Cancel" \
+    --yesno "$(ui_center_block 56 "$msg")" 12 74
+
+  # 0 = Yes, 1 = No, 255 = ESC
+  case $? in
+    0) return 0 ;;
+    *) die "Canceled by user." ;;
+  esac
+}
+
+
+
+
+
+
 boot_mode_human() {
   case "${1:-}" in
     uefi) echo "UEFI" ;;
@@ -79,15 +137,7 @@ Continue forcing Legacy (BIOS/CSM) anyway?" 14 86
   esac
 }
 
-ui_welcome() {
-  local boot_mode="$1"
-  dialog --clear --backtitle "OVH VPS Rescue Installer" --title "Welcome"     --msgbox "Boot mode detected: ${boot_mode}
 
-RUN ONLY IN RESCUE MODE.
-All data will be destroyed.
-
-Log: ${LOG_FILE}" 15 84
-}
 
 has_uefi_rescue() {
   [[ -d /sys/firmware/efi ]]
