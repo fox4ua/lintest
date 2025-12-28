@@ -45,7 +45,7 @@ EOF
     --no-collapse --cr-wrap \
     --yes-label "Continue" \
     --no-label "Cancel" \
-    --yesno "$(ui_center_block 56 "$msg")" 12 74
+    --yesno "$(ui_center_block 62 "$msg")" 12 74
 
   # 0 = Yes, 1 = No, 255 = ESC
   case $? in
