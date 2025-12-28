@@ -31,6 +31,7 @@ ui_welcome() {
   local msg
   msg=$(
     cat <<EOF
+
 RUN ONLY IN RESCUE MODE.
 
 All data will be destroyed.
@@ -45,13 +46,15 @@ EOF
     --no-collapse --cr-wrap \
     --yes-label "Continue" \
     --no-label "Cancel" \
-    --yesno "$(ui_center_block 62 "$msg")" 12 74
+    --yesno "$msg" 12 744
 
-  # 0 = Yes, 1 = No, 255 = ESC
-  case $? in
-    0) return 0 ;;
-    *) die "Canceled by user." ;;
-  esac
+  rc=$?  # 0=yes, 1=no, 255=esc
+  if [[ $rc -eq 0 ]]; then
+    return 0
+  fi
+
+  # Cancel/ESC -> тихо выходим наверх
+  return 1
 }
 
 

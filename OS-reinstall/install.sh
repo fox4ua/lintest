@@ -23,8 +23,7 @@ main() {
   BOOT_MODE_DETECTED="$(detect_boot_mode_strict)"
   # ВАЖНО: поставить зависимости ДО первого dialog
   ensure_deps_rescue "$BOOT_MODE_DETECTED"
-  ui_welcome "$BOOT_MODE"
-  # allow override because VPS "detection" can be unreliable
+  ui_welcome "$BOOT_MODE_DETECTED" || { log "Canceled by user."; exit 0; }  # allow override because VPS "detection" can be unreliable
   BOOT_MODE="$(ui_pick_boot_mode "$BOOT_MODE_DETECTED")"
   ensure_deps_rescue "$BOOT_MODE"
 
