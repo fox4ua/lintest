@@ -45,6 +45,9 @@ install_debian() {
   log "Debootstrap Debian ${suite} from ${mirror}"
   run debootstrap "$suite" /mnt "$mirror"
 
+  # Ensure DNS works in chroot before any apt/systemctl operations
+  run cp -f /etc/resolv.conf /mnt/etc/resolv.conf || true
+
   write_sources_list "/mnt" "$suite" "$mirror"
   mount_chroot_fs
 

@@ -96,6 +96,38 @@ assert_not_busy() {
   fi
 }
 
+disk_unmount_any_from_disk() {
+  local disk="$1"
+  local pref; pref="$(disk_part_prefix "$disk")"
+
+  # Если rescue что-то авто-смонтировал — снять
+  while read -r src tgt; do
+    [[ "$src" == ${pref}* ]] || continue
+    warn "Auto-mount detected: unmounting $tgt ($src)"
+    umount -lf "$tgt" 2>/dev/null || true
+  done < <(findmnt -rn -o SOURCE,TARGET 2>/dev/null || true)
+
+  # Если авто-включили swap — снять
+  while read -r swdev; do
+    [[ "$swdev" == ${pref}* ]] || continue
+    warn "Auto-swap detected: swapoff $swdev"
+    swapoff "$swdev" 2>/dev/null || true
+  done < <(swapon --noheadings --show=NAME 2>/dev/null || true)
+
+  udevadm settle 2>/dev/null || true
+}
+
+disk_fail_if_mounted_from_disk() {
+  local disk="$1"
+  local pref; pref="$(disk_part_prefix "$disk")"
+
+  if findmnt -rn -o SOURCE,TARGET | awk -v p="^"${pref} '$1 ~ p {print}' | grep -q .; then
+    warn "Still mounted from ${disk}:"
+    findmnt -rn -o SOURCE,TARGET | awk -v p="^"${pref} '$1 ~ p {print}' | tee -a "$LOG_FILE" || true
+    die "Target disk partitions are mounted (automount). Unmount/reboot rescue and retry."
+  fi
+}
+
 disk_prepare_and_partition() {
   local disk="$1" boot_mode="$2" boot_mib="$3" swap_gb="$4"
 
@@ -120,9 +152,21 @@ disk_prepare_and_partition() {
 
   log "Creating GPT partitions (boot_mode=$boot_mode)"
   if [[ "$boot_mode" == "bios" ]]; then
-    run parted "$disk" --script       mklabel gpt       mkpart primary "${BIOS_GRUB_START}MiB" "${BIOS_GRUB_END}MiB"       set 1 bios_grub on       mkpart primary ext4 "${BOOT_START}MiB" "${BOOT_END}MiB"       mkpart primary linux-swap "${BOOT_END}MiB" "${SWAP_END}MiB"       mkpart primary "${SWAP_END}MiB" 100%
+    run parted "$disk" --script \
+      mklabel gpt \
+      mkpart primary "${BIOS_GRUB_START}MiB" "${BIOS_GRUB_END}MiB" \
+      set 1 bios_grub on \
+      mkpart primary ext4 "${BOOT_START}MiB" "${BOOT_END}MiB" \
+      mkpart primary linux-swap "${BOOT_END}MiB" "${SWAP_END}MiB" \
+      mkpart primary "${SWAP_END}MiB" 100%
   else
-    run parted "$disk" --script       mklabel gpt       mkpart primary fat32 "${ESP_START}MiB" "${ESP_END}MiB"       set 1 esp on       mkpart primary ext4 "${BOOT_START}MiB" "${BOOT_END}MiB"       mkpart primary linux-swap "${BOOT_END}MiB" "${SWAP_END}MiB"       mkpart primary "${SWAP_END}MiB" 100%
+    run parted "$disk" --script \
+      mklabel gpt \
+      mkpart primary fat32 "${ESP_START}MiB" "${ESP_END}MiB" \
+      set 1 esp on \
+      mkpart primary ext4 "${BOOT_START}MiB" "${BOOT_END}MiB" \
+      mkpart primary linux-swap "${BOOT_END}MiB" "${SWAP_END}MiB" \
+      mkpart primary "${SWAP_END}MiB" 100%
   fi
 
   reload_partitions "$disk"
@@ -133,6 +177,10 @@ disk_prepare_and_partition() {
     reload_partitions "$disk"
     disk_wait_partitions "$disk" || die "Kernel did not create partition devices. Reboot rescue and retry."
   fi
+
+  # 🔥 Ключевое: после разметки rescue может авто-смонтировать / включить swap
+  disk_unmount_any_from_disk "$disk"
+  disk_fail_if_mounted_from_disk "$disk"
 
   force_release_disk "$disk"
   reload_partitions "$disk"
@@ -147,6 +195,10 @@ disk_resolve_partitions() {
 
 disk_format_partitions() {
   local boot_mode="$1" p1="$2" p2="$3" p3="$4"
+
+  # 🔥 ещё раз на всякий случай — часто помогает против udisks/auto-mount
+  [[ -n "${DISK:-}" ]] && disk_unmount_any_from_disk "$DISK"
+  [[ -n "${DISK:-}" ]] && disk_fail_if_mounted_from_disk "$DISK"
 
   release_partition "$p1" || true
   release_partition "$p2" || true
