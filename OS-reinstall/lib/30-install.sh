@@ -31,6 +31,14 @@ mount_chroot_fs() {
   run mount --bind /run  /mnt/run
 }
 
+blk_uuid() {
+  local dev="$1"
+  local u=""
+  u="$(blkid -s UUID -o value "$dev" 2>/dev/null || true)"
+  [[ -n "$u" ]] || die "Cannot read UUID for $dev"
+  echo "$u"
+}
+
 install_debian() {
   local suite="$1" mirror="$2"
 
@@ -56,21 +64,28 @@ install_write_basic_config() {
     echo "127.0.1.1   ${hostname}" >> /mnt/etc/hosts
   fi
 
-  log "Writing fstab"
+  log "Writing fstab (UUID-based)"
+  local boot_uuid swap_uuid esp_uuid
+
+  boot_uuid="$(blk_uuid "$p2")"
+  swap_uuid="$(blk_uuid "$p3")"
+
   if [[ "$boot_mode" == "uefi" ]]; then
-    cat > /mnt/etc/fstab <<EOF
-/dev/pve/root  /          ext4  defaults     0 1
-${p2}          /boot      ext4  defaults     0 2
-${p1}          /boot/efi  vfat  umask=0077   0 1
-${p3}          none       swap  sw           0 0
+    esp_uuid="$(blk_uuid "$p1")"
+  cat > /mnt/etc/fstab <<EOF
+/dev/pve/root        /          ext4  defaults     0 1
+UUID=${boot_uuid}    /boot      ext4  defaults     0 2
+UUID=${esp_uuid}     /boot/efi  vfat  umask=0077   0 1
+UUID=${swap_uuid}    none       swap  sw           0 0
 EOF
   else
-    cat > /mnt/etc/fstab <<EOF
-/dev/pve/root  /      ext4  defaults  0 1
-${p2}          /boot  ext4  defaults  0 2
-${p3}          none   swap  sw        0 0
+  cat > /mnt/etc/fstab <<EOF
+/dev/pve/root        /      ext4  defaults  0 1
+UUID=${boot_uuid}    /boot  ext4  defaults  0 2
+UUID=${swap_uuid}    none   swap  sw        0 0
 EOF
   fi
+
 
   log "Configuring network backend=${backend}, mode=${mode}, profile=${profile:-n/a}"
   if [[ "$backend" == "networkd" ]]; then

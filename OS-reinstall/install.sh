@@ -54,6 +54,8 @@ main() {
   preflight_check_mirror "$MIRROR" "$DEBREL"
   ROOT_PASS="$(ui_input_root_password)"
 
+  ui_confirm_or_exit || die "User cancelled installation."
+
   disk_prepare_and_partition "$DISK" "$BOOT_MODE" "$BOOT_MIB" "$SWAP_GB"
   disk_resolve_partitions "$DISK" "$BOOT_MODE"
   disk_format_partitions "$BOOT_MODE" "$P1" "$P2" "$P3"
