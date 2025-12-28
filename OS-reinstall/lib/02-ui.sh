@@ -1,6 +1,80 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+ui_pick_boot_mode() {
+  local detected="$1"
+  local default_key="auto"
+
+  # Pick default selection in dialog
+  # If detected is uefi, make "auto" still default but show detected in text.
+  # (Keeping "auto" as default reduces accidental mismatch.)
+  local auto_on="on" uefi_on="off" bios_on="off"
+
+  local pick
+  pick=$(dialog --clear \
+    --backtitle "OVH VPS Rescue Installer" \
+    --title "Boot mode" \
+    --radiolist "Detected (heuristic): ${detected}\n\nChoose boot mode for installation:" 14 74 4 \
+      "auto" "Use detected (${detected})" "${auto_on}" \
+      "uefi" "Force UEFI (ESP + grub-efi)" "${uefi_on}" \
+      "bios" "Force BIOS/Legacy (bios_grub + grub-pc)" "${bios_on}" \
+    3>&1 1>&2 2>&3)
+
+  case "$pick" in
+    auto|"")
+      echo "$detected"
+      ;;
+
+    uefi)
+      if ! has_uefi_rescue; then
+        dialog --clear \
+          --backtitle "OVH VPS Rescue Installer" \
+          --title "Warning: UEFI not detected in Rescue" \
+          --yesno \
+"You selected FORCE UEFI, but this Rescue environment does NOT expose UEFI (/sys/firmware/efi is missing).
+
+On many VPS this means UEFI boot may NOT be available, and the installed system could become unbootable.
+
+Continue forcing UEFI anyway?" 15 86
+        if [[ $? -ne 0 ]]; then
+          # user chose "No" -> fallback to detected
+          echo "$detected"
+          return 0
+        fi
+      fi
+      echo "uefi"
+      ;;
+
+    bios)
+      if has_uefi_rescue; then
+        dialog --clear \
+          --backtitle "OVH VPS Rescue Installer" \
+          --title "Warning: UEFI detected in Rescue" \
+          --yesno \
+"You selected FORCE BIOS/Legacy, but this Rescue environment exposes UEFI.
+
+If the VPS is configured to boot only in UEFI mode, BIOS/Legacy installation may not boot.
+
+Continue forcing BIOS/Legacy anyway?" 14 86
+        if [[ $? -ne 0 ]]; then
+          # user chose "No" -> fallback to detected
+          echo "$detected"
+          return 0
+        fi
+      fi
+      echo "bios"
+      ;;
+
+    *)
+      die "Invalid boot mode selection: $pick"
+      ;;
+  esac
+}
+
+has_uefi_rescue() {
+  [[ -d /sys/firmware/efi ]]
+}
+
 ui_welcome() {
   local boot_mode="$1"
   dialog --clear --backtitle "OVH VPS Rescue Installer" --title "Welcome"     --msgbox "Boot mode detected: ${boot_mode}

@@ -20,8 +20,11 @@ main() {
   init_log
   stage_set "preflight"
 
-  BOOT_MODE="$(detect_boot_mode_strict)"
+  BOOT_MODE_DETECTED="$(detect_boot_mode_strict)"
+  # allow override because VPS "detection" can be unreliable
+  BOOT_MODE="$(ui_pick_boot_mode "$BOOT_MODE_DETECTED")"
   ensure_deps_rescue "$BOOT_MODE"
+
   preflight_reset_state
   preflight_check_rescue_mode_hint
   preflight_check_time_dns
