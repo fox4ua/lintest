@@ -57,6 +57,7 @@ Continue forcing Legacy anyway?" \
 ui_pick_boot_mode() {
   local detected="$1"
   local outvar="$2"
+  local outaction="$3"
 
   local had_errexit=0
   case $- in *e*) had_errexit=1;; esac
@@ -80,22 +81,30 @@ ui_pick_boot_mode() {
   dialog --clear
   clear
 
-case "$rc" in
-  0)
-    # OK / Применить — продолжаем
-    ;;
-  3)
-    # Назад — вернуться на предыдущий шаг (или просто return 0 из preflight)
-    return 0
-    ;;
-  1|255)
-    # Отмена/ESC — тихо выйти без ERROR-окна
-    return 0
-    ;;
-  *)
-    # Реальная ошибка UI
-    return "$rc"
-    ;;
-esac
+  case "$rc" in
+    0)
+      # Apply
+      [[ -n "$choice" ]] || { printf -v "$outaction" '%s' "cancel"; return 0; }
+      printf -v "$outvar" '%s' "$choice"
+      printf -v "$outaction" '%s' "apply"
+      return 0
+      ;;
+    3)
+      # Back
+      printf -v "$outaction" '%s' "back"
+      return 0
+      ;;
+    1|255)
+      # Cancel / ESC
+      printf -v "$outaction" '%s' "cancel"
+      return 0
+      ;;
+    *)
+      # Реальная ошибка dialog
+      printf -v "$outaction" '%s' "error"
+      return "$rc"
+      ;;
+  esac
 }
+
 

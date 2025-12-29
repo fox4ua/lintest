@@ -26,24 +26,21 @@ main() {
   BOOT_MODE_DETECTED="$(detect_boot_mode_strict)"
 
 
-ui_pick_boot_mode "$BOOT_MODE_DETECTED" BOOT_MODE
-rc=$?
+UI_ACTION=""
+ui_pick_boot_mode "$BOOT_MODE_DETECTED" BOOT_MODE UI_ACTION || return $?
 
-case "$rc" in
-  0)
-    # OK / Применить — продолжаем
+case "$UI_ACTION" in
+  apply)
+    # продолжаем, BOOT_MODE установлен
     ;;
-  3)
-    # Назад — вернуться на предыдущий шаг (или просто return 0 из preflight)
-    return 0
+  back)
+    return 0   # вернуться на предыдущий шаг (как у тебя задумано)
     ;;
-  1|255)
-    # Отмена/ESC — тихо выйти без ERROR-окна
-    return 0
+  cancel)
+    return 0   # тихо выйти без ERROR-окна
     ;;
   *)
-    # Реальная ошибка UI
-    return "$rc"
+    return 1
     ;;
 esac
 
