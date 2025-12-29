@@ -2,25 +2,36 @@
 set -Eeuo pipefail
 
 ui_abort() {
-  # always restore real terminal (even if stdout/stderr redirected to log)
   {
     stty sane < /dev/tty 2>/dev/null || true
-
-    # leave alternate screen used by dialog/ncurses
-    if command -v tput >/dev/null 2>&1; then
-      tput rmcup >/dev/tty 2>/dev/null || true
-      tput cnorm >/dev/tty 2>/dev/null || true
-    fi
-
-    # hard fallback (works even without tput)
+    command -v tput >/dev/null 2>&1 && tput rmcup >/dev/tty 2>/dev/null || true
     printf '\033[?1049l\033[0m\033[H\033[2J' > /dev/tty 2>/dev/null || true
-
     clear > /dev/tty 2>/dev/null || true
   } || true
-
   echo "Canceled." > /dev/tty 2>/dev/null || true
   exit 0
 }
+
+# ui_dialog_to_var OUTVAR dialog args...
+ui_dialog_to_var() {
+  local __outvar="$1"; shift
+  local tmp rc
+
+  tmp="$(mktemp)"
+  # dialog рисует в tty, вывод (выбор) пишем в tmp
+  dialog --clear --stdout "$@" </dev/tty 2>/dev/tty >"$tmp"
+  rc=$?
+  if [[ $rc -ne 0 ]]; then
+    rm -f "$tmp"
+    ui_abort
+  fi
+
+  # читаем результат
+  IFS= read -r __val <"$tmp" || __val=""
+  rm -f "$tmp"
+  printf -v "$__outvar" '%s' "$__val"
+}
+
 
 
 # Helpers (non-window)
