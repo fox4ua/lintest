@@ -1,13 +1,17 @@
 #!/usr/bin/env bash
 
+# Глобальный флаг:
+# UI_BACK=1  -> пользователь выбрал "Назад"
+# UI_BACK=0  -> обычный выбор или Cancel
+UI_BACK=0
+
 # ui_pick_boot_mode OUT_BOOTMODE OUT_LABEL
-# return: 0=Apply, 1=Cancel/ESC (exit), 2=Back (go welcome)
+# return: 0=выбор сделан, 1=Cancel/ESC
 ui_pick_boot_mode() {
   local out_bootmode="$1"
   local out_label="$2"
 
-  local had_errexit=0
-  case $- in *e*) had_errexit=1;; esac
+  UI_BACK=0
 
   local choice rc
   set +e
@@ -23,21 +27,21 @@ ui_pick_boot_mode() {
         biosmbr "Legacy BIOS + MBR (msdos)"
   )"
   rc=$?
-  ((had_errexit)) && set -e
+  set -e
 
   ui_clear
 
-  # Cancel/ESC => выйти
+  # Cancel/ESC
   if [[ "$rc" -ne 0 ]]; then
     return 1
   fi
 
-  # OK, но выбран Back => вернуться
+  # Back
   if [[ "$choice" == "__back" ]]; then
-    return 2
+    UI_BACK=1
+    return 0
   fi
 
-  # OK, выбран режим
   case "$choice" in
     uefi)
       printf -v "$out_bootmode" "%s" "uefi"

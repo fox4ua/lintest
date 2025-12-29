@@ -13,14 +13,21 @@ main() {
   local boot_mode="" boot_label=""
 
   while true; do
-    ui_welcome || exit 0
+    if ! ui_welcome; then
+      exit 0
+    fi
 
-    ui_pick_boot_mode boot_mode boot_label
-    case $? in
-      0) break ;;      # Apply
-      2) continue ;;   # Back -> Welcome
-      1) exit 0 ;;     # Cancel/ESC -> exit
-    esac
+    if ! ui_pick_boot_mode boot_mode boot_label; then
+      exit 0
+    fi
+
+    # Если выбран "Назад" — возвращаемся на welcome
+    if [[ "${UI_BACK:-0}" -eq 1 ]]; then
+      continue
+    fi
+
+    # Иначе выбор сделан
+    break
   done
 
   ui_msg "Вы выбрали:\n\n${boot_label}\n\n(boot_mode=${boot_mode})"
