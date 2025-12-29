@@ -57,15 +57,17 @@ Continue forcing Legacy anyway?" \
 ui_pick_boot_mode() {
   local detected="$1"
   local outvar="$2"
-  local pick rc
+  local pick="" rc
 
   while true; do
-    if ! ui_boot_mode_select "$detected" pick; then
-      rc=$?
-      if [[ $rc -eq 1 ]]; then
-        ui_welcome
-        continue
-      fi
+    pick=""
+    ui_boot_mode_select "$detected" pick
+    rc=$?
+    if [[ $rc -eq 1 ]]; then
+      ui_welcome
+      continue
+    elif [[ $rc -ne 0 ]]; then
+      ui_abort
     fi
 
     case "$pick" in
