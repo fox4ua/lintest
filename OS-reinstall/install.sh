@@ -23,6 +23,8 @@ main() {
 
   ensure_deps_base # check
   ui_welcome # dialog - Welcom
+dialog --infobox "Running preflight checks..." 3 40
+
   BOOT_MODE_DETECTED="$(detect_boot_mode_strict)"
   log "UI: BOOT_MODE_DETECTED: $BOOT_MODE_DETECTED"
 
@@ -33,7 +35,6 @@ main() {
 
   DISK="$(ui_pick_disk)" #dialog - select disk
 
-dialog --infobox "Running preflight checks..." 3 40
 log "UI: boot_mode selected: $BOOT_MODE"
 
 log "preflight: reset_state start"
