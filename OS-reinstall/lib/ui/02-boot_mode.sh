@@ -63,22 +63,29 @@ Continue forcing Legacy anyway?" 14 86 </dev/tty 2>/dev/tty
 
 ui_pick_boot_mode() {
   local detected="$1"
-  local pick action
+  local out_var="$2"
+
+  local pick rc action
 
   while true; do
-    pick="$(ui_boot_mode_menu "$detected")"  # Cancel/ESC -> ui_abort
+    pick="$(ui_boot_mode_menu "$detected")"
+    rc=$?
+    [[ $rc -ne 0 ]] && ui_abort      # Cancel/ESC в меню -> abort ВСЕГО скрипта
 
-    # Маппинг auto
     if [[ "$pick" == "auto" || -z "$pick" ]]; then
-      echo "$detected"
+      printf -v "$out_var" '%s' "$detected"
       return 0
     fi
 
-    # Ворнинги для uefi/bios, кнопка Back возвращает к выбору
-    action="$(ui_boot_mode_warn_or_back "$pick" "$detected")"
+    action="$(ui_boot_mode_warn_or_back "$pick")"
+    rc=$?
+    [[ $rc -ne 0 ]] && ui_abort      # ESC в warning -> abort ВСЕГО скрипта
+
     [[ "$action" == "back" ]] && continue
 
-    echo "$pick"
+    printf -v "$out_var" '%s' "$pick"
     return 0
   done
 }
+
+
