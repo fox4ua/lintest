@@ -1,6 +1,9 @@
-ui_pick_boot_mode() {
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+ui_boot_mode_menu() {
   local detected="$1"
-  local pick rc
+  local pick
 
   pick="$(
     dialog --stdout --clear \
@@ -11,59 +14,71 @@ ui_pick_boot_mode() {
         "uefi" "UEFI (ESP + grub-efi)" "off" \
         "bios" "Legacy (BIOS/CSM) (bios_grub + grub-pc)" "off" \
       </dev/tty 2>/dev/tty
-  )"
-  rc=$?
+  )" || ui_abort
 
-  # Cancel/ESC -> always abort
-  [[ $rc -ne 0 ]] && ui_abort
+  echo "$pick"
+}
 
-  case "$pick" in
-    auto)
-      echo "$detected"
-      ;;
+ui_boot_mode_warn_or_back() {
+  local pick="$1"
+  local detected="$2"
+  local rc
 
-    uefi)
-      if ! has_uefi_rescue; then
-        dialog --clear \
-          --backtitle "OVH VPS Rescue Installer" \
-          --title "Warning: UEFI not detected in Rescue" \
-          --yes-label "Continue" \
-          --no-label "Back" \
-          --yesno \
+  if [[ "$pick" == "uefi" && ! -d /sys/firmware/efi ]]; then
+    dialog --clear \
+      --backtitle "OVH VPS Rescue Installer" \
+      --title "Warning: UEFI not detected in Rescue" \
+      --yes-label "Continue" \
+      --no-label "Back" \
+      --yesno \
 "You selected UEFI, but this Rescue environment does NOT expose UEFI (/sys/firmware/efi is missing).
 
 On many VPS this means UEFI boot may NOT be available, and the installed system could become unbootable.
 
 Continue forcing UEFI anyway?" 15 86 </dev/tty 2>/dev/tty
-        rc=$?
-        [[ $rc -eq 255 ]] && ui_abort
-        [[ $rc -ne 0 ]] && { echo "$detected"; return 0; }
-      fi
-      echo "uefi"
-      ;;
+    rc=$?
+    [[ $rc -eq 255 ]] && ui_abort
+    [[ $rc -ne 0 ]] && echo "back" && return 0
+  fi
 
-    bios)
-      if has_uefi_rescue; then
-        dialog --clear \
-          --backtitle "OVH VPS Rescue Installer" \
-          --title "Warning: UEFI detected in Rescue" \
-          --yes-label "Continue" \
-          --no-label "Back" \
-          --yesno \
+  if [[ "$pick" == "bios" && -d /sys/firmware/efi ]]; then
+    dialog --clear \
+      --backtitle "OVH VPS Rescue Installer" \
+      --title "Warning: UEFI detected in Rescue" \
+      --yes-label "Continue" \
+      --no-label "Back" \
+      --yesno \
 "You selected Legacy (BIOS/CSM), but this Rescue environment exposes UEFI.
 
 If the VPS is configured to boot only in UEFI mode, Legacy installation may not boot.
 
 Continue forcing Legacy anyway?" 14 86 </dev/tty 2>/dev/tty
-        rc=$?
-        [[ $rc -eq 255 ]] && ui_abort
-        [[ $rc -ne 0 ]] && { echo "$detected"; return 0; }
-      fi
-      echo "bios"
-      ;;
+    rc=$?
+    [[ $rc -eq 255 ]] && ui_abort
+    [[ $rc -ne 0 ]] && echo "back" && return 0
+  fi
 
-    *)
-      die "Invalid boot mode selection: $pick"
-      ;;
-  esac
+  echo "ok"
+}
+
+ui_pick_boot_mode() {
+  local detected="$1"
+  local pick action
+
+  while true; do
+    pick="$(ui_boot_mode_menu "$detected")"  # Cancel/ESC -> ui_abort
+
+    # Маппинг auto
+    if [[ "$pick" == "auto" || -z "$pick" ]]; then
+      echo "$detected"
+      return 0
+    fi
+
+    # Ворнинги для uefi/bios, кнопка Back возвращает к выбору
+    action="$(ui_boot_mode_warn_or_back "$pick" "$detected")"
+    [[ "$action" == "back" ]] && continue
+
+    echo "$pick"
+    return 0
+  done
 }
