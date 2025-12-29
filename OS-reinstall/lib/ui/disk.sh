@@ -15,7 +15,7 @@ ui_pick_disk() {
     --backtitle "OVH VPS Rescue Installer" \
     --title "Select target disk (WILL BE WIPED)" \
     --radiolist "Choose disk:" 15 78 6 "${items[@]}" \
-    3>&1 1>&2 2>&3) || ui_abort
+    </dev/tty 2>/dev/tty) || ui_abort
 
   echo "$out"
 }
