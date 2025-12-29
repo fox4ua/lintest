@@ -30,18 +30,9 @@ UI_ACTION=""
 ui_pick_boot_mode "$BOOT_MODE_DETECTED" BOOT_MODE UI_ACTION || return $?
 
 case "$UI_ACTION" in
-  apply)
-    # продолжаем, BOOT_MODE установлен
-    ;;
-  back)
-    return 0   # вернуться на предыдущий шаг (как у тебя задумано)
-    ;;
-  cancel)
-    return 0   # тихо выйти без ERROR-окна
-    ;;
-  *)
-    return 1
-    ;;
+  apply)  ;;                 # дальше
+  back)   ui_welcome; return 0 ;;
+  cancel) return 0 ;;
 esac
 
 
