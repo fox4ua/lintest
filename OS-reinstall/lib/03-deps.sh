@@ -2,17 +2,7 @@
 set -Eeuo pipefail
 
 detect_boot_mode_strict() {
-  if [[ -d /sys/firmware/efi && -d /sys/firmware/efi/efivars ]]; then
-    echo "uefi"; return 0
-  fi
 
-  if [[ -d /sys/firmware/efi ]]; then
-    mkdir -p /sys/firmware/efi/efivars 2>/dev/null || true
-    mount -t efivarfs efivarfs /sys/firmware/efi/efivars 2>/dev/null || true
-    if [[ -d /sys/firmware/efi/efivars ]] && ls /sys/firmware/efi/efivars >/dev/null 2>&1; then
-      echo "uefi"; return 0
-    fi
-  fi
 
   echo "bios"
 }
