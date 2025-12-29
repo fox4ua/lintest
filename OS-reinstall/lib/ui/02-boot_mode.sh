@@ -58,9 +58,15 @@ ui_pick_boot_mode() {
         if ! has_uefi_rescue; then
           ui_warn_force_uefi_when_no_uefi_rescue
           rc=$?
-          [[ $rc -eq 255 ]] && ui_abort
-          [[ $rc -ne 0 ]] && { pick="auto"; continue; } # Back -> return to menu
+
+          if [[ $rc -eq 255 ]]; then
+            ui_abort
+          elif [[ $rc -eq 1 ]]; then
+            continue   # <-- ВОТ ЭТО и есть "Back работает"
+          fi
+          # rc=0 -> Continue
         fi
+
         printf -v "$outvar" '%s' "uefi"
         return 0
         ;;
@@ -69,16 +75,18 @@ ui_pick_boot_mode() {
         if has_uefi_rescue; then
           ui_warn_force_bios_when_uefi_rescue
           rc=$?
-          [[ $rc -eq 255 ]] && ui_abort
-          [[ $rc -ne 0 ]] && { pick="auto"; continue; } # Back -> return to menu
+
+          if [[ $rc -eq 255 ]]; then
+            ui_abort
+          elif [[ $rc -eq 1 ]]; then
+            continue
+          fi
         fi
+
         printf -v "$outvar" '%s' "bios"
         return 0
         ;;
 
-      *)
-        die "Invalid boot mode selection: $pick"
-        ;;
     esac
   done
 }
