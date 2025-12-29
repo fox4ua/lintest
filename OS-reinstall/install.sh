@@ -26,26 +26,24 @@ main() {
   BOOT_MODE_DETECTED="$(detect_boot_mode_strict)"
 
 
-BOOT_MODE=""  # или оставь как есть, но важно: дальше не использовать без проверки
-
 ui_pick_boot_mode "$BOOT_MODE_DETECTED" BOOT_MODE
 rc=$?
 
 case "$rc" in
   0)
-    # apply: BOOT_MODE гарантированно установлен
-    echo "APPLY: $BOOT_MODE"
+    # OK / Применить — продолжаем
     ;;
-  10)
-    echo "BACK"
-    # return 0 / continue на предыдущий шаг
+  3)
+    # Назад — вернуться на предыдущий шаг (или просто return 0 из preflight)
+    return 0
     ;;
-  20)
-    echo "CANCEL"
-    # abort/return в меню/выход
+  1|255)
+    # Отмена/ESC — тихо выйти без ERROR-окна
+    return 0
     ;;
   *)
-    echo "ERROR"
+    # Реальная ошибка UI
+    return "$rc"
     ;;
 esac
 
