@@ -12,25 +12,28 @@ ui_abort() {
   exit 0
 }
 
-# ui_dialog_to_var OUTVAR dialog args...
 ui_dialog_to_var() {
   local __outvar="$1"; shift
-  local tmp rc
+  local tmp rc __val=""
 
   tmp="$(mktemp)"
-  # dialog рисует в tty, вывод (выбор) пишем в tmp
+
   dialog --clear --stdout "$@" </dev/tty 2>/dev/tty >"$tmp"
   rc=$?
+
   if [[ $rc -ne 0 ]]; then
     rm -f "$tmp"
     ui_abort
   fi
 
-  # читаем результат
-  IFS= read -r __val <"$tmp" || __val=""
+  if [[ -s "$tmp" ]]; then
+    IFS= read -r __val <"$tmp"
+  fi
+
   rm -f "$tmp"
   printf -v "$__outvar" '%s' "$__val"
 }
+
 
 
 
