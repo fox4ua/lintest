@@ -55,8 +55,6 @@ Continue forcing Legacy anyway?" \
 
 # Main entry: detected + OUTVAR (NO subshell!)
 ui_pick_boot_mode() {
-  # $1 = detected (например: uefi|bios|unknown)
-  # $2 = имя переменной для результата (например: BOOT_MODE)
   local detected="$1"
   local outvar="$2"
 
@@ -73,40 +71,25 @@ ui_pick_boot_mode() {
       --extra-button \
       --extra-label "Назад" \
       --menu "Выберите режим загрузки (detected: ${detected}):" 12 70 4 \
-        uefi   "UEFI" \
-        bios   "Legacy (BIOS)"
+        uefi "UEFI" \
+        bios "Legacy (BIOS)"
   )"
   rc=$?
   ((had_errexit)) && set -e
 
+  dialog --clear
+  clear
+
   case "$rc" in
     0)
-      # Применить: записываем результат в переменную по имени
-      if [[ -z "$choice" ]]; then
-        dialog --title "Ошибка" --msgbox "Ничего не выбрано." 7 40
-        return 1
-      fi
+      # ТОЛЬКО тут пишем результат
+      [[ -n "$choice" ]] || return 1
       printf -v "$outvar" '%s' "$choice"
-      dialog --clear
-      clear
       return 0
       ;;
-    3)
-      # Назад
-      dialog --clear
-      clear
-      return 10
-      ;;
-    1|255)
-      # Отмена или ESC
-      dialog --clear
-      clear
-      return 20
-      ;;
-    *)
-      dialog --clear
-      clear
-      return 20
-      ;;
+    3)   return 10 ;;   # back
+    1|255) return 20 ;; # cancel/esc
+    *)   return 20 ;;
   esac
 }
+
