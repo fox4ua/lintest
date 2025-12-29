@@ -80,16 +80,22 @@ ui_pick_boot_mode() {
   dialog --clear
   clear
 
-  case "$rc" in
-    0)
-      # ТОЛЬКО тут пишем результат
-      [[ -n "$choice" ]] || return 1
-      printf -v "$outvar" '%s' "$choice"
-      return 0
-      ;;
-    3)   return 10 ;;   # back
-    1|255) return 20 ;; # cancel/esc
-    *)   return 20 ;;
-  esac
+case "$rc" in
+  0)
+    # OK / Применить — продолжаем
+    ;;
+  3)
+    # Назад — вернуться на предыдущий шаг (или просто return 0 из preflight)
+    return 0
+    ;;
+  1|255)
+    # Отмена/ESC — тихо выйти без ERROR-окна
+    return 0
+    ;;
+  *)
+    # Реальная ошибка UI
+    return "$rc"
+    ;;
+esac
 }
 
