@@ -2,8 +2,8 @@
 
 UI_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/ui"
 
-source "$UI_DIR/welcome.sh"
-source "$UI_DIR/bios.sh"
+source "$UI_DIR/01-welcome.sh"
+source "$UI_DIR/02-bios.sh"
 
 ui_init() {
   if ! command -v dialog >/dev/null 2>&1; then
