@@ -5,12 +5,14 @@ ui_boot_mode_select() {
   local outvar="$2"
   local rc
 
+  set +e
   ui_radiolist_safe "$outvar" 14 74 4 \
     "Detected: ${detected}\n\nChoose boot mode for installation:" \
       "auto" "Use detected (${detected})" "on" \
       "uefi" "UEFI (ESP + grub-efi)" "off" \
       "bios" "Legacy (BIOS/CSM) (bios_grub + grub-pc)" "off"
   rc=$?
+  set -e
 
   # Cancel/ESC => abort installer
   [[ $rc -eq 1 || $rc -eq 255 ]] && ui_abort
@@ -56,14 +58,14 @@ ui_pick_boot_mode() {
 
       uefi)
         if ! has_uefi_rescue; then
+          set +e
           ui_warn_force_uefi_when_no_uefi_rescue
           rc=$?
+          set -e
 
-          if [[ $rc -eq 255 ]]; then
-            ui_abort
-          elif [[ $rc -eq 1 ]]; then
-            continue   # <-- ВОТ ЭТО и есть "Back работает"
-          fi
+          [[ $rc -eq 255 ]] && ui_abort
+          [[ $rc -eq 1 ]] && continue   # Back
+
           # rc=0 -> Continue
         fi
 
@@ -73,14 +75,13 @@ ui_pick_boot_mode() {
 
       bios)
         if has_uefi_rescue; then
+          set +e
           ui_warn_force_bios_when_uefi_rescue
           rc=$?
+          set -e
 
-          if [[ $rc -eq 255 ]]; then
-            ui_abort
-          elif [[ $rc -eq 1 ]]; then
-            continue
-          fi
+          [[ $rc -eq 255 ]] && ui_abort
+          [[ $rc -eq 1 ]] && continue
         fi
 
         printf -v "$outvar" '%s' "bios"
