@@ -1,23 +1,28 @@
-#!/usr/bin/env bash
-
 ui_pick_boot_mode() {
-  local msg
-  msg=$(cat <<EOF
+  local detected="$1"
+  local pick rc
 
-RUN ONLY IN RESCUE MODE.
+  pick="$(
+    dialog --stdout --clear \
+      --backtitle "OVH VPS Rescue Installer" \
+      --title "Boot mode" \
+      --radiolist "Detected: ${detected}\n\nChoose boot mode for installation:" 14 74 4 \
+        "auto" "Use detected (${detected})" "on" \
+        "uefi" "UEFI (ESP + grub-efi)" "off" \
+        "bios" "Legacy (BIOS/CSM) (bios_grub + grub-pc)" "off" \
+      </dev/tty 2>/dev/tty
+  )"
+  rc=$?
 
-All data will be destroyed.
+  # Cancel/ESC -> exit cleanly (no fallthrough!)
+  if [[ $rc -ne 0 ]]; then
+    ui_abort
+  fi
 
-Log: ${LOG_FILE}
-
-EOF
-  )
-
-  dialog --clear \
-    --backtitle "OVH VPS Rescue Installer" \
-    --title "Welcome" \
-    --no-collapse --cr-wrap \
-    --yes-label "Continue" \
-    --no-label "Cancel" \
-    --yesno "$msg" 12 74 || ui_abor
+  case "$pick" in
+    auto) echo "$detected" ;;
+    uefi) echo "uefi" ;;
+    bios) echo "bios" ;;
+    *) die "Invalid boot mode selection: $pick" ;;
+  esac
 }
