@@ -27,6 +27,8 @@ main() {
   BOOT_MODE="$(ui_pick_boot_mode "$BOOT_MODE_DETECTED")" # dialog - select Bios(UEFI/Legacy)
   [[ "$BOOT_MODE" == "uefi" ]] && ensure_deps_uefi
 
+  DISK="$(ui_pick_disk)" #dialog - select disk
+
 dialog --infobox "Running preflight checks..." 3 40
 log "UI: boot_mode selected: $BOOT_MODE"
 
@@ -43,7 +45,6 @@ preflight_check_time_dns
 log "preflight: time_dns ok"
 
 
-  DISK="$(ui_pick_disk)" #dialog - select disk
 
 
   preflight_check_rescue_not_on_disk "$DISK"
