@@ -4,14 +4,15 @@ ui_pick_boot_mode() {
   local detected="$1"
   local pick rc
 
-  pick=$(dialog --clear \
+  pick="$(dialog --stdout --clear \
     --backtitle "OVH VPS Rescue Installer" \
     --title "Boot mode" \
     --radiolist "Detected: ${detected}\n\nChoose boot mode for installation:" 14 74 4 \
       "auto" "Use detected (${detected})" "on" \
       "uefi" "UEFI (ESP + grub-efi)" "off" \
       "bios" "Legacy (BIOS/CSM) (bios_grub + grub-pc)" "off" \
-    3>&1 1>&2 2>&3) || ui_abort
+    2>/dev/tty
+  )" || ui_abort
 
   case "$pick" in
     auto|"")
