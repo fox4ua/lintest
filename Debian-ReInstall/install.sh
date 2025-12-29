@@ -17,17 +17,14 @@ main() {
       exit 0
     fi
 
-    if ! ui_pick_boot_mode boot_mode boot_label; then
-      exit 0
+    if ui_pick_boot_mode boot_mode boot_label; then
+      break  # Apply
+    else
+      case $? in
+        2) continue ;; # Back -> Welcome
+        *) exit 0 ;;   # Cancel/ESC -> Exit
+      esac
     fi
-
-    # Если выбран "Назад" — возвращаемся на welcome
-    if [[ "${UI_BACK:-0}" -eq 1 ]]; then
-      continue
-    fi
-
-    # Иначе выбор сделан
-    break
   done
 
   ui_msg "Вы выбрали:\n\n${boot_label}\n\n(boot_mode=${boot_mode})"
