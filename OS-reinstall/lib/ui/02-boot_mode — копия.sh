@@ -55,33 +55,60 @@ Continue forcing Legacy anyway?" \
 
 # Main entry: detected + OUTVAR (NO subshell!)
 ui_pick_boot_mode() {
-# Окно выбора режима загрузки (BIOS/UEFI) в dialog с 3 кнопками:
-# Применить (OK) / Отмена (Cancel) / Назад (Extra)
+  local detected="$1"
+  local outvar="$2"
+  local pick="" rc
 
-choice="$(
-  dialog --clear --stdout \
-    --title "Выбор режима загрузки" \
-    --ok-label "Применить" \
-    --cancel-label "Отмена" \
-    --extra-button \
-    --extra-label "Назад" \
-    --menu "Выберите режим загрузки:" 12 60 4 \
-      uefi "UEFI" \
-      bios "Legacy (BIOS)"
-)"
-rc=$?
+  while true; do
+    pick=""
+    ui_boot_mode_select "$detected" pick
+    rc=$?
+    if [[ $rc -eq 1 ]]; then
+      ui_welcome
+      continue
+    elif [[ $rc -ne 0 ]]; then
+      ui_abort
+    fi
 
-case "$rc" in
-  0)   # Применить
-       # choice будет "uefi" или "bios"
-       echo "apply:$choice"
-       ;;
-  3)   # Назад
-       echo "back"
-       ;;
-  1|255)  # Отмена или ESC
-       echo "cancel"
-       ;;
-esac
+    case "$pick" in
+      auto|"")
+        printf -v "$outvar" '%s' "$detected"
+        return 0
+        ;;
 
+      uefi)
+        if ! has_uefi_rescue; then
+          ui_warn_force_uefi_when_no_uefi_rescue
+          rc=$?
+
+          if [[ $rc -eq 255 ]]; then
+            ui_abort
+          elif [[ $rc -eq 1 ]]; then
+            continue   # <-- ВОТ ЭТО и есть "Back работает"
+          fi
+          # rc=0 -> Continue
+        fi
+
+        printf -v "$outvar" '%s' "uefi"
+        return 0
+        ;;
+
+      bios)
+        if has_uefi_rescue; then
+          ui_warn_force_bios_when_uefi_rescue
+          rc=$?
+
+          if [[ $rc -eq 255 ]]; then
+            ui_abort
+          elif [[ $rc -eq 1 ]]; then
+            continue
+          fi
+        fi
+
+        printf -v "$outvar" '%s' "bios"
+        return 0
+        ;;
+
+    esac
+  done
 }
