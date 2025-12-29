@@ -3,17 +3,31 @@
 ui_boot_mode_select() {
   local detected="$1"
   local outvar="$2"
-  local rc
+  local rc pick
 
-  ui_radiolist_safe "$outvar" 14 74 4 \
-    "Detected: ${detected}\n\nChoose boot mode for installation:" \
+  set +e
+  pick="$(
+    dialog --stdout --clear \
+      --backtitle "OVH VPS Rescue Installer" \
+      --cancel-label "Back" \
+      --extra-button --extra-label "Cancel" \
+      --radiolist "Detected: ${detected}\n\nChoose boot mode for installation:" 14 74 4 \
       "auto" "Use detected (${detected})" "on" \
       "uefi" "UEFI (ESP + grub-efi)" "off" \
-      "bios" "Legacy (BIOS/CSM) (bios_grub + grub-pc)" "off"
+      "bios" "Legacy (BIOS/CSM) (bios_grub + grub-pc)" "off" \
+      </dev/tty 2>/dev/tty
+  )"
   rc=$?
+  set -e
 
-  # Cancel/ESC => abort installer
-  [[ $rc -eq 1 || $rc -eq 255 ]] && ui_abort
+  if [[ $rc -eq 0 ]]; then
+    printf -v "$outvar" '%s' "$pick"
+    return 0
+  fi
+
+  # Back => return to previous screen, Cancel/ESC => abort installer
+  [[ $rc -eq 3 || $rc -eq 255 ]] && ui_abort
+  [[ $rc -eq 1 ]] && return 1
   return 0
 }
 
@@ -46,7 +60,13 @@ ui_pick_boot_mode() {
   local pick rc
 
   while true; do
-    ui_boot_mode_select "$detected" pick
+    if ! ui_boot_mode_select "$detected" pick; then
+      rc=$?
+      if [[ $rc -eq 1 ]]; then
+        ui_welcome
+        continue
+      fi
+    fi
 
     case "$pick" in
       auto|"")
