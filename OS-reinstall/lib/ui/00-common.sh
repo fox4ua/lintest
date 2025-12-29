@@ -22,6 +22,51 @@ ui_abort() {
   exit 0
 }
 
+ui_radiolist_safe() {
+  # usage: ui_radiolist_safe OUTVAR height width listheight "text" items...
+  local __out="$1"; shift
+  local h="$1" w="$2" lh="$3"; shift 3
+  local text="$1"; shift
+  local val rc
+
+  set +e
+  val="$(
+    dialog --stdout --clear \
+      --backtitle "OVH VPS Rescue Installer" \
+      --radiolist "$text" "$h" "$w" "$lh" \
+      "$@" \
+      </dev/tty 2>/dev/tty
+  )"
+  rc=$?
+  set -e
+
+  if [[ $rc -ne 0 ]]; then
+    return "$rc"   # 1 = Cancel, 255 = ESC
+  fi
+
+  printf -v "$__out" '%s' "$val"
+  return 0
+}
+
+ui_yesno_safe() {
+  # usage: ui_yesno_safe "title" "text" height width
+  # returns: 0 yes, 1 no, 255 esc
+  local title="$1" text="$2" h="$3" w="$4"
+  local rc
+
+  set +e
+  dialog --clear \
+    --backtitle "OVH VPS Rescue Installer" \
+    --title "$title" \
+    --yes-label "Continue" \
+    --no-label "Back" \
+    --yesno "$text" "$h" "$w" </dev/tty 2>/dev/tty
+  rc=$?
+  set -e
+
+  return "$rc"
+}
+
 
 # Helpers (non-window)
 has_uefi_rescue() {
