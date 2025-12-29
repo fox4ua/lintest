@@ -12,7 +12,13 @@ ui_pick_boot_mode() {
       "uefi" "UEFI (ESP + grub-efi)" "off" \
       "bios" "Legacy (BIOS/CSM) (bios_grub + grub-pc)" "off" \
     2>/dev/tty
-  )" || ui_abort
+  )"
+  rc=$?
+
+  # Cancel/ESC
+  if [[ $rc -ne 0 ]]; then
+    ui_abort
+  fi
 
   case "$pick" in
     auto|"")
