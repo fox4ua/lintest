@@ -25,6 +25,8 @@ main() {
   ui_welcome # dialog - Welcom
   BOOT_MODE_DETECTED="$(detect_boot_mode_strict)"
   BOOT_MODE="$(ui_pick_boot_mode "$BOOT_MODE_DETECTED")" # dialog - select Bios(UEFI/Legacy)
+    clear
+
   [[ "$BOOT_MODE" == "uefi" ]] && ensure_deps_uefi
   clear
 
