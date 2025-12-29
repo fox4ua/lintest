@@ -24,8 +24,16 @@ main() {
   ensure_deps_base # check
   ui_welcome # dialog - Welcom
   BOOT_MODE_DETECTED="$(detect_boot_mode_strict)"
-  ui_pick_boot_mode "$BOOT_MODE_DETECTED" BOOT_MODE # dialog - select Bios(UEFI/Legacy)
-
+BOOT_MODE=""
+if ui_pick_boot_mode "$BOOT_MODE_DETECTED" BOOT_MODE; then
+  echo "apply: $BOOT_MODE"
+else
+  case "$?" in
+    10) echo "back" ;;
+    20) echo "cancel" ;;
+    *)  echo "error" ;;
+  esac
+fi
   [[ "$BOOT_MODE" == "uefi" ]] && ensure_deps_uefi
 
   DISK="$(ui_pick_disk)" #dialog - select disk

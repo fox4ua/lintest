@@ -55,40 +55,58 @@ Continue forcing Legacy anyway?" \
 
 # Main entry: detected + OUTVAR (NO subshell!)
 ui_pick_boot_mode() {
-# Если у тебя где-то стоит set -e, то на время dialog его надо выключить:
-set +e
-choice="$(
-  dialog --clear --stdout \
-    --title "Выбор режима загрузки" \
-    --ok-label "Применить" \
-    --cancel-label "Отмена" \
-    --extra-button \
-    --extra-label "Назад" \
-    --menu "Выберите режим загрузки:" 12 60 4 \
-      uefi "UEFI" \
-      bios "Legacy (BIOS)"
-)"
-rc=$?
-set -e 2>/dev/null || true   # безопасно вернёт set -e, если он был
+  # $1 = detected (например: uefi|bios|unknown)
+  # $2 = имя переменной для результата (например: BOOT_MODE)
+  local detected="$1"
+  local outvar="$2"
 
-case "$rc" in
-  0)
-    # Применить: choice = uefi|bios
-    echo "apply:$choice"
-    ;;
-  3)
-    # Назад: НЕ трогаем choice (он пустой), просто уходим на предыдущий шаг
-    dialog --clear
-    clear
-    echo "back"
-    ;;
-  1|255)
-    # Отмена/ESC
-    dialog --clear
-    clear
-    echo "cancel"
-    ;;
-esac
+  local had_errexit=0
+  case $- in *e*) had_errexit=1;; esac
 
+  local choice rc
+  set +e
+  choice="$(
+    dialog --clear --stdout \
+      --title "Выбор режима загрузки" \
+      --ok-label "Применить" \
+      --cancel-label "Отмена" \
+      --extra-button \
+      --extra-label "Назад" \
+      --menu "Выберите режим загрузки (detected: ${detected}):" 12 70 4 \
+        uefi   "UEFI" \
+        bios   "Legacy (BIOS)"
+  )"
+  rc=$?
+  ((had_errexit)) && set -e
 
+  case "$rc" in
+    0)
+      # Применить: записываем результат в переменную по имени
+      if [[ -z "$choice" ]]; then
+        dialog --title "Ошибка" --msgbox "Ничего не выбрано." 7 40
+        return 1
+      fi
+      printf -v "$outvar" '%s' "$choice"
+      dialog --clear
+      clear
+      return 0
+      ;;
+    3)
+      # Назад
+      dialog --clear
+      clear
+      return 10
+      ;;
+    1|255)
+      # Отмена или ESC
+      dialog --clear
+      clear
+      return 20
+      ;;
+    *)
+      dialog --clear
+      clear
+      return 20
+      ;;
+  esac
 }
