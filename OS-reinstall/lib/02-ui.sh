@@ -8,7 +8,7 @@ source "${UI_DIR}/00-common.sh"
 
 # One file = one window
 source "${UI_DIR}/01-welcome.sh"
-source "${UI_DIR}/boot_mode.sh"
+source "${UI_DIR}/02-boot_mode.sh"
 source "${UI_DIR}/disk.sh"
 source "${UI_DIR}/swap.sh"
 source "${UI_DIR}/boot.sh"
