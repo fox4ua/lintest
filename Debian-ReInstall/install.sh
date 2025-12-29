@@ -17,9 +17,9 @@ main() {
 
     ui_pick_boot_mode boot_mode boot_label
     case $? in
-      0) break ;;
-      2) continue ;;
-      1) exit 0 ;;
+      0) break ;;      # Apply
+      2) continue ;;   # Back -> Welcome
+      1) exit 0 ;;     # Cancel/ESC -> exit
     esac
   done
 
