@@ -55,9 +55,8 @@ Continue forcing Legacy anyway?" \
 
 # Main entry: detected + OUTVAR (NO subshell!)
 ui_pick_boot_mode() {
-# Окно выбора режима загрузки (BIOS/UEFI) в dialog с 3 кнопками:
-# Применить (OK) / Отмена (Cancel) / Назад (Extra)
-
+# Если у тебя где-то стоит set -e, то на время dialog его надо выключить:
+set +e
 choice="$(
   dialog --clear --stdout \
     --title "Выбор режима загрузки" \
@@ -70,18 +69,26 @@ choice="$(
       bios "Legacy (BIOS)"
 )"
 rc=$?
+set -e 2>/dev/null || true   # безопасно вернёт set -e, если он был
 
 case "$rc" in
-  0)   # Применить
-       # choice будет "uefi" или "bios"
-       echo "apply:$choice"
-       ;;
-  3)   # Назад
-       echo "back"
-       ;;
-  1|255)  # Отмена или ESC
-       echo "cancel"
-       ;;
+  0)
+    # Применить: choice = uefi|bios
+    echo "apply:$choice"
+    ;;
+  3)
+    # Назад: НЕ трогаем choice (он пустой), просто уходим на предыдущий шаг
+    dialog --clear
+    clear
+    echo "back"
+    ;;
+  1|255)
+    # Отмена/ESC
+    dialog --clear
+    clear
+    echo "cancel"
+    ;;
 esac
+
 
 }
