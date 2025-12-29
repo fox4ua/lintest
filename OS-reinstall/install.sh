@@ -26,14 +26,26 @@ main() {
   BOOT_MODE_DETECTED="$(detect_boot_mode_strict)"
 
 
-UI_ACTION=""
-ui_pick_boot_mode "$BOOT_MODE_DETECTED" BOOT_MODE UI_ACTION || return $?
+while :; do
+  UI_ACTION=""
+  ui_pick_boot_mode "$BOOT_MODE_DETECTED" BOOT_MODE UI_ACTION || return $?
 
-case "$UI_ACTION" in
-  apply)  ;;                 # дальше
-  back)   ui_welcome; return 0 ;;
-  cancel) return 0 ;;
-esac
+  case "$UI_ACTION" in
+    apply)
+      break
+      ;;
+    back)
+      ui_welcome
+      continue
+      ;;
+    cancel)
+      ui_abort   # тихий выход без ERROR
+      ;;
+    *)
+      die "UI: unexpected action: ${UI_ACTION}"
+      ;;
+  esac
+done
 
 
 
