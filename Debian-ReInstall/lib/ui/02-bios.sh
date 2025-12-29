@@ -14,11 +14,10 @@ ui_pick_boot_mode() {
   choice="$(
     dialog --clear --stdout \
       --title "Режим загрузки" \
-      --ok-label "Применить" \
+      --ok-label "Выбрать" \
       --cancel-label "Отмена" \
-      --extra-button \
-      --extra-label "Назад" \
-      --menu "Выберите схему загрузки и разметки:" 13 74 6 \
+      --menu "Выберите схему загрузки и разметки:" 14 74 7 \
+        __back  "← Назад (к приветствию)" \
         uefi    "UEFI + GPT (EFI 512M FAT32)" \
         biosgpt "Legacy BIOS + GPT (bios_grub 1-2M)" \
         biosmbr "Legacy BIOS + MBR (msdos)"
@@ -28,24 +27,34 @@ ui_pick_boot_mode() {
 
   ui_clear
 
-  case "$rc" in
-    0)
-      case "$choice" in
-        uefi)    printf -v "$out_bootmode" "%s" "uefi";    printf -v "$out_label" "%s" "UEFI + GPT";;
-        biosgpt) printf -v "$out_bootmode" "%s" "biosgpt"; printf -v "$out_label" "%s" "Legacy BIOS + GPT";;
-        biosmbr) printf -v "$out_bootmode" "%s" "biosmbr"; printf -v "$out_label" "%s" "Legacy BIOS + MBR";;
-        *) return 1;;
-      esac
-      return 0
+  # Cancel/ESC => выйти
+  if [[ "$rc" -ne 0 ]]; then
+    return 1
+  fi
+
+  # OK, но выбран Back => вернуться
+  if [[ "$choice" == "__back" ]]; then
+    return 2
+  fi
+
+  # OK, выбран режим
+  case "$choice" in
+    uefi)
+      printf -v "$out_bootmode" "%s" "uefi"
+      printf -v "$out_label"    "%s" "UEFI + GPT"
       ;;
-    3) # extra-button => Back
-      return 2
+    biosgpt)
+      printf -v "$out_bootmode" "%s" "biosgpt"
+      printf -v "$out_label"    "%s" "Legacy BIOS + GPT"
       ;;
-    1|255) # Cancel/ESC => exit
-      return 1
+    biosmbr)
+      printf -v "$out_bootmode" "%s" "biosmbr"
+      printf -v "$out_label"    "%s" "Legacy BIOS + MBR"
       ;;
     *)
       return 1
       ;;
   esac
+
+  return 0
 }
