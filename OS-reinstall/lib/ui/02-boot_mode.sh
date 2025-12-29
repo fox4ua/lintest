@@ -3,19 +3,31 @@
 ui_boot_mode_select() {
   local detected="$1"
   local outvar="$2"
-  local rc
+  local rc pick
 
   set +e
-  ui_radiolist_safe "$outvar" 14 74 4 \
-    "Detected: ${detected}\n\nChoose boot mode for installation:" \
+  pick="$(
+    dialog --stdout --clear \
+      --backtitle "OVH VPS Rescue Installer" \
+      --cancel-label "Back" \
+      --extra-button --extra-label "Cancel" \
+      --radiolist "Detected: ${detected}\n\nChoose boot mode for installation:" 14 74 4 \
       "auto" "Use detected (${detected})" "on" \
       "uefi" "UEFI (ESP + grub-efi)" "off" \
-      "bios" "Legacy (BIOS/CSM) (bios_grub + grub-pc)" "off"
+      "bios" "Legacy (BIOS/CSM) (bios_grub + grub-pc)" "off" \
+      </dev/tty 2>/dev/tty
+  )"
   rc=$?
   set -e
 
-  # Cancel/ESC => abort installer
-  [[ $rc -eq 1 || $rc -eq 255 ]] && ui_abort
+  if [[ $rc -eq 0 ]]; then
+    printf -v "$outvar" '%s' "$pick"
+    return 0
+  fi
+
+  # Back => return to previous screen, Cancel/ESC => abort installer
+  [[ $rc -eq 3 || $rc -eq 255 ]] && ui_abort
+  [[ $rc -eq 1 ]] && return 1
   return 0
 }
 
@@ -48,7 +60,13 @@ ui_pick_boot_mode() {
   local pick rc
 
   while true; do
-    ui_boot_mode_select "$detected" pick
+    if ! ui_boot_mode_select "$detected" pick; then
+      rc=$?
+      if [[ $rc -eq 1 ]]; then
+        ui_welcome
+        continue
+      fi
+    fi
 
     case "$pick" in
       auto|"")
@@ -58,14 +76,14 @@ ui_pick_boot_mode() {
 
       uefi)
         if ! has_uefi_rescue; then
-          set +e
           ui_warn_force_uefi_when_no_uefi_rescue
           rc=$?
-          set -e
 
-          [[ $rc -eq 255 ]] && ui_abort
-          [[ $rc -eq 1 ]] && continue   # Back
-
+          if [[ $rc -eq 255 ]]; then
+            ui_abort
+          elif [[ $rc -eq 1 ]]; then
+            continue   # <-- ВОТ ЭТО и есть "Back работает"
+          fi
           # rc=0 -> Continue
         fi
 
@@ -75,13 +93,14 @@ ui_pick_boot_mode() {
 
       bios)
         if has_uefi_rescue; then
-          set +e
           ui_warn_force_bios_when_uefi_rescue
           rc=$?
-          set -e
 
-          [[ $rc -eq 255 ]] && ui_abort
-          [[ $rc -eq 1 ]] && continue
+          if [[ $rc -eq 255 ]]; then
+            ui_abort
+          elif [[ $rc -eq 1 ]]; then
+            continue
+          fi
         fi
 
         printf -v "$outvar" '%s' "bios"
