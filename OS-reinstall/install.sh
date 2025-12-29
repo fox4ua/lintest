@@ -20,12 +20,14 @@ main() {
   init_log
   stage_set "preflight"
 
+
+  ensure_deps_rescue # check
+  ui_welcome # dialog - Welcom
   BOOT_MODE_DETECTED="$(detect_boot_mode_strict)"
-  # ВАЖНО: поставить зависимости ДО первого dialog
-  ensure_deps_rescue "$BOOT_MODE_DETECTED"
-  ui_welcome "$BOOT_MODE_DETECTED" || { log "Canceled by user."; exit 0; }  # allow override because VPS "detection" can be unreliable
-  BOOT_MODE="$(ui_pick_boot_mode "$BOOT_MODE_DETECTED")"
+  BOOT_MODE="$(ui_pick_boot_mode "$BOOT_MODE_DETECTED")" # dialog - select Bios(UEFI/Legacy)
   ensure_deps_rescue "$BOOT_MODE"
+
+
 
   preflight_reset_state
   preflight_check_rescue_mode_hint
