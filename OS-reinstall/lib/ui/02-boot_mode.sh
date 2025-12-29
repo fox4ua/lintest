@@ -14,15 +14,56 @@ ui_pick_boot_mode() {
   )"
   rc=$?
 
-  # Cancel/ESC -> exit cleanly (no fallthrough!)
-  if [[ $rc -ne 0 ]]; then
-    ui_abort
-  fi
+  # Cancel/ESC -> always abort
+  [[ $rc -ne 0 ]] && ui_abort
 
   case "$pick" in
-    auto) echo "$detected" ;;
-    uefi) echo "uefi" ;;
-    bios) echo "bios" ;;
-    *) die "Invalid boot mode selection: $pick" ;;
+    auto)
+      echo "$detected"
+      ;;
+
+    uefi)
+      if ! has_uefi_rescue; then
+        dialog --clear \
+          --backtitle "OVH VPS Rescue Installer" \
+          --title "Warning: UEFI not detected in Rescue" \
+          --yes-label "Continue" \
+          --no-label "Back" \
+          --yesno \
+"You selected UEFI, but this Rescue environment does NOT expose UEFI (/sys/firmware/efi is missing).
+
+On many VPS this means UEFI boot may NOT be available, and the installed system could become unbootable.
+
+Continue forcing UEFI anyway?" 15 86 </dev/tty 2>/dev/tty
+        rc=$?
+        [[ $rc -eq 255 ]] && ui_abort
+        [[ $rc -ne 0 ]] && { echo "$detected"; return 0; }
+      fi
+      echo "uefi"
+      ;;
+
+    bios)
+      if has_uefi_rescue; then
+        dialog --clear \
+          --backtitle "OVH VPS Rescue Installer" \
+          --title "Warning: UEFI detected in Rescue" \
+          --yes-label "Continue" \
+          --no-label "Back" \
+          --yesno \
+"You selected Legacy (BIOS/CSM), but this Rescue environment exposes UEFI.
+
+If the VPS is configured to boot only in UEFI mode, Legacy installation may not boot.
+
+Continue forcing Legacy anyway?" 14 86 </dev/tty 2>/dev/tty
+        rc=$?
+        [[ $rc -eq 255 ]] && ui_abort
+        [[ $rc -ne 0 ]] && { echo "$detected"; return 0; }
+      fi
+      echo "bios"
+      ;;
+
+    *)
+      die "Invalid boot mode selection: $pick"
+      ;;
   esac
 }
