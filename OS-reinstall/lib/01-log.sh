@@ -23,17 +23,27 @@ run() {
   local src="${BASH_SOURCE[1]##*/}"
   log "[${src}] $*"
   "$@" 2>&1 | tee -a "$LOG_FILE"
+  return "${PIPESTATUS[0]}"
 }
 
 run_secret() {
   local src="${BASH_SOURCE[1]##*/}"
   log "[${src}] (secret command redacted)"
   "$@" 2>&1 | tee -a "$LOG_FILE"
+  return "${PIPESTATUS[0]}"
 }
 
 log_kv() {
   local title="$1"; shift
   log "$title: $*"
+}
+
+on_int_trap() {
+  # SIGINT (Ctrl+C) is user cancel, not a script error
+  local exit_code=130
+  warn "Canceled by user (SIGINT)"
+  clear || true
+  exit "$exit_code"
 }
 
 on_error_trap() {
@@ -48,7 +58,12 @@ on_error_trap() {
   if command -v dialog >/dev/null 2>&1; then
     local tail_lines
     tail_lines="$(tail -n 40 "$LOG_FILE" 2>/dev/null || true)"
-    dialog --clear       --backtitle "OVH VPS Rescue Installer"       --title "ERROR"       --msgbox "stage: ${STAGE}
+
+    # Force dialog UI to real terminal, not to redirected stderr/log
+    dialog --clear \
+      --backtitle "OVH VPS Rescue Installer" \
+      --title "ERROR" \
+      --msgbox "stage: ${STAGE}
 location: ${src}:${line} (${func})
 exit code: ${exit_code}
 
@@ -56,11 +71,12 @@ Log:  ${LOG_FILE}
 Dump: ${DUMP_TGZ}
 
 Last log lines:
-${tail_lines}" 28 100 || true
+${tail_lines}" 28 100 </dev/tty 2>/dev/tty || true
   fi
 
   clear || true
   exit "$exit_code"
 }
 
-trap on_error_trap ERR INT
+trap on_error_trap ERR
+trap on_int_trap INT
