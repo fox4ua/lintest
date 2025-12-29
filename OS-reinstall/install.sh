@@ -25,17 +25,27 @@ main() {
   ui_welcome # dialog - Welcom
   BOOT_MODE_DETECTED="$(detect_boot_mode_strict)"
   BOOT_MODE="$(ui_pick_boot_mode "$BOOT_MODE_DETECTED")" # dialog - select Bios(UEFI/Legacy)
-    clear
-
   [[ "$BOOT_MODE" == "uefi" ]] && ensure_deps_uefi
-  clear
+
+dialog --infobox "Running preflight checks..." 3 40
+log "UI: boot_mode selected: $BOOT_MODE"
+
+log "preflight: reset_state start"
+preflight_reset_state
+log "preflight: reset_state ok"
+
+log "preflight: rescue_mode_hint start"
+preflight_check_rescue_mode_hint
+log "preflight: rescue_mode_hint ok"
+
+log "preflight: time_dns start"
+preflight_check_time_dns
+log "preflight: time_dns ok"
 
 
-  preflight_reset_state
-  preflight_check_rescue_mode_hint
-  preflight_check_time_dns
+  DISK="$(ui_pick_disk)" #dialog - select disk
 
-  DISK="$(ui_pick_disk)"
+
   preflight_check_rescue_not_on_disk "$DISK"
 
   SWAP_GB="$(ui_pick_swap)"
