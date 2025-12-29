@@ -30,8 +30,15 @@ main() {
 dialog --infobox "Running preflight checks..." 3 40
 log "UI: boot_mode selected: $BOOT_MODE"
 
+log "preflight: reset_state start"
 preflight_reset_state
+log "preflight: reset_state ok"
+
+log "preflight: rescue_mode_hint start"
 preflight_check_rescue_mode_hint
+log "preflight: rescue_mode_hint ok"
+
+log "preflight: time_dns start"
 preflight_check_time_dns
 log "preflight: time_dns ok"
 
