@@ -15,10 +15,10 @@ warn_mismatch_or_handle() {
 
   ui_dialog dialog --clear \
     --title "Предупреждение" \
-    --ok-label "Продолжить" \
-    --cancel-label "Отмена" \
+    --ok-label "Continue" \
+    --cancel-label "Cancel" \
     --help-button \
-    --help-label "Назад" \
+    --help-label "Back" \
     --yesno "$text" 12 74
   warn_rc=$?
   ui_clear
@@ -44,10 +44,10 @@ ui_pick_boot_mode() {
     choice="$(
       ui_dialog dialog --clear --stdout \
         --title "Режим загрузки" \
-        --ok-label "Применить" \
-        --cancel-label "Отмена" \
+        --ok-label "Continue" \
+        --cancel-label "Cancel" \
         --help-button \
-        --help-label "Назад" \
+        --help-label "Back" \
         --menu "Выберите режим загрузки:" 13 74 6 \
           uefi    "UEFI + GPT" \
           biosgpt "Legacy BIOS + GPT" \
