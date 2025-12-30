@@ -15,10 +15,10 @@ warn_mismatch_or_handle() {
 
   ui_dialog dialog --clear \
     --title "Предупреждение" \
-    --ok-label "Продолжить" \
-    --cancel-label "Отмена" \
+    --yes-label "Continue" \
+    --no-label "Cancel" \
     --help-button \
-    --help-label "Назад" \
+    --help-label "Back" \
     --yesno "$text" 12 74
 
   rc=$?
