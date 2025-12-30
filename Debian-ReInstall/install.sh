@@ -49,7 +49,7 @@ main() {
 
 
 
-  ui_msg "Вы выбрали:\n\n${boot_label}\n\n(boot_mode=${boot_mode})"
+  ui_msg "Вы выбрали:\n\n${BOOT_LABEL}\n\n(boot_mode=${BOOT_MODE})"
 }
 
 main "$@"
