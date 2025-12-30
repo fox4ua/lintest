@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 
-BASE_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-UI_DIR="$BASE_DIR/ui"
-INIT_DIR="$BASE_DIR/init"
+: "${UI_DIR:?}"
+: "${INIT_DIR:?}"
 
 # init (детекты/утилиты, которые могут понадобиться UI)
 # shellcheck source=/dev/null

@@ -8,9 +8,11 @@ export BASE_DIR
 source "$BASE_DIR/lib/00-env.sh"
 # логирование
 source "$LIB_DIR/10-log.sh"
-# остальное
+# дополнительные функции
 source "$INIT_DIR/01-require_root.sh"
 source "$INIT_DIR/02-boot_detect.sh"
+# остальное
+
 source "$LIB_DIR/ui.sh"
 
 
@@ -23,32 +25,29 @@ main() {
 
   local boot_mode="" boot_label="" rc
 
-  while true; do
-    ui_welcome
-    rc=$?
-    case "$rc" in
-      0) : ;;        # OK -> дальше
-      1|255) exit 0 ;; # Cancel/ESC
-      *) exit 0 ;;
-    esac
+while true; do
+  ui_welcome
+  rc=$?
+  case "$rc" in
+    0) : ;;
+    1|255) exit 0 ;;
+    *) exit 0 ;;
+  esac
 
-    # перед окном выбора:
-    local HAS_UEFI=0
-    if detect_boot_mode_strict; then
-      HAS_UEFI=1
-    else
-      HAS_UEFI=0
-    fi
+  local HAS_UEFI=0
+  if detect_boot_mode_strict; then HAS_UEFI=1; else HAS_UEFI=0; fi
 
-    ui_pick_boot_mode boot_mode boot_label "$HAS_UEFI"
-    case $? in
-      0) : ;;        # дальше следующее окно
-      2) continue ;; # назад -> welcome
-      *) exit 0 ;;
-    esac
+  rc=0
+  ui_pick_boot_mode boot_mode boot_label "$HAS_UEFI" || rc=$?
+  case "$rc" in
+    0) break ;;     # выбор принят -> следующее окно
+    2) continue ;;  # back -> welcome
+    1|255) exit 0 ;;# cancel/esc
+    *) exit 0 ;;
+  esac
+done
 
 
-  done
 
   ui_msg "Вы выбрали:\n\n${boot_label}\n\n(boot_mode=${boot_mode})"
 }
