@@ -1,16 +1,37 @@
 #!/usr/bin/env bash
 
-UI_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/ui"
+BASE_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+UI_DIR="$BASE_DIR/ui"
+INIT_DIR="$BASE_DIR/init"
 
+# init (детекты/утилиты, которые могут понадобиться UI)
+# shellcheck source=/dev/null
+source "$INIT_DIR/02-boot_detect.sh"
+
+# ui
 # shellcheck source=/dev/null
 source "$UI_DIR/01-welcome.sh"
 source "$UI_DIR/02-bios.sh"
 
+
 ui_init() {
-  command -v dialog >/dev/null 2>&1 || {
-    echo "dialog not found. Install it: apt-get update && apt-get install -y dialog" >&2
-    exit 1
-  }
+  if command -v dialog >/dev/null 2>&1; then
+    return 0
+  fi
+
+  if command -v apt-get >/dev/null 2>&1; then
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update -y
+    apt-get install -y --no-install-recommends dialog
+    command -v dialog >/dev/null 2>&1 || {
+      echo "Failed to install dialog" >&2
+      exit 1
+    }
+    return 0
+  fi
+
+  echo "No supported package manager to install dialog automatically." >&2
+  exit 1
 }
 
 ui_clear() {
@@ -22,6 +43,12 @@ ui_msg() {
   ui_dialog dialog --clear --title "Информация" --msgbox "$1" 12 74
   ui_clear
 }
+
+ui_warn() {
+  ui_dialog dialog --clear --title "Предупреждение" --msgbox "$1" 12 74
+  ui_clear
+}
+
 
 # ВАЖНО:
 # - временно отключает errexit/errtrace и ERR trap
