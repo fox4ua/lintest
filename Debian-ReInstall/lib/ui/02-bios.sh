@@ -28,9 +28,9 @@ ui_pick_boot_mode() {
     ui_clear
 
     case "$rc" in
-      0) : ;;           # OK -> дальше проверяем mismatch
-      2) return 2 ;;    # Back (help) -> на предыдущее окно (welcome)
-      1|255) return 1 ;;# Cancel/ESC -> выход
+      0) : ;;            # OK -> дальше проверяем mismatch
+      2) return 2 ;;     # Back -> предыдущее окно (welcome)
+      1|255) return 1 ;; # Cancel/ESC -> выход
       *) return 1 ;;
     esac
 
@@ -42,14 +42,14 @@ ui_pick_boot_mode() {
         --cancel-label "Отмена" \
         --help-button \
         --help-label "Назад" \
-        --msgbox "UEFI не обнаружен в текущем окружении.\n\nЕсли продолжить с UEFI, система может не загрузиться.\n\nВыберите действие:" 12 74
+        --yesno "UEFI не обнаружен в текущем окружении.\n\nЕсли продолжить с UEFI, система может не загрузиться.\n\nВыберите действие:" 12 74
       warn_rc=$?
       ui_clear
 
       case "$warn_rc" in
-        0) : ;;            # продолжить -> принять выбор
-        2) continue ;;     # назад -> вернуться в меню выбора режима
-        1|255) return 1 ;; # отмена -> выход
+        0) : ;;            # Продолжить -> принять выбор
+        2) continue ;;     # Назад -> обратно в меню выбора режима
+        1|255) return 1 ;; # Отмена/ESC -> выход
         *) return 1 ;;
       esac
     fi
@@ -62,7 +62,7 @@ ui_pick_boot_mode() {
         --cancel-label "Отмена" \
         --help-button \
         --help-label "Назад" \
-        --msgbox "В текущем окружении обнаружен UEFI.\n\nЕсли продолжить с Legacy BIOS, загрузчик может установиться некорректно.\n\nВыберите действие:" 12 74
+        --yesno "В текущем окружении обнаружен UEFI.\n\nЕсли продолжить с Legacy BIOS, загрузчик может установиться некорректно.\n\nВыберите действие:" 12 74
       warn_rc=$?
       ui_clear
 
@@ -89,7 +89,6 @@ ui_pick_boot_mode() {
         printf -v "$out_label"    "%s" "Legacy BIOS + MBR"
         ;;
       *)
-        # на всякий случай вернёмся в меню
         continue
         ;;
     esac
