@@ -10,21 +10,25 @@ source "$LIB_DIR/ui.sh"
 main() {
   ui_init
 
-  local boot_mode="" boot_label=""
+  local boot_mode="" boot_label="" rc
 
   while true; do
-    if ! ui_welcome; then
-      exit 0
-    fi
+    ui_welcome
+    rc=$?
+    case "$rc" in
+      0) : ;;        # OK -> дальше
+      1|255) exit 0 ;; # Cancel/ESC
+      *) exit 0 ;;
+    esac
 
-    if ui_pick_boot_mode boot_mode boot_label; then
-      break  # Apply
-    else
-      case $? in
-        2) continue ;; # Back -> Welcome
-        *) exit 0 ;;   # Cancel/ESC -> Exit
-      esac
-    fi
+    ui_pick_boot_mode boot_mode boot_label
+    rc=$?
+    case "$rc" in
+      0) break ;;      # Apply
+      2) continue ;;   # Back -> welcome
+      1|255) exit 0 ;; # Cancel/ESC
+      *) exit 0 ;;
+    esac
   done
 
   ui_msg "Вы выбрали:\n\n${boot_label}\n\n(boot_mode=${boot_mode})"
