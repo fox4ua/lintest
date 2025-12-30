@@ -40,21 +40,7 @@ ui_msg() {
   ui_clear
 }
 
-ui_warn() {
-  local text="$1"
 
-  ui_dialog dialog --clear \
-    --title "Предупреждение" \
-    --ok-label "Продолжить" \
-    --cancel-label "Отмена" \
-    --help-button \
-    --help-label "Назад" \
-    --msgbox "$text" 12 74
-
-  local rc=$?
-  ui_clear
-  return "$rc"   # 0 OK, 1 Cancel, 2 Help, 255 ESC
-}
 # очистка экрана
 ui_clear() {
   dialog --clear
