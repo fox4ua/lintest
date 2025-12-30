@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # ui_pick_boot_mode OUT_BOOTMODE OUT_LABEL HAS_UEFI
-# return: 0=Apply(valid or forced), 1=Cancel/ESC(exit), 2=Back(go welcome)
+# return: 0=Apply (accepted), 1=Cancel/ESC (exit), 2=Back (to welcome)
 ui_pick_boot_mode() {
   local out_bootmode="$1"
   local out_label="$2"
@@ -10,6 +10,7 @@ ui_pick_boot_mode() {
   local choice rc warn_rc
 
   while true; do
+    # Основное меню выбора режима
     choice="$(
       ui_dialog dialog --clear --stdout \
         --title "Режим загрузки" \
@@ -27,28 +28,44 @@ ui_pick_boot_mode() {
     ui_clear
 
     case "$rc" in
-      0) : ;;
-      2) return 2 ;;      # Back -> welcome
-      1|255) return 1 ;;  # Cancel/ESC -> exit
+      0) : ;;           # OK -> дальше проверяем mismatch
+      2) return 2 ;;    # Back (help) -> на предыдущее окно (welcome)
+      1|255) return 1 ;;# Cancel/ESC -> выход
       *) return 1 ;;
     esac
 
-    # mismatch: HAS_UEFI=0, но выбрали UEFI
+    # mismatch #1: UEFI нет, но выбрали UEFI
     if [[ "$has_uefi" -eq 0 && "$choice" == "uefi" ]]; then
-      ui_warn "UEFI не обнаружен в текущем окружении.\n\nЕсли продолжить с UEFI, система может не загрузиться.\n\nЧто делаем?"
+      ui_dialog dialog --clear \
+        --title "Предупреждение" \
+        --ok-label "Продолжить" \
+        --cancel-label "Отмена" \
+        --help-button \
+        --help-label "Назад" \
+        --msgbox "UEFI не обнаружен в текущем окружении.\n\nЕсли продолжить с UEFI, система может не загрузиться.\n\nВыберите действие:" 12 74
       warn_rc=$?
+      ui_clear
+
       case "$warn_rc" in
-        0) : ;;          # Продолжить -> принимаем выбор
-        2) continue ;;   # Назад -> снова меню
-        1|255) return 1 ;; # Отмена
+        0) : ;;            # продолжить -> принять выбор
+        2) continue ;;     # назад -> вернуться в меню выбора режима
+        1|255) return 1 ;; # отмена -> выход
         *) return 1 ;;
       esac
     fi
 
-    # mismatch: HAS_UEFI=1, но выбрали Legacy
+    # mismatch #2: UEFI есть, но выбрали Legacy
     if [[ "$has_uefi" -eq 1 && "$choice" != "uefi" ]]; then
-      ui_warn "В текущем окружении обнаружен UEFI.\n\nЕсли продолжить с Legacy BIOS, загрузчик может установиться некорректно.\n\nЧто делаем?"
+      ui_dialog dialog --clear \
+        --title "Предупреждение" \
+        --ok-label "Продолжить" \
+        --cancel-label "Отмена" \
+        --help-button \
+        --help-label "Назад" \
+        --msgbox "В текущем окружении обнаружен UEFI.\n\nЕсли продолжить с Legacy BIOS, загрузчик может установиться некорректно.\n\nВыберите действие:" 12 74
       warn_rc=$?
+      ui_clear
+
       case "$warn_rc" in
         0) : ;;
         2) continue ;;
@@ -57,7 +74,7 @@ ui_pick_boot_mode() {
       esac
     fi
 
-    # принять выбор
+    # Принять выбор и отдать наружу
     case "$choice" in
       uefi)
         printf -v "$out_bootmode" "%s" "uefi"
@@ -72,6 +89,7 @@ ui_pick_boot_mode() {
         printf -v "$out_label"    "%s" "Legacy BIOS + MBR"
         ;;
       *)
+        # на всякий случай вернёмся в меню
         continue
         ;;
     esac

@@ -33,11 +33,8 @@ ui_init() {
   exit 1
 }
 
-ui_clear() {
-  dialog --clear
-  clear
-}
 
+# Вывод конечного результата
 ui_msg() {
   ui_dialog dialog --clear --title "Информация" --msgbox "$1" 12 74
   ui_clear
@@ -58,8 +55,11 @@ ui_warn() {
   ui_clear
   return "$rc"   # 0 OK, 1 Cancel, 2 Help, 255 ESC
 }
-
-
+# очистка экрана
+ui_clear() {
+  dialog --clear
+  clear
+}
 # ВАЖНО:
 # - временно отключает errexit/errtrace и ERR trap
 # - возвращает реальный exit code dialog (0/1/2/255/…)
