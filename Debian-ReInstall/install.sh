@@ -45,6 +45,30 @@ main() {
       1|255) exit 0 ;;# cancel/esc
       *) exit 0 ;;
     esac
+
+# ... после выбора boot mode:
+# ui_pick_boot_mode BOOT_MODE BOOT_LABEL "$HAS_UEFI" ...
+
+# далее окно выбора диска
+while true; do
+  rc=0
+  ui_pick_disk DISK || rc=$?
+  case "$rc" in
+    0) break ;;       # диск выбран -> дальше
+    2) break ;;       # Back -> вернёмся на предыдущую стадию (ниже обработаем)
+    *) exit 0 ;;      # Cancel/ESC
+  esac
+done
+
+# если Back из диска — вернуться к boot menu
+if [[ "${rc:-0}" -eq 2 ]]; then
+  # возвращаемся в цикл выбора boot_mode
+  continue
+fi
+
+# проверка
+ui_msg "Вы выбрали:\n\n${BOOT_LABEL}\nДиск: ${DISK}"
+
   done
 
 

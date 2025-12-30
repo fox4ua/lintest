@@ -7,8 +7,10 @@ INIT_DIR="${INIT_DIR:-$LIB_DIR/init}"
 UI_DIR="${UI_DIR:-$LIB_DIR/ui}"
 # Файл логов
 LOG_FILE="${LOG_FILE:-/root/debian_installer.log}"
-
-
+# boot mode
+HAS_UEFI="${HAS_UEFI:-0}"
+BOOT_MODE="${BOOT_MODE:-}"
+BOOT_LABEL="${BOOT_LABEL:-}"
 
 
 # Файлы/папки
@@ -17,9 +19,7 @@ TARGET_DIR="${TARGET_DIR:-/mnt/target}"
 # Глобальные значения мастера (заполняются по мере прохождения)
 STAGE="${STAGE:-init}"
 
-HAS_UEFI="${HAS_UEFI:-0}"
-BOOT_MODE="${BOOT_MODE:-}"
-BOOT_LABEL="${BOOT_LABEL:-}"
+
 
 # (на будущее)
 DISK="${DISK:-}"

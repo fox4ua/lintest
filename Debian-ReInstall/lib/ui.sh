@@ -11,7 +11,7 @@ source "$INIT_DIR/02-boot_detect.sh"
 # shellcheck source=/dev/null
 source "$UI_DIR/01-welcome.sh"
 source "$UI_DIR/02-bios.sh"
-
+source "$UI_DIR/03-disk.sh"
 
 ui_init() {
   if command -v dialog >/dev/null 2>&1; then
