@@ -11,33 +11,27 @@ msg_uefi=$'В текущем окружении обнаружен UEFI.\n\nЕс
 #   1 -> Отмена/ESC (выйти)
 warn_mismatch_or_handle() {
   local text="$1"
-  local choice rc
+  local rc
 
-  choice="$(
-    ui_dialog dialog --clear --stdout \
-      --title "Предупреждение" \
-      --ok-label "Continue" \
-      --cancel-label "Cancel" \
-      --menu "$text" 13 74 5 \
-        cont "Continue" \
-        back "Back" \
-        cancel "Cancel"
-  )"
+  ui_dialog dialog --clear \
+    --title "Предупреждение" \
+    --ok-label "Продолжить" \
+    --cancel-label "Отмена" \
+    --help-button \
+    --help-label "Назад" \
+    --yesno "$text" 12 74
+
   rc=$?
   ui_clear
 
-  # Cancel/ESC на самом dialog
-  if [[ "$rc" -ne 0 ]]; then
-    return 1
-  fi
-
-  case "$choice" in
-    cont) return 0 ;;
-    back) return 2 ;;
-    cancel) return 1 ;;
+  case "$rc" in
+    0) return 0 ;;        # Продолжить
+    2) return 2 ;;        # Назад
+    1|255) return 1 ;;    # Отмена / ESC
     *) return 1 ;;
   esac
 }
+
 
 
 # ui_pick_boot_mode OUT_BOOTMODE OUT_LABEL HAS_UEFI
