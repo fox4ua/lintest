@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
 # ui_pick_boot_mode OUT_BOOTMODE OUT_LABEL HAS_UEFI
-# return: 0=Apply(valid), 1=Cancel/ESC(exit), 2=Back(go welcome)
+# return: 0=Apply(valid or forced), 1=Cancel/ESC(exit), 2=Back(go welcome)
 ui_pick_boot_mode() {
   local out_bootmode="$1"
   local out_label="$2"
   local has_uefi="${3:-0}"
 
-  local choice rc
+  local choice rc warn_rc
 
   while true; do
     choice="$(
@@ -27,25 +27,37 @@ ui_pick_boot_mode() {
     ui_clear
 
     case "$rc" in
-      0) : ;;          # OK -> проверяем выбор ниже
-      2) return 2 ;;   # Back
-      1|255) return 1 ;; # Cancel/ESC
+      0) : ;;
+      2) return 2 ;;      # Back -> welcome
+      1|255) return 1 ;;  # Cancel/ESC -> exit
       *) return 1 ;;
     esac
 
-    # 1) Если UEFI недоступен, но выбрали UEFI -> warning и снова меню
+    # mismatch: HAS_UEFI=0, но выбрали UEFI
     if [[ "$has_uefi" -eq 0 && "$choice" == "uefi" ]]; then
-      ui_warn "UEFI не обнаружен в текущем окружении.\n\nСкорее всего вы загрузились в Legacy/BIOS режиме.\n\nВыберите Legacy BIOS или вернитесь назад."
-      continue
+      ui_warn "UEFI не обнаружен в текущем окружении.\n\nЕсли продолжить с UEFI, система может не загрузиться.\n\nЧто делаем?"
+      warn_rc=$?
+      case "$warn_rc" in
+        0) : ;;          # Продолжить -> принимаем выбор
+        2) continue ;;   # Назад -> снова меню
+        1|255) return 1 ;; # Отмена
+        *) return 1 ;;
+      esac
     fi
 
-    # 2) Если UEFI доступен, но выбрали Legacy -> warning и снова меню
+    # mismatch: HAS_UEFI=1, но выбрали Legacy
     if [[ "$has_uefi" -eq 1 && "$choice" != "uefi" ]]; then
-      ui_warn "В текущем окружении обнаружен UEFI.\n\nЕсли вы выберете Legacy BIOS, загрузчик может не установиться/не загрузиться.\n\nРекомендуется выбрать UEFI."
-      continue
+      ui_warn "В текущем окружении обнаружен UEFI.\n\nЕсли продолжить с Legacy BIOS, загрузчик может установиться некорректно.\n\nЧто делаем?"
+      warn_rc=$?
+      case "$warn_rc" in
+        0) : ;;
+        2) continue ;;
+        1|255) return 1 ;;
+        *) return 1 ;;
+      esac
     fi
 
-    # 3) Выбор валиден -> отдаём результат наружу
+    # принять выбор
     case "$choice" in
       uefi)
         printf -v "$out_bootmode" "%s" "uefi"
@@ -60,7 +72,6 @@ ui_pick_boot_mode() {
         printf -v "$out_label"    "%s" "Legacy BIOS + MBR"
         ;;
       *)
-        # на всякий случай: вернёмся в меню
         continue
         ;;
     esac
