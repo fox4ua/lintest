@@ -24,14 +24,7 @@ main() {
       *) exit 0 ;;
     esac
 
-    ui_pick_boot_mode boot_mode boot_label
-    rc=$?
-    case "$rc" in
-      0) break ;;      # Apply
-      2) continue ;;   # Back -> welcome
-      1|255) exit 0 ;; # Cancel/ESC
-      *) exit 0 ;;
-    esac
+
 
 # перед окном выбора:
 local HAS_UEFI=0
