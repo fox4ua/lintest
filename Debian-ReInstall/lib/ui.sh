@@ -6,6 +6,8 @@
 # init (детекты/утилиты, которые могут понадобиться UI)
 # shellcheck source=/dev/null
 source "$INIT_DIR/02-boot_detect.sh"
+source "$INIT_DIR/03-disk_check.sh"
+source "$INIT_DIR/04-disk_release.sh"
 
 # ui
 # shellcheck source=/dev/null
