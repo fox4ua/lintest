@@ -4,24 +4,26 @@
 # return: 2=Back, 1=Cancel/ESC
 ui_block_current_env_disk() {
   local disk="$1"
+  local rc
   local src_root
+
   src_root="$(findmnt -no SOURCE / 2>/dev/null || true)"
 
   ui_dialog dialog --clear \
     --title "Нельзя выбрать этот диск" \
     --yes-label "Назад" \
     --no-label "Отмена" \
-    --help-button \
-    --help-label "Назад" \
     --yesno "Этот диск используется текущей средой.\n\nТекущий / смонтирован из:\n${src_root:-unknown}\n\nВыбранный диск: $disk\n\nВыбери другой диск." 14 74
-  local rc=$?
+  rc=$?
   ui_clear
 
   case "$rc" in
-    0|2) return 2 ;;
+    0|2) return 2 ;;     # YES = Назад (а HELP тут нет, но оставим совместимость)
+    1|255) return 1 ;;   # NO/ESC = Отмена
     *) return 1 ;;
   esac
 }
+
 
 
 # warning: disk busy -> release?
@@ -38,11 +40,11 @@ ui_warn_disk_busy_plan_only() {
   text+="\nПеред разметкой их нужно будет отключить.\nОтключить (позже) и продолжить?"
 
   ui_dialog dialog --clear \
-    --title "Диск используется" \
-    --yes-label "Отключить" \
-    --no-label "Отмена" \
+    --title "Disc is used" \
+    --yes-label "Continue" \
+    --no-label "Cancel" \
     --help-button \
-    --help-label "Назад" \
+    --help-label "Back" \
     --yesno "$text" 16 74
   local rc=$?
   ui_clear
