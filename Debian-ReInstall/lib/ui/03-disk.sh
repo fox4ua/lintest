@@ -6,25 +6,20 @@ ui_block_current_env_disk() {
   local disk="$1"
   local rc
   local src_root
-
   src_root="$(findmnt -no SOURCE / 2>/dev/null || true)"
-
   ui_dialog dialog --clear \
-    --title "Нельзя выбрать этот диск" \
-    --yes-label "Назад" \
-    --no-label "Отмена" \
-    --yesno "Этот диск используется текущей средой.\n\nТекущий / смонтирован из:\n${src_root:-unknown}\n\nВыбранный диск: $disk\n\nВыбери другой диск." 14 74
+    --title "This disc cannot be selected" \
+    --yes-label "Back" \
+    --no-label "Cancel" \
+    --yesno "This disc is used by the current environment.\n\nТекущий / смонтирован из:\n${src_root:-unknown}\n\nВыбранный диск: $disk\n\nВыбери другой диск." 14 74
   rc=$?
   ui_clear
-
   case "$rc" in
-    0|2) return 2 ;;     # YES = Назад (а HELP тут нет, но оставим совместимость)
+    0|2) return 2 ;;     # YES = Назад
     1|255) return 1 ;;   # NO/ESC = Отмена
     *) return 1 ;;
   esac
 }
-
-
 
 # warning: disk busy -> release?
 # return: 0=Release&Continue, 2=Back, 1=Cancel/ESC
@@ -83,19 +78,19 @@ ui_pick_disk() {
   done < <(lsblk -dn -o NAME,TYPE,SIZE,MODEL 2>/dev/null | sed 's/[[:space:]]\+/ /g')
 
   if [[ ${#items[@]} -eq 0 ]]; then
-    ui_msg "Не найдено доступных дисков (lsblk вернул пусто)."
+    ui_msg "No available disks found (lsblk returned empty)."
     return 1
   fi
 
   while true; do
     choice="$(
       ui_dialog dialog --clear --stdout \
-        --title "Выбор диска" \
-        --ok-label "Выбрать" \
-        --cancel-label "Отмена" \
+        --title "Choosing a disc" \
+        --ok-label "Select" \
+        --cancel-label "Cancel" \
         --help-button \
-        --help-label "Назад" \
-        --menu "Выберите диск для установки (ВСЕ ДАННЫЕ БУДУТ УДАЛЕНЫ):" 18 74 10 \
+        --help-label "Back" \
+        --menu "Select the disk for installation (ALL DATA WILL BE DELETED)):" 18 74 10 \
         "${items[@]}"
     )"
     rc=$?
@@ -111,29 +106,29 @@ ui_pick_disk() {
     [[ -b "$choice" ]] || continue
 
     # Блокирующая проверка "системного диска" (как реализовано в текущем архиве)
-# Блокирующая проверка: выбран диск текущей среды (rescue/live)
-if disk_is_current_env_disk "$choice"; then
-  ui_block_current_env_disk "$choice"
-  case $? in
-    2) continue ;;  # назад -> снова список дисков
-    *) return 1 ;;  # отмена/esc
-  esac
-fi
+    # Блокирующая проверка: выбран диск текущей среды (rescue/live)
+    if disk_is_current_env_disk "$choice"; then
+      ui_block_current_env_disk "$choice"
+      case $? in
+        2) continue ;;  # назад -> снова список дисков
+        *) return 1 ;;  # отмена/esc
+      esac
+    fi
 
 
     # Проверка занятости диска (mount/swap/lvm/md) и предложение "освободить"
-# Только детект и запись флагов (действия будут потом, на стадии установки)
-DISK_RELEASE_APPROVED=0
-disk_detect_usage_flags "$choice"
+    # Только детект и запись флагов (действия будут потом, на стадии установки)
+    DISK_RELEASE_APPROVED=0
+    disk_detect_usage_flags "$choice"
 
-if (( DISK_NEEDS_RELEASE )); then
-  ui_warn_disk_busy_plan_only "$choice"
-  case $? in
-    0) DISK_RELEASE_APPROVED=1 ;;  # пользователь согласен “отключить позже”
-    2) continue ;;                 # назад -> снова список дисков
-    *) return 1 ;;                 # отмена/esc
-  esac
-fi
+    if (( DISK_NEEDS_RELEASE )); then
+      ui_warn_disk_busy_plan_only "$choice"
+      case $? in
+        0) DISK_RELEASE_APPROVED=1 ;;  # пользователь согласен “отключить позже”
+        2) continue ;;                 # назад -> снова список дисков
+        *) return 1 ;;                 # отмена/esc
+      esac
+    fi
 
 
     printf -v "$out_disk" "%s" "$choice"

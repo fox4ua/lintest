@@ -32,7 +32,11 @@ ui_init() {
   echo "No supported package manager to install dialog automatically." >&2
   exit 1
 }
-
+# очистка экрана
+ui_clear() {
+  dialog --clear
+  clear
+}
 
 # Вывод конечного результата
 ui_msg() {
@@ -41,11 +45,7 @@ ui_msg() {
 }
 
 
-# очистка экрана
-ui_clear() {
-  dialog --clear
-  clear
-}
+
 # ВАЖНО:
 # - временно отключает errexit/errtrace и ERR trap
 # - возвращает реальный exit code dialog (0/1/2/255/…)
