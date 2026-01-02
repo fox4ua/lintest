@@ -14,14 +14,21 @@ BOOT_LABEL="${BOOT_LABEL:-}"
 
 
 DISK="${DISK:-}"
-
 DISK_NEEDS_RELEASE="${DISK_NEEDS_RELEASE:-0}"     # диск занят чем-то
 DISK_RELEASE_APPROVED="${DISK_RELEASE_APPROVED:-0}" # пользователь согласен “Отключить” позже
-
 DISK_HAS_MOUNTS="${DISK_HAS_MOUNTS:-0}"
 DISK_HAS_SWAP="${DISK_HAS_SWAP:-0}"
 DISK_HAS_LVM="${DISK_HAS_LVM:-0}"
 DISK_HAS_MD="${DISK_HAS_MD:-0}"
+
+
+
+BOOT_SIZE_MIB="${BOOT_SIZE_MIB:-512}"   # /boot (MiB)
+SWAP_SIZE_GIB="${SWAP_SIZE_GIB:-1}"     # swap (GiB)
+ROOT_SIZE_GIB="${ROOT_SIZE_GIB:-30}"    # root (GiB)
+
+
+
 
 # Файлы/папки
 TARGET_DIR="${TARGET_DIR:-/mnt/target}"

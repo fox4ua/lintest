@@ -51,6 +51,14 @@ main() {
         2) continue ;;   # Back -> обратно к boot menu
         *) exit 0 ;;     # Cancel/ESC
       esac
+      
+      rc=0
+      ui_pick_partition_sizes BOOT_SIZE_MIB SWAP_SIZE_GIB ROOT_SIZE_GIB "$DISK" || rc=$?
+      case "$rc" in
+        0) : ;;
+        2) continue ;;   # Назад -> возвращайся на предыдущий шаг (выбор диска или boot — как у тебя организовано)
+        *) exit 0 ;;
+      esac
     done
   done
 
