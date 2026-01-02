@@ -11,7 +11,8 @@ ui_block_current_env_disk() {
     --title "Нельзя выбрать этот диск" \
     --yes-label "Назад" \
     --no-label "Отмена" \
-
+    --help-button \
+    --help-label "Назад" \
     --yesno "Этот диск используется текущей средой.\n\nТекущий / смонтирован из:\n${src_root:-unknown}\n\nВыбранный диск: $disk\n\nВыбери другой диск." 14 74
   local rc=$?
   ui_clear
