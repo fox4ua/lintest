@@ -109,47 +109,30 @@ ui_pick_disk() {
     [[ -b "$choice" ]] || continue
 
     # Блокирующая проверка "системного диска" (как реализовано в текущем архиве)
-    if disk_is_current_system_disk "$choice"; then
-      ui_dialog dialog --clear \
-        --title "Нельзя выбрать этот диск" \
-        --yes-label "Назад" \
-        --no-label "Отмена" \
-        --help-button --help-label "Назад" \
-        --yesno "${DISK_CHECK_REASON}\n\n${DISK_CHECK_DETAILS}" 14 74
-      warn_rc=$?
-      ui_clear
+# Блокирующая проверка: выбран диск текущей среды (rescue/live)
+if disk_is_current_env_disk "$choice"; then
+  ui_block_current_env_disk "$choice"
+  case $? in
+    2) continue ;;  # назад -> снова список дисков
+    *) return 1 ;;  # отмена/esc
+  esac
+fi
 
-      case "$warn_rc" in
-        0|2) continue ;;   # назад -> снова выбор диска
-        *) return 1 ;;     # отмена/esc
-      esac
-    fi
 
     # Проверка занятости диска (mount/swap/lvm/md) и предложение "освободить"
-    if disk_collect_busy_info "$choice"; then
-      ui_dialog dialog --clear \
-        --title "Диск используется" \
-        --yes-label "Отключить" \
-        --no-label "Отмена" \
-        --help-button \
-        --help-label "Назад" \
-        --yesno "Диск используется\n\n${DISK_BUSY_SUMMARY}\n\nВыбранный диск: $choice\n\n${DISK_BUSY_DETAILS}\nОтключить и продолжить?" 18 74
-      warn_rc=$?
-      ui_clear
+# Только детект и запись флагов (действия будут потом, на стадии установки)
+DISK_RELEASE_APPROVED=0
+disk_detect_usage_flags "$choice"
 
-      case "$warn_rc" in
-        0)
-          if ! disk_release_locks "$choice"; then
-            ui_msg "Не удалось освободить диск (umount/swapoff).
+if (( DISK_NEEDS_RELEASE )); then
+  ui_warn_disk_busy_plan_only "$choice"
+  case $? in
+    0) DISK_RELEASE_APPROVED=1 ;;  # пользователь согласен “отключить позже”
+    2) continue ;;                 # назад -> снова список дисков
+    *) return 1 ;;                 # отмена/esc
+  esac
+fi
 
-Закрой процессы, использующие диск, и повтори."
-            continue
-          fi
-          ;;
-        2) continue ;;      # назад
-        *) return 1 ;;      # отмена
-      esac
-    fi
 
     printf -v "$out_disk" "%s" "$choice"
     return 0
