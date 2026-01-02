@@ -18,13 +18,11 @@ disk_is_current_env_disk() {
 
 disk_detect_usage_flags() {
   local disk="$1"
-
   DISK_HAS_MOUNTS=0
   DISK_HAS_SWAP=0
   DISK_HAS_LVM=0
   DISK_HAS_MD=0
   DISK_NEEDS_RELEASE=0
-
   local parts
   parts="$(lsblk -ln -o PATH "$disk" 2>/dev/null | tail -n +2 || true)"
 

@@ -3,9 +3,6 @@
 : "${UI_DIR:?}"
 : "${INIT_DIR:?}"
 
-# init (детекты/утилиты, которые могут понадобиться UI)
-# shellcheck source=/dev/null
-
 
 # ui
 # shellcheck source=/dev/null

@@ -1,17 +1,30 @@
 #!/usr/bin/env bash
 
-# warning: disk is current system disk
+# предупреждение, выбран системный диск
 # return: 2=Back, 1=Cancel/ESC
 ui_block_current_env_disk() {
   local disk="$1"
   local rc
   local src_root
   src_root="$(findmnt -no SOURCE / 2>/dev/null || true)"
+  msg=$(
+    cat <<EOF
+This disc is used by the current environment.
+
+Current / mounted from:
+${src_root:-unknown}
+
+Selected disc: ${disk}
+
+Choose another disc.
+EOF
+  )
+
   ui_dialog dialog --clear \
     --title "This disc cannot be selected" \
     --yes-label "Back" \
     --no-label "Cancel" \
-    --yesno "This disc is used by the current environment.\n\nТекущий / смонтирован из:\n${src_root:-unknown}\n\nВыбранный диск: $disk\n\nВыбери другой диск." 14 74
+    --yesno "$msg" 14 74
   rc=$?
   ui_clear
   case "$rc" in
@@ -21,18 +34,16 @@ ui_block_current_env_disk() {
   esac
 }
 
-# warning: disk busy -> release?
-# return: 0=Release&Continue, 2=Back, 1=Cancel/ESC
+# предупреждение, разделы выбранного диска сущестуют и смонтированы
+# return: 0=Continue, 2=Back, 1=Cancel/ESC
 ui_warn_disk_busy_plan_only() {
   local disk="$1"
-  local text="На выбранном диске обнаружены активные ресурсы.\n\nДиск: $disk\n\n"
-
-  (( DISK_HAS_MOUNTS )) && text+="• Есть примонтированные разделы\n"
-  (( DISK_HAS_SWAP   )) && text+="• Есть активный swap\n"
-  (( DISK_HAS_LVM    )) && text+="• Есть LVM PV\n"
-  (( DISK_HAS_MD     )) && text+="• Возможно mdraid\n"
-
-  text+="\nПеред разметкой их нужно будет отключить.\nОтключить (позже) и продолжить?"
+  local text="Active resources found on the selected drive.\n\nDrive: $disk\n\n"
+  (( DISK_HAS_MOUNTS )) && text+="• There are mounted partitions\n"
+  (( DISK_HAS_SWAP   )) && text+="• There is an active swap\n"
+  (( DISK_HAS_LVM    )) && text+="• There is LVM PV\n"
+  (( DISK_HAS_MD     )) && text+="• Possibly mdraid\n"
+  text+="\nThey will be disabled before marking."
 
   ui_dialog dialog --clear \
     --title "Disc is used" \
@@ -51,12 +62,10 @@ ui_warn_disk_busy_plan_only() {
   esac
 }
 
-
-# ui_pick_disk OUT_DISK
-# return: 0=ok (disk set), 1=cancel/esc, 2=back
+# окно выбора диска
+# return: 0=Select, 2=Back, 1=Cancel/ESC
 ui_pick_disk() {
   local out_disk="$1"
-
   local choice rc warn_rc
   local -a items=()
 
@@ -115,7 +124,6 @@ ui_pick_disk() {
       esac
     fi
 
-
     # Проверка занятости диска (mount/swap/lvm/md) и предложение "освободить"
     # Только детект и запись флагов (действия будут потом, на стадии установки)
     DISK_RELEASE_APPROVED=0
@@ -129,7 +137,6 @@ ui_pick_disk() {
         *) return 1 ;;                 # отмена/esc
       esac
     fi
-
 
     printf -v "$out_disk" "%s" "$choice"
     return 0
