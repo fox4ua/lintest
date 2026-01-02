@@ -11,6 +11,7 @@ source "$LIB_DIR/10-log.sh"
 # дополнительные функции
 source "$INIT_DIR/01-require_root.sh"
 source "$INIT_DIR/02-boot_detect.sh"
+source "$INIT_DIR/03-disk_detect.sh"
 # остальное
 
 source "$LIB_DIR/ui.sh"

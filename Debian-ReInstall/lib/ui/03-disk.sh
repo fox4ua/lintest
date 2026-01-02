@@ -18,8 +18,7 @@ ui_block_current_env_disk() {
   ui_clear
 
   case "$rc" in
-    0|2) return 2 ;;     # Назад
-    1|255) return 1 ;;   # Отмена/ESC
+    0|2) return 2 ;;
     *) return 1 ;;
   esac
 }
@@ -49,9 +48,8 @@ ui_warn_disk_busy_plan_only() {
   ui_clear
 
   case "$rc" in
-    0) return 0 ;;       # “Отключить” (только планируем)
-    2) return 2 ;;       # Назад
-    1|255) return 1 ;;   # Отмена/ESC
+    0) return 0 ;;
+    2) return 2 ;;
     *) return 1 ;;
   esac
 }
@@ -61,10 +59,33 @@ ui_warn_disk_busy_plan_only() {
 # return: 0=ok (disk set), 1=cancel/esc, 2=back
 ui_pick_disk() {
   local out_disk="$1"
-  local choice rc
+
+  local choice rc warn_rc
+  local -a items=()
+
+  # собираем /dev/sdX, /dev/nvme0n1 и т.п.
+  while IFS= read -r line; do
+    local name type size model
+    name="$(awk '{print $1}' <<<"$line")"
+    type="$(awk '{print $2}' <<<"$line")"
+    size="$(awk '{print $3}' <<<"$line")"
+    model="$(cut -d' ' -f4- <<<"$line")"
+
+    [[ "$type" == "disk" ]] || continue
+
+    local dev="/dev/$name"
+    [[ -b "$dev" ]] || continue
+
+    [[ -n "$model" ]] || model="-"
+    items+=("$dev" "${size}  ${model}")
+  done < <(lsblk -dn -o NAME,TYPE,SIZE,MODEL 2>/dev/null | sed 's/[[:space:]]\+/ /g')
+
+  if [[ ${#items[@]} -eq 0 ]]; then
+    ui_msg "Не найдено доступных дисков (lsblk вернул пусто)."
+    return 1
+  fi
 
   while true; do
-    # ...твой список дисков через lsblk и dialog --menu...
     choice="$(
       ui_dialog dialog --clear --stdout \
         --title "Выбор диска" \
@@ -72,46 +93,67 @@ ui_pick_disk() {
         --cancel-label "Отмена" \
         --help-button \
         --help-label "Назад" \
-        --menu "Выберите диск для установки:" 18 74 10 \
-        "${DISK_MENU_ITEMS[@]}"
+        --menu "Выберите диск для установки (ВСЕ ДАННЫЕ БУДУТ УДАЛЕНЫ):" 18 74 10 \
+        "${items[@]}"
     )"
     rc=$?
     ui_clear
 
     case "$rc" in
       0) : ;;
-      2) return 2 ;;
-      1|255) return 1 ;;
+      2) return 2 ;;         # Back
+      1|255) return 1 ;;     # Cancel/ESC
       *) return 1 ;;
     esac
 
     [[ -b "$choice" ]] || continue
 
-    # 1) Блокирующая проверка: диск текущей среды -> только назад/отмена
-    if disk_is_current_env_disk "$choice"; then
-      ui_block_current_env_disk "$choice"
-      case $? in
-        2) continue ;;   # назад -> снова список дисков
-        *) return 1 ;;   # отмена/esc -> выход
+    # Блокирующая проверка "системного диска" (как реализовано в текущем архиве)
+    if disk_is_current_system_disk "$choice"; then
+      ui_dialog dialog --clear \
+        --title "Нельзя выбрать этот диск" \
+        --yes-label "Назад" \
+        --no-label "Отмена" \
+        --help-button --help-label "Назад" \
+        --yesno "${DISK_CHECK_REASON}\n\n${DISK_CHECK_DETAILS}" 14 74
+      warn_rc=$?
+      ui_clear
+
+      case "$warn_rc" in
+        0|2) continue ;;   # назад -> снова выбор диска
+        *) return 1 ;;     # отмена/esc
       esac
     fi
 
-    # 2) Не блокируем: просто детект и запись флагов/решения
-    DISK_RELEASE_APPROVED=0
-    disk_detect_usage_flags "$choice"
+    # Проверка занятости диска (mount/swap/lvm/md) и предложение "освободить"
+    if disk_collect_busy_info "$choice"; then
+      ui_dialog dialog --clear \
+        --title "Диск используется" \
+        --yes-label "Отключить" \
+        --no-label "Отмена" \
+        --help-button \
+        --help-label "Назад" \
+        --yesno "Диск используется\n\n${DISK_BUSY_SUMMARY}\n\nВыбранный диск: $choice\n\n${DISK_BUSY_DETAILS}\nОтключить и продолжить?" 18 74
+      warn_rc=$?
+      ui_clear
 
-    if (( DISK_NEEDS_RELEASE )); then
-      ui_warn_disk_busy_plan_only "$choice"
-      case $? in
-        0) DISK_RELEASE_APPROVED=1 ;;  # только запланировали “release позже”
-        2) continue ;;                 # назад -> снова список дисков
-        *) return 1 ;;                 # отмена/esc
+      case "$warn_rc" in
+        0)
+          if ! disk_release_locks "$choice"; then
+            ui_msg "Не удалось освободить диск (umount/swapoff).
+
+Закрой процессы, использующие диск, и повтори."
+            continue
+          fi
+          ;;
+        2) continue ;;      # назад
+        *) return 1 ;;      # отмена
       esac
     fi
 
-    # 3) Фиксируем выбор
     printf -v "$out_disk" "%s" "$choice"
     return 0
   done
 }
+
 

@@ -1,5 +1,21 @@
 #!/usr/bin/env bash
 
+disk_is_current_env_disk() {
+  local disk="$1"
+  local src
+
+  src="$(findmnt -no SOURCE / 2>/dev/null || true)"
+  [[ -n "$src" && "$src" == "$disk"* ]] && return 0
+
+  src="$(findmnt -no SOURCE /boot 2>/dev/null || true)"
+  [[ -n "$src" && "$src" == "$disk"* ]] && return 0
+
+  src="$(findmnt -no SOURCE /boot/efi 2>/dev/null || true)"
+  [[ -n "$src" && "$src" == "$disk"* ]] && return 0
+
+  return 1
+}
+
 disk_detect_usage_flags() {
   local disk="$1"
 
@@ -46,7 +62,7 @@ disk_detect_usage_flags() {
     done < <(pvs --noheadings -o pv_name 2>/dev/null | awk '{$1=$1;print}' || true)
   fi
 
-  # md (грубая, но достаточная для флага)
+  # md
   if [[ -r /proc/mdstat ]]; then
     local base
     base="$(basename "$disk")"
