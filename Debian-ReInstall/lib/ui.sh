@@ -16,6 +16,11 @@ source "$UI_DIR/06-swap_size.sh"
 source "$UI_DIR/07-root_size.sh"
 # debian
 source "$UI_DIR/08-debian_version.sh"
+# mirror
+source "$UI_DIR/09-mirror.sh"
+# hostname / hosts
+source "$UI_DIR/10-hostname.sh"
+source "$UI_DIR/11-hosts.sh"
 ui_init() {
   if command -v dialog >/dev/null 2>&1; then
     return 0

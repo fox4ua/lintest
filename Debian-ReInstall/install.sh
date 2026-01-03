@@ -123,11 +123,42 @@ main() {
         rc=0
         ui_pick_debian_version DEBIAN_VERSION DEBIAN_SUITE || rc=$?
         case "$rc" in
-          0) state="summary" ;;
+          0) state="mirror" ;;
           2) state="part_root" ;;
           *) exit 0 ;;
         esac
         ;;
+
+      mirror)
+        rc=0
+        ui_pick_mirror DEBIAN_MIRROR || rc=$?
+        case "$rc" in
+          0) state="hostname" ;;
+          2) state="debian" ;;
+          *) exit 0 ;;
+        esac
+        ;;
+
+      hostname)
+        rc=0
+        ui_pick_hostname HOSTNAME_SHORT || rc=$?
+        case "$rc" in
+          0) state="hosts" ;;
+          2) state="mirror" ;;
+          *) exit 0 ;;
+        esac
+        ;;
+
+      hosts)
+        rc=0
+        ui_pick_hosts HOSTS_DOMAIN HOSTS_FQDN "$HOSTNAME_SHORT" || rc=$?
+        case "$rc" in
+          0) state="summary" ;;
+          2) state="hostname" ;;
+          *) exit 0 ;;
+        esac
+        ;;
+
 
       summary)
         ui_msg "План установки:\n\n${BOOT_LABEL}\nДиск: ${DISK}\n\n/boot: ${BOOT_SIZE_MIB} MiB\nswap: ${SWAP_SIZE_GIB} GiB\nroot: ${ROOT_SIZE_GIB} GiB (0=остаток)\n\nLVM_MODE=${LVM_MODE}\nVG_NAME=${VG_NAME}\nTHINPOOL_NAME=${THINPOOL_NAME}\n\nDISK_RELEASE_APPROVED=${DISK_RELEASE_APPROVED:-0}"
