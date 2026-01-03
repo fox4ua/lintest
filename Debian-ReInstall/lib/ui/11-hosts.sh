@@ -9,16 +9,17 @@ ui_pick_hosts() {
 
   local rc domain fqdn
 
-  domain="${HOSTS_DOMAIN:-localdomain}"
+  domain="${HOSTS_DOMAIN:-}"
   fqdn="${HOSTS_FQDN:-}"
 
+  # domain (optional)
   domain="$(
     ui_dialog dialog --clear --stdout \
       --title "/etc/hosts" \
       --ok-label "Далее" \
       --cancel-label "Отмена" \
       --help-button --help-label "Назад" \
-      --inputbox "Введите домен (опционально).\n\nОставь пустым, если FQDN не нужен.\nПример: example.com" 12 74 "$domain"
+      --inputbox "Введите домен (опционально).\n\nМожно оставить пустым.\nПример: example.com" 12 74 "$domain"
   )"
   rc=$?
   ui_clear
@@ -30,32 +31,24 @@ ui_pick_hosts() {
     *) return 1 ;;
   esac
 
-  # trim
   domain="$(echo "$domain" | awk '{$1=$1;print}')"
 
-  # домен можно пустой
+  # domain can be empty; validate only if non-empty
   if [[ -n "$domain" ]]; then
-    # simple domain validation (labels + dots)
     if ! [[ "$domain" =~ ^[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*$ ]]; then
       ui_msg "Некорректный домен: $domain"
       return 2
     fi
   fi
 
-  # FQDN: можно автосборку
-  if [[ -n "$domain" ]]; then
-    fqdn_default="${hn_short}.${domain}"
-  else
-    fqdn_default=""
-  fi
-
+  # fqdn (optional) — НИКАКИХ вычислений/автосборок
   fqdn="$(
     ui_dialog dialog --clear --stdout \
       --title "/etc/hosts" \
       --ok-label "Готово" \
       --cancel-label "Отмена" \
       --help-button --help-label "Назад" \
-      --inputbox "Введите FQDN (опционально).\n\nЕсли оставить пустым — будет: ${fqdn_default:-<пусто>}\nПример: ${hn_short}.${domain:-example.com}" 12 74 "${fqdn:-$fqdn_default}"
+      --inputbox "Введите FQDN (опционально).\n\nМожно оставить пустым — тогда будет использован только hostname.\nПример: ${hn_short}.example.com" 12 74 "$fqdn"
   )"
   rc=$?
   ui_clear
@@ -69,6 +62,7 @@ ui_pick_hosts() {
 
   fqdn="$(echo "$fqdn" | awk '{$1=$1;print}')"
 
+  # fqdn can be empty; validate only if non-empty
   if [[ -n "$fqdn" ]]; then
     if ! [[ "$fqdn" =~ ^[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$ ]]; then
       ui_msg "Некорректный FQDN: $fqdn"

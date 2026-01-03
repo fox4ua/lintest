@@ -29,7 +29,7 @@ ui_pick_hostname() {
   # trim
   val="$(echo "$val" | awk '{$1=$1;print}')"
 
-  # validation: RFC-ish label: 1..63, starts/ends alnum, inside alnum or '-'
+  # validation: 1..63, starts/ends alnum, inside alnum or '-'
   if ! [[ "$val" =~ ^[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?$ ]]; then
     ui_msg "Некорректный hostname: $val\n\nПравило: без точек, 1..63 символов, буквы/цифры/дефис, не начинать/заканчивать дефисом."
     return 2

@@ -153,8 +153,21 @@ main() {
         rc=0
         ui_pick_hosts HOSTS_DOMAIN HOSTS_FQDN "$HOSTNAME_SHORT" || rc=$?
         case "$rc" in
-          0) state="summary" ;;
+          0) state="net_mode" ;;
           2) state="hostname" ;;
+          *) exit 0 ;;
+        esac
+        ;;
+
+      net_mode)
+        rc=0
+        ui_pick_net_mode NET_MODE || rc=$?
+        case "$rc" in
+          0)
+            # пока только выбор режима; static параметры добавим следующим окном
+            state="summary"
+            ;;
+          2) state="hosts" ;;
           *) exit 0 ;;
         esac
         ;;

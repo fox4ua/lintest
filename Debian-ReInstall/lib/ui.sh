@@ -21,6 +21,8 @@ source "$UI_DIR/09-mirror.sh"
 # hostname / hosts
 source "$UI_DIR/10-hostname.sh"
 source "$UI_DIR/11-hosts.sh"
+
+source "$UI_DIR/12-net_mode.sh"
 ui_init() {
   if command -v dialog >/dev/null 2>&1; then
     return 0

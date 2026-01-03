@@ -38,6 +38,16 @@ HOSTNAME_SHORT="${HOSTNAME_SHORT:-debian}"
 HOSTS_DOMAIN="${HOSTS_DOMAIN:-localdomain}"
 HOSTS_FQDN="${HOSTS_FQDN:-}"
 
+NET_MODE="${NET_MODE:-dhcp}"      # dhcp|static
+NET_IFACE="${NET_IFACE:-}"        # выберем позже отдельным окном (пока пусто)
+
+NET_ADDR="${NET_ADDR:-}"          # static: IP/CIDR, пример 192.168.1.10/24
+NET_GW="${NET_GW:-}"              # static: gateway, пример 192.168.1.1
+NET_DNS="${NET_DNS:-}"            # static: DNS через пробел, пример "1.1.1.1 8.8.8.8"
+
+
+
+
 
 # Файлы/папки
 TARGET_DIR="${TARGET_DIR:-/mnt/target}"
