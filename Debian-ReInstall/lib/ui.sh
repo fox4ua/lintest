@@ -41,10 +41,18 @@ ui_init() {
 
   if command -v apt-get >/dev/null 2>&1; then
     export DEBIAN_FRONTEND=noninteractive
-    apt-get update -y
-    apt-get install -y --no-install-recommends dialog
+
+    if ! apt-get update -y; then
+      echo "Warning: failed to update package lists. Network access may be unavailable." >&2
+      exit 1
+    fi
+    if ! apt-get install -y --no-install-recommends dialog; then
+      echo "Warning: failed to install dialog. Please ensure network access and try again." >&2
+      exit 1
+    fi
+
     command -v dialog >/dev/null 2>&1 || {
-      echo "Failed to install dialog" >&2
+      echo "Warning: dialog is still unavailable after installation attempt." >&2
       exit 1
     }
     return 0

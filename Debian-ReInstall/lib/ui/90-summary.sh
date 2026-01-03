@@ -5,57 +5,82 @@
 ui_confirm_summary() {
   local rc
 
-  local net_line=""
+  local net_block pass_line lvm_block msg
+
   if [[ "${NET_MODE:-dhcp}" == "static" ]]; then
-    net_line="Mode: static\nIface: ${NET_IFACE:-}\nAddr: ${NET_ADDR:-}\nGW: ${NET_GW:-}\nDNS: ${NET_DNS:-}"
+    net_block=$(
+      cat <<EOF
+Mode: static
+Iface: ${NET_IFACE:-}
+Addr : ${NET_ADDR:-}
+GW   : ${NET_GW:-}
+DNS  : ${NET_DNS:-}
+EOF
+    )
   else
-    net_line="Mode: dhcp\nIface: ${NET_IFACE:-}"
+    net_block=$(
+      cat <<EOF
+Mode: dhcp
+Iface: ${NET_IFACE:-}
+EOF
+    )
   fi
 
-  local pass_line="not set"
+  pass_line="not set"
   [[ -n "${ROOT_PASS:-}" ]] && pass_line="set"
 
-  # LVM строка (если ты включал LVM)
-  local lvm_line="LVM: ${LVM_MODE:-none}"
   if [[ "${LVM_MODE:-none}" != "none" ]]; then
-    lvm_line="${lvm_line}\nVG: ${VG_NAME:-}\nThinpool: ${THINPOOL_NAME:-}"
+    lvm_block=$(
+      cat <<EOF
+LVM : ${LVM_MODE:-}
+VG  : ${VG_NAME:-}
+Thin: ${THINPOOL_NAME:-}
+EOF
+    )
+  else
+    lvm_block="LVM : none"
   fi
 
-  ui_dialog dialog --clear \
-    --title "Summary" \
-    --ok-label "Установить" \
-    --cancel-label "Отмена" \
-    --help-button --help-label "Назад" \
-    --yesno \
-"Debian: ${DEBIAN_VERSION:-} (${DEBIAN_SUITE:-})
-Mirror: ${DEBIAN_MIRROR:-}
+  msg=$(
+    cat <<EOF
+Debian : ${DEBIAN_VERSION:-} (${DEBIAN_SUITE:-})
+Mirror : ${DEBIAN_MIRROR:-}
 
-Boot: ${BOOT_LABEL:-}
-Disk: ${DISK:-}
+Boot   : ${BOOT_LABEL:-}
+Disk   : ${DISK:-}
+
 Partitions:
   /boot: ${BOOT_SIZE_MIB:-} MiB
   swap : ${SWAP_SIZE_GIB:-} GiB
   root : ${ROOT_SIZE_GIB:-} GiB (0=остаток)
 
-${lvm_line}
+${lvm_block}
 
 Hostname: ${HOSTNAME_SHORT:-}
-Domain: ${HOSTS_DOMAIN:-}
-FQDN: ${HOSTS_FQDN:-}
+Domain  : ${HOSTS_DOMAIN:-}
+FQDN    : ${HOSTS_FQDN:-}
 
 Network:
-${net_line}
+${net_block}
+Stack   : ${NET_STACK:-}
 
-Network stack: ${NET_STACK:-}
 Root password: ${pass_line}
-" 24 74
+EOF
+  )
+
+  ui_dialog dialog --clear --cr-wrap \
+    --title "Summary" \
+    --yes-label "Установить" \
+    --no-label "Отмена" \
+    --help-button --help-label "Назад" \
+    --yesno "$msg" 26 86
   rc=$?
   ui_clear
 
   case "$rc" in
-    0) return 0 ;;   # OK = install
-    2) return 2 ;;   # HELP = back
-    1|255) return 1 ;; # cancel/esc
+    0) return 0 ;;      # Yes = Установить
+    2) return 2 ;;      # Help = Назад
+    1|255) return 1 ;;  # No/ESC = Отмена
     *) return 1 ;;
   esac
 }
