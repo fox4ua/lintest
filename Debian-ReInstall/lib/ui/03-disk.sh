@@ -9,19 +9,19 @@ ui_block_current_env_disk() {
   src_root="$(findmnt -no SOURCE / 2>/dev/null || true)"
   msg=$(
     cat <<EOF
-This disc is used by the current environment.
+This disk is used by the current environment.
 
 Current / mounted from:
 ${src_root:-unknown}
 
-Selected disc: ${disk}
+Selected disk: ${disk}
 
-Choose another disc.
+Choose another disk.
 EOF
   )
 
   ui_dialog dialog --clear \
-    --title "This disc cannot be selected" \
+    --title "This disk cannot be selected" \
     --yes-label "Back" \
     --no-label "Cancel" \
     --yesno "$msg" 14 74
@@ -46,7 +46,7 @@ ui_warn_disk_busy_plan_only() {
   text+="\nThey will be disabled before marking."
 
   ui_dialog dialog --clear \
-    --title "Disc is used" \
+    --title "disk is used" \
     --yes-label "Continue" \
     --no-label "Cancel" \
     --help-button \
@@ -94,12 +94,12 @@ ui_pick_disk() {
   while true; do
     choice="$(
       ui_dialog dialog --clear --stdout \
-        --title "Choosing a disc" \
+        --title "Choosing a disk" \
         --ok-label "Select" \
         --cancel-label "Cancel" \
         --help-button \
         --help-label "Back" \
-        --menu "Select the disk for installation (ALL DATA WILL BE DELETED)):" 18 74 10 \
+        --menu "Select the disk for installation (ALL DATA WILL BE DELETED):" 18 74 10 \
         "${items[@]}"
     )"
     rc=$?
@@ -142,5 +142,3 @@ ui_pick_disk() {
     return 0
   done
 }
-
-

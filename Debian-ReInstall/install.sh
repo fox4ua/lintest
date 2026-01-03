@@ -225,13 +225,17 @@ main() {
 
 
       summary)
-        ui_msg "План установки:\n\n${BOOT_LABEL}\nДиск: ${DISK}\n\n/boot: ${BOOT_SIZE_MIB} MiB\nswap: ${SWAP_SIZE_GIB} GiB\nroot: ${ROOT_SIZE_GIB} GiB (0=остаток)\n\nLVM_MODE=${LVM_MODE}\nVG_NAME=${VG_NAME}\nTHINPOOL_NAME=${THINPOOL_NAME}\n\nDISK_RELEASE_APPROVED=${DISK_RELEASE_APPROVED:-0}"
-        break
+        rc=0
+        ui_confirm_summary || rc=$?
+        case "$rc" in
+          0) break ;;          # пользователь подтвердил -> выходим из while и идём к execution
+          2) state="root_pass" ;;  # Назад -> на предыдущий шаг (поставь тот state, который у тебя перед summary)
+          *) exit 0 ;;
+        esac
         ;;
 
-      *)
-        exit 1
-        ;;
+
+      *) exit 1 ;;
     esac
   done
 }

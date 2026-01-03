@@ -56,10 +56,3 @@ TARGET_DIR="${TARGET_DIR:-/mnt/target}"
 
 # Глобальные значения мастера (заполняются по мере прохождения)
 STAGE="${STAGE:-init}"
-
-
-
-# (на будущее)
-DEBIAN_SUITE="${DEBIAN_SUITE:-bookworm}"
-MIRROR="${MIRROR:-http://deb.debian.org/debian}"
-HOSTNAME="${HOSTNAME:-debian}"
