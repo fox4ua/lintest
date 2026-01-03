@@ -38,6 +38,8 @@ HOSTNAME_SHORT="${HOSTNAME_SHORT:-debian}"
 HOSTS_DOMAIN="${HOSTS_DOMAIN:-localdomain}"
 HOSTS_FQDN="${HOSTS_FQDN:-}"
 
+NET_STACK="${NET_STACK:-}"   # networkd|ifupdown|"" (если пусто — выберем через UI)
+
 NET_MODE="${NET_MODE:-dhcp}"      # dhcp|static
 NET_IFACE="${NET_IFACE:-}"        # выберем позже отдельным окном (пока пусто)
 

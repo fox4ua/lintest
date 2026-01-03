@@ -153,8 +153,29 @@ main() {
         rc=0
         ui_pick_hosts HOSTS_DOMAIN HOSTS_FQDN "$HOSTNAME_SHORT" || rc=$?
         case "$rc" in
-          0) state="net_mode" ;;
+          0) state="net_stack" ;;
           2) state="hostname" ;;
+          *) exit 0 ;;
+        esac
+        ;;
+
+      net_stack)
+        rc=0
+        ui_pick_net_stack NET_STACK "$DEBIAN_VERSION" "$DEBIAN_SUITE" || rc=$?
+        case "$rc" in
+          0) state="net_iface" ;;
+          2) state="hosts" ;;
+          *) exit 0 ;;
+        esac
+        ;;
+
+
+      net_iface)
+        rc=0
+        ui_pick_net_iface NET_IFACE || rc=$?
+        case "$rc" in
+          0) state="net_mode" ;;
+          2) state="net_stack" ;;
           *) exit 0 ;;
         esac
         ;;
@@ -164,10 +185,23 @@ main() {
         ui_pick_net_mode NET_MODE || rc=$?
         case "$rc" in
           0)
-            # пока только выбор режима; static параметры добавим следующим окном
-            state="summary"
+            if [[ "$NET_MODE" == "static" ]]; then
+              state="net_static"
+            else
+              state="summary"
+            fi
             ;;
-          2) state="hosts" ;;
+          2) state="net_iface" ;;
+          *) exit 0 ;;
+        esac
+        ;;
+
+      net_static)
+        rc=0
+        ui_pick_net_static NET_ADDR NET_GW NET_DNS || rc=$?
+        case "$rc" in
+          0) state="summary" ;;
+          2) state="net_mode" ;;
           *) exit 0 ;;
         esac
         ;;
