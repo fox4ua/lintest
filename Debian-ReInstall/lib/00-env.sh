@@ -20,9 +20,11 @@ DISK_HAS_MOUNTS="${DISK_HAS_MOUNTS:-0}"
 DISK_HAS_SWAP="${DISK_HAS_SWAP:-0}"
 DISK_HAS_LVM="${DISK_HAS_LVM:-0}"
 DISK_HAS_MD="${DISK_HAS_MD:-0}"
-
-
-
+# LVM
+LVM_MODE="${LVM_MODE:-linear}"          # linear|thin|none
+VG_NAME="${VG_NAME:-pve}"               # имя VG (если LVM включён)
+THINPOOL_NAME="${THINPOOL_NAME:-data}"  # имя thinpool (если thin)
+# Partitions
 BOOT_SIZE_MIB="${BOOT_SIZE_MIB:-512}"   # /boot (MiB)
 SWAP_SIZE_GIB="${SWAP_SIZE_GIB:-1}"     # swap (GiB)
 ROOT_SIZE_GIB="${ROOT_SIZE_GIB:-30}"    # root (GiB)

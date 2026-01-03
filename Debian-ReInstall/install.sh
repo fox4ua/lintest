@@ -31,6 +31,11 @@ main() {
       welcome)
         # ui_welcome: 0=Continue, иначе Cancel/ESC
         ui_welcome || exit 0
+        if detect_boot_mode_strict; then
+          HAS_UEFI=1
+        else
+          HAS_UEFI=0
+        fi
         state="boot"
         ;;
 
@@ -56,6 +61,16 @@ main() {
         fi
 
         case "$rc" in
+          0) state="lvm" ;;
+          2) state="boot" ;;
+          *) exit 0 ;;
+        esac
+        ;;
+
+      lvm)
+        rc=0
+        ui_pick_lvm_mode LVM_MODE VG_NAME THINPOOL_NAME || rc=$?
+        case "$rc" in
           0) state="part_boot" ;;
           2) state="boot" ;;
           *) exit 0 ;;
@@ -71,7 +86,7 @@ main() {
 
         case "$rc" in
           0) state="part_swap" ;;
-          2) state="disk" ;;
+          2) state="lvm" ;;
           *) exit 0 ;;
         esac
         ;;
@@ -105,7 +120,7 @@ main() {
         ;;
 
       summary)
-        ui_msg "План установки:\n\n${BOOT_LABEL}\nДиск: ${DISK}\n\n/boot: ${BOOT_SIZE_MIB} MiB\nswap: ${SWAP_SIZE_GIB} GiB\nroot: ${ROOT_SIZE_GIB} GiB (0=остаток)\n\nDISK_RELEASE_APPROVED=${DISK_RELEASE_APPROVED:-0}"
+        ui_msg "План установки:\n\n${BOOT_LABEL}\nДиск: ${DISK}\n\n/boot: ${BOOT_SIZE_MIB} MiB\nswap: ${SWAP_SIZE_GIB} GiB\nroot: ${ROOT_SIZE_GIB} GiB (0=остаток)\n\nLVM_MODE=${LVM_MODE}\nVG_NAME=${VG_NAME}\nTHINPOOL_NAME=${THINPOOL_NAME}\n\nDISK_RELEASE_APPROVED=${DISK_RELEASE_APPROVED:-0}"
         break
         ;;
 

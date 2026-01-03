@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 : "${UI_DIR:?}"
-: "${INIT_DIR:?}"
 
 
 # ui
@@ -9,10 +8,12 @@
 source "$UI_DIR/01-welcome.sh"
 source "$UI_DIR/02-bios.sh"
 source "$UI_DIR/03-disk.sh"
+# lvm
+source "$UI_DIR/04-lvm.sh"
 # partitions
-source "$UI_DIR/04-boot_size.sh"
-source "$UI_DIR/05-swap_size.sh"
-source "$UI_DIR/06-root_size.sh"
+source "$UI_DIR/05-boot_size.sh"
+source "$UI_DIR/06-swap_size.sh"
+source "$UI_DIR/07-root_size.sh"
 
 ui_init() {
   if command -v dialog >/dev/null 2>&1; then
