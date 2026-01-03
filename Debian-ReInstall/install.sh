@@ -113,8 +113,18 @@ main() {
         fi
 
         case "$rc" in
-          0) state="summary" ;;
+          0) state="debian" ;;
           2) state="part_swap" ;;
+          *) exit 0 ;;
+        esac
+        ;;
+
+      debian)
+        rc=0
+        ui_pick_debian_version DEBIAN_VERSION DEBIAN_SUITE || rc=$?
+        case "$rc" in
+          0) state="summary" ;;
+          2) state="part_root" ;;
           *) exit 0 ;;
         esac
         ;;

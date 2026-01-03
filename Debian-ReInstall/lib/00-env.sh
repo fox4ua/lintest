@@ -28,7 +28,9 @@ THINPOOL_NAME="${THINPOOL_NAME:-data}"  # имя thinpool (если thin)
 BOOT_SIZE_MIB="${BOOT_SIZE_MIB:-512}"   # /boot (MiB)
 SWAP_SIZE_GIB="${SWAP_SIZE_GIB:-1}"     # swap (GiB)
 ROOT_SIZE_GIB="${ROOT_SIZE_GIB:-30}"    # root (GiB)
-
+# debian
+DEBIAN_VERSION="${DEBIAN_VERSION:-12}"   # 11|12|13
+DEBIAN_SUITE="${DEBIAN_SUITE:-bookworm}" # bullseye|bookworm|trixie
 
 
 

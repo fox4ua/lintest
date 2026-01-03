@@ -14,7 +14,8 @@ source "$UI_DIR/04-lvm.sh"
 source "$UI_DIR/05-boot_size.sh"
 source "$UI_DIR/06-swap_size.sh"
 source "$UI_DIR/07-root_size.sh"
-
+# debian
+source "$UI_DIR/08-debian_version.sh"
 ui_init() {
   if command -v dialog >/dev/null 2>&1; then
     return 0
