@@ -20,98 +20,101 @@ source "$LIB_DIR/ui.sh"
 main() {
   log_init
   trap 'on_error $? $LINENO "$BASH_COMMAND"' ERR
-  # check root
   require_root
   ui_init
 
-  local rc=0
+  local rc state
+  state="welcome"
 
-  while true; do
-    # 1) welcome
-    ui_welcome || exit 0
+  while :; do
+    case "$state" in
+      welcome)
+        # ui_welcome: 0=Continue, иначе Cancel/ESC
+        ui_welcome || exit 0
+        state="boot"
+        ;;
 
-    # 2) detect uefi BEFORE boot menu
-    while true; do
-      rc=0
-      ui_pick_boot_mode BOOT_MODE BOOT_LABEL "$HAS_UEFI" || rc=$?
-      case "$rc" in
-        0) : ;;          # OK -> идём к диску
-        2) break ;;      # Back -> welcome
-        *) exit 0 ;;     # Cancel/ESC
-      esac
+      boot)
+        if ui_pick_boot_mode BOOT_MODE BOOT_LABEL "$HAS_UEFI"; then
+          rc=0
+        else
+          rc=$?
+        fi
 
-      # Step 3: Disk loop (Back -> boot)
-      while true; do
-        rc=0
-        ui_pick_disk DISK || rc=$?
         case "$rc" in
-          0) : ;;
-          2) break ;;    # Back -> boot menu
-          *) exit 0 ;;   # Cancel/ESC
+          0) state="disk" ;;
+          2) state="welcome" ;;
+          *) exit 0 ;;
         esac
+        ;;
 
-        # Step 4: Partitions wizard with strict Back:
-        # root -> swap -> boot -> disk
-        local part_stage="boot"
+      disk)
+        if ui_pick_disk DISK; then
+          rc=0
+        else
+          rc=$?
+        fi
 
-        while true; do
-          case "$part_stage" in
-            boot)
-              rc=0
-              ui_pick_boot_size BOOT_SIZE_MIB || rc=$?
-              case "$rc" in
-                0) part_stage="swap" ;;  # далее -> swap
-                2) part_stage="disk" ;;  # назад -> диск
-                *) exit 0 ;;
-              esac
-              ;;
+        case "$rc" in
+          0) state="part_boot" ;;
+          2) state="boot" ;;
+          *) exit 0 ;;
+        esac
+        ;;
 
-            swap)
-              rc=0
-              ui_pick_swap_size SWAP_SIZE_GIB || rc=$?
-              case "$rc" in
-                0) part_stage="root" ;;  # далее -> root
-                2) part_stage="boot" ;;  # назад -> boot
-                *) exit 0 ;;
-              esac
-              ;;
+      part_boot)
+        if ui_pick_boot_size BOOT_SIZE_MIB; then
+          rc=0
+        else
+          rc=$?
+        fi
 
-            root)
-              rc=0
-              ui_pick_root_size ROOT_SIZE_GIB || rc=$?
-              case "$rc" in
-                0) part_stage="done" ;;  # готово
-                2) part_stage="swap" ;;  # назад -> swap
-                *) exit 0 ;;
-              esac
-              ;;
+        case "$rc" in
+          0) state="part_swap" ;;
+          2) state="disk" ;;
+          *) exit 0 ;;
+        esac
+        ;;
 
-            disk)
-              # вернуться к выбору диска
-              break
-              ;;
+      part_swap)
+        if ui_pick_swap_size SWAP_SIZE_GIB; then
+          rc=0
+        else
+          rc=$?
+        fi
 
-            done)
-              # всё выбрано -> выходим из disk+boot+welcome циклов (как у тебя)
-              break 3
-              ;;
+        case "$rc" in
+          0) state="part_root" ;;
+          2) state="part_boot" ;;
+          *) exit 0 ;;
+        esac
+        ;;
 
-            *)
-              # fallback
-              break
-              ;;
-          esac
-        done
+      part_root)
+        if ui_pick_root_size ROOT_SIZE_GIB; then
+          rc=0
+        else
+          rc=$?
+        fi
 
-        # если вышли из wizard на "disk" -> заново показать ui_pick_disk
-        # (мы тут продолжаем внешний disk-loop)
-      done
-      # если вышли из disk-loop по Back -> показываем boot menu снова
-    done
+        case "$rc" in
+          0) state="summary" ;;
+          2) state="part_swap" ;;
+          *) exit 0 ;;
+        esac
+        ;;
+
+      summary)
+        ui_msg "План установки:\n\n${BOOT_LABEL}\nДиск: ${DISK}\n\n/boot: ${BOOT_SIZE_MIB} MiB\nswap: ${SWAP_SIZE_GIB} GiB\nroot: ${ROOT_SIZE_GIB} GiB (0=остаток)\n\nDISK_RELEASE_APPROVED=${DISK_RELEASE_APPROVED:-0}"
+        break
+        ;;
+
+      *)
+        exit 1
+        ;;
+    esac
   done
-
-
-  ui_msg "План установки:\n\n${BOOT_LABEL}\nДиск: ${DISK}\n\n/boot: ${BOOT_SIZE_MIB} MiB\nswap: ${SWAP_SIZE_GIB} GiB\nroot: ${ROOT_SIZE_GIB} GiB (0=остаток)\n\nDISK_RELEASE_APPROVED=${DISK_RELEASE_APPROVED:-0}"
 }
+
 
 main "$@"
