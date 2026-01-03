@@ -44,21 +44,25 @@ main() {
       esac
 
       # 4) disk menu (Back -> обратно в boot menu)
-      rc=0
-      ui_pick_disk DISK || rc=$?
-      case "$rc" in
-        0) break 2 ;;    # всё выбрано -> выходим из обоих циклов
-        2) continue ;;   # Back -> обратно к boot menu
-        *) exit 0 ;;     # Cancel/ESC
-      esac
-      
-      rc=0
-      ui_pick_partition_sizes BOOT_SIZE_MIB SWAP_SIZE_GIB ROOT_SIZE_GIB "$DISK" || rc=$?
-      case "$rc" in
-        0) : ;;
-        2) continue ;;   # Назад -> возвращайся на предыдущий шаг (выбор диска или boot — как у тебя организовано)
-        *) exit 0 ;;
-      esac
+    # Step 3: Disk
+      while true; do
+        rc=0
+        ui_pick_disk DISK || rc=$?
+        case "$rc" in
+          0) : ;;
+          2) break ;;     # back -> boot mode
+          *) exit 0 ;;
+        esac
+
+        # Step 4: Partition sizes
+        rc=0
+        ui_pick_partition_sizes BOOT_SIZE_MIB SWAP_SIZE_GIB ROOT_SIZE_GIB "$DISK" || rc=$?
+        case "$rc" in
+          0) break ;;     # ok -> выходим из disk-loop и из общего цикла
+          2) continue ;;  # back -> снова выбор диска
+          *) exit 0 ;;
+        esac
+      done
     done
   done
 
