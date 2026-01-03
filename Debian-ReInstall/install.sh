@@ -45,19 +45,66 @@ main() {
         rc=0
         ui_pick_disk DISK || rc=$?
         case "$rc" in
-          0) : ;;        # OK -> идём к разделам
+          0) : ;;
           2) break ;;    # Back -> boot menu
           *) exit 0 ;;   # Cancel/ESC
         esac
 
-        # Step 4: Partitions (Back -> disk)
-        rc=0
-        ui_pick_partition_sizes BOOT_SIZE_MIB SWAP_SIZE_GIB ROOT_SIZE_GIB "$DISK" || rc=$?
-        case "$rc" in
-          0) break 3 ;;  # всё выбрано -> выходим из disk+boot+welcome циклов
-          2) continue ;; # Back -> снова выбор диска
-          *) exit 0 ;;   # Cancel/ESC
-        esac
+        # Step 4: Partitions wizard with strict Back:
+        # root -> swap -> boot -> disk
+        local part_stage="boot"
+
+        while true; do
+          case "$part_stage" in
+            boot)
+              rc=0
+              ui_pick_boot_size BOOT_SIZE_MIB || rc=$?
+              case "$rc" in
+                0) part_stage="swap" ;;  # далее -> swap
+                2) part_stage="disk" ;;  # назад -> диск
+                *) exit 0 ;;
+              esac
+              ;;
+
+            swap)
+              rc=0
+              ui_pick_swap_size SWAP_SIZE_GIB || rc=$?
+              case "$rc" in
+                0) part_stage="root" ;;  # далее -> root
+                2) part_stage="boot" ;;  # назад -> boot
+                *) exit 0 ;;
+              esac
+              ;;
+
+            root)
+              rc=0
+              ui_pick_root_size ROOT_SIZE_GIB || rc=$?
+              case "$rc" in
+                0) part_stage="done" ;;  # готово
+                2) part_stage="swap" ;;  # назад -> swap
+                *) exit 0 ;;
+              esac
+              ;;
+
+            disk)
+              # вернуться к выбору диска
+              break
+              ;;
+
+            done)
+              # всё выбрано -> выходим из disk+boot+welcome циклов (как у тебя)
+              break 3
+              ;;
+
+            *)
+              # fallback
+              break
+              ;;
+          esac
+        done
+
+        # если вышли из wizard на "disk" -> заново показать ui_pick_disk
+        # (мы тут продолжаем внешний disk-loop)
       done
       # если вышли из disk-loop по Back -> показываем boot menu снова
     done
