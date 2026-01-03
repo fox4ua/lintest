@@ -30,6 +30,8 @@ source "$UI_DIR/14-net_mode.sh"
 
 source "$UI_DIR/15-net_static.sh"
 
+source "$UI_DIR/16-root_password.sh"
+
 ui_init() {
   if command -v dialog >/dev/null 2>&1; then
     return 0

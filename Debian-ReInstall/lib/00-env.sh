@@ -47,7 +47,7 @@ NET_ADDR="${NET_ADDR:-}"          # static: IP/CIDR, пример 192.168.1.10/2
 NET_GW="${NET_GW:-}"              # static: gateway, пример 192.168.1.1
 NET_DNS="${NET_DNS:-}"            # static: DNS через пробел, пример "1.1.1.1 8.8.8.8"
 
-
+ROOT_PASS="${ROOT_PASS:-}"
 
 
 

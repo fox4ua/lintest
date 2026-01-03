@@ -188,7 +188,7 @@ main() {
             if [[ "$NET_MODE" == "static" ]]; then
               state="net_static"
             else
-              state="summary"
+              state="root_pass"
             fi
             ;;
           2) state="net_iface" ;;
@@ -200,8 +200,25 @@ main() {
         rc=0
         ui_pick_net_static NET_ADDR NET_GW NET_DNS || rc=$?
         case "$rc" in
-          0) state="summary" ;;
+          0) state="root_pass" ;;
           2) state="net_mode" ;;
+          *) exit 0 ;;
+        esac
+        ;;
+
+      root_pass)
+        rc=0
+        ui_pick_root_password ROOT_PASS || rc=$?
+        case "$rc" in
+          0) state="summary" ;;
+          2)
+            # назад: если static -> net_static, иначе -> net_mode
+            if [[ "$NET_MODE" == "static" ]]; then
+              state="net_static"
+            else
+              state="net_mode"
+            fi
+            ;;
           *) exit 0 ;;
         esac
         ;;
