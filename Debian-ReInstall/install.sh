@@ -64,6 +64,7 @@ main() {
   done
 
 
-  ui_msg "План установки:\n\n${BOOT_LABEL}\nДиск: ${DISK}\n\n/boot: ${BOOT_SIZE_MIB} MiB\nswap: ${SWAP_SIZE_GIB} GiB\nroot: ${ROOT_SIZE_GIB} GiB (0=остаток)\n\nDISK_RELEASE_APPROVED=${DISK_RELEASE_APPROVED:-0}"}
+  ui_msg "План установки:\n\n${BOOT_LABEL}\nДиск: ${DISK}\n\n/boot: ${BOOT_SIZE_MIB} MiB\nswap: ${SWAP_SIZE_GIB} GiB\nroot: ${ROOT_SIZE_GIB} GiB (0=остаток)\n\nDISK_RELEASE_APPROVED=${DISK_RELEASE_APPROVED:-0}"
+}
 
 main "$@"
