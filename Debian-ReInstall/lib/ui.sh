@@ -22,6 +22,8 @@ source "$UI_DIR/09-mirror.sh"
 source "$UI_DIR/10-hostname.sh"
 source "$UI_DIR/11-hosts.sh"
 
+source "$UI_DIR/12-net_stack.sh"
+
 source "$UI_DIR/13-net_iface.sh"
 
 source "$UI_DIR/14-net_mode.sh"
