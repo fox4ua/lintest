@@ -22,11 +22,11 @@ source "$UI_DIR/09-mirror.sh"
 source "$UI_DIR/10-hostname.sh"
 source "$UI_DIR/11-hosts.sh"
 
-source "$UI_DIR/12-net_iface.sh"
+source "$UI_DIR/13-net_iface.sh"
 
-source "$UI_DIR/13-net_mode.sh"
+source "$UI_DIR/14-net_mode.sh"
 
-source "$UI_DIR/14-net_static.sh"
+source "$UI_DIR/15-net_static.sh"
 
 ui_init() {
   if command -v dialog >/dev/null 2>&1; then
