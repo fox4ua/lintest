@@ -47,7 +47,7 @@ main() {
   ui_init
 
   local rc 
-  STAGE "welcome"
+  stage "welcome"
 
   while :; do
     case "$STAGE" in
