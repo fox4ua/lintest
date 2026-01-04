@@ -50,7 +50,7 @@ main() {
   stage "welcome"
 
   while :; do
-    case "$STAGE" in
+    case "$stage" in
       # ui_welcome
       welcome)
         ui_welcome || exit 0
@@ -69,8 +69,8 @@ main() {
           rc=$?
         fi
         case "$rc" in
-          0) STAGE "disk" ;;
-          2) STAGE "welcome" ;;
+          0) stage "disk" ;;
+          2) stage "welcome" ;;
           *) exit 0 ;;
         esac
         ;;
@@ -82,8 +82,8 @@ main() {
           rc=$?
         fi
         case "$rc" in
-          0) STAGE "lvm" ;;
-          2) STAGE "boot" ;;
+          0) stage "lvm" ;;
+          2) stage "boot" ;;
           *) exit 0 ;;
         esac
         ;;
@@ -92,8 +92,8 @@ main() {
         rc=0
         ui_pick_lvm_mode LVM_MODE VG_NAME THINPOOL_NAME || rc=$?
         case "$rc" in
-          0) STAGE "part_boot" ;;
-          2) STAGE "boot" ;;
+          0) stage "part_boot" ;;
+          2) stage "boot" ;;
           *) exit 0 ;;
         esac
         ;;
@@ -105,8 +105,8 @@ main() {
           rc=$?
         fi
         case "$rc" in
-          0) STAGE "part_swap" ;;
-          2) STAGE "lvm" ;;
+          0) stage "part_swap" ;;
+          2) stage "lvm" ;;
           *) exit 0 ;;
         esac
         ;;
@@ -118,8 +118,8 @@ main() {
           rc=$?
         fi
         case "$rc" in
-          0) STAGE "part_root" ;;
-          2) STAGE "part_boot" ;;
+          0) stage "part_root" ;;
+          2) stage "part_boot" ;;
           *) exit 0 ;;
         esac
         ;;
@@ -139,7 +139,7 @@ main() {
               continue
             fi
             ;;
-          2) STAGE "part_swap" ;;
+          2) stage "part_swap" ;;
           *) exit 0 ;;
         esac
         ;;
@@ -148,8 +148,8 @@ main() {
         rc=0
         ui_pick_debian_version DEBIAN_VERSION DEBIAN_SUITE || rc=$?
         case "$rc" in
-          0) STAGE "mirror" ;;
-          2) STAGE "part_root" ;;
+          0) stage "mirror" ;;
+          2) stage "part_root" ;;
           *) exit 0 ;;
         esac
         ;;
@@ -158,8 +158,8 @@ main() {
         rc=0
         ui_pick_mirror DEBIAN_MIRROR || rc=$?
         case "$rc" in
-          0) STAGE "hostname" ;;
-          2) STAGE "debian" ;;
+          0) stage "hostname" ;;
+          2) stage "debian" ;;
           *) exit 0 ;;
         esac
         ;;
@@ -168,8 +168,8 @@ main() {
         rc=0
         ui_pick_net_stack NET_STACK "$DEBIAN_VERSION" "$DEBIAN_SUITE" || rc=$?
         case "$rc" in
-          0) STAGE "net_iface" ;;
-          2) STAGE "debian" ;;
+          0) stage "net_iface" ;;
+          2) stage "debian" ;;
           *) exit 0 ;;
         esac
         ;;
@@ -178,8 +178,8 @@ main() {
         rc=0
         ui_pick_net_iface NET_IFACE || rc=$?
         case "$rc" in
-          0) STAGE "net_mode" ;;
-          2) STAGE "net_stack" ;;
+          0) stage "net_mode" ;;
+          2) stage "net_stack" ;;
           *) exit 0 ;;
         esac
         ;;
@@ -190,12 +190,12 @@ main() {
         case "$rc" in
           0)
             if [[ "$NET_MODE" == "static" ]]; then
-              STAGE "net_static"
+              stage "net_static"
             else
-              STAGE "hostname"
+              stage "hostname"
             fi
             ;;
-          2) STAGE "net_iface" ;;
+          2) stage "net_iface" ;;
           *) exit 0 ;;
         esac
         ;;
@@ -204,8 +204,8 @@ main() {
         rc=0
         ui_pick_net_static NET_ADDR NET_GW NET_DNS || rc=$?
         case "$rc" in
-          0) STAGE "hostname" ;;
-          2) STAGE "net_mode" ;;
+          0) stage "hostname" ;;
+          2) stage "net_mode" ;;
           *) exit 0 ;;
         esac
         ;;
@@ -214,8 +214,8 @@ main() {
         rc=0
         ui_pick_hostname HOSTNAME_SHORT || rc=$?
         case "$rc" in
-          0) STAGE "hosts" ;;
-          2) STAGE "mirror" ;;
+          0) stage "hosts" ;;
+          2) stage "mirror" ;;
           *) exit 0 ;;
         esac
         ;;
@@ -224,8 +224,8 @@ main() {
         rc=0
         ui_pick_hosts HOSTS_DOMAIN HOSTS_FQDN "$HOSTNAME_SHORT" || rc=$?
         case "$rc" in
-          0) STAGE "root_pass" ;;
-          2) STAGE "hostname" ;;
+          0) stage "root_pass" ;;
+          2) stage "hostname" ;;
           *) exit 0 ;;
         esac
         ;;
@@ -234,13 +234,13 @@ main() {
         rc=0
         ui_pick_root_password ROOT_PASS || rc=$?
         case "$rc" in
-          0) STAGE "summary" ;;
+          0) stage "summary" ;;
           2)
             # назад: если static -> net_static, иначе -> net_mode
             if [[ "$NET_MODE" == "static" ]]; then
-              STAGE "net_static"
+              stage "net_static"
             else
-              STAGE "net_mode"
+              stage "net_mode"
             fi
             ;;
           *) exit 0 ;;
@@ -252,7 +252,7 @@ main() {
         ui_confirm_summary || rc=$?
         case "$rc" in
           0) break ;;          # пользователь подтвердил -> выходим из while и идём к execution
-          2) STAGE "root_pass" ;;  # Назад -> на предыдущий шаг (поставь тот STAGE, который у тебя перед summary)
+          2) stage "root_pass" ;;  # Назад -> на предыдущий шаг (поставь тот stage, который у тебя перед summary)
           *) exit 0 ;;
         esac
         ;;
