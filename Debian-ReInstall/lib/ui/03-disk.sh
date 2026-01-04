@@ -62,6 +62,28 @@ ui_warn_disk_busy_plan_only() {
   esac
 }
 
+# предупреждение, проверка занятости неполная
+# return: 0=Continue, 2=Back, 1=Cancel/ESC
+ui_warn_disk_detect_incomplete() {
+  local text="Проверка занятости диска неполная, часть активных ресурсов могла не быть обнаружена.\n\nПродолжить выбор диска?"
+
+  ui_dialog dialog --clear \
+    --title "disk check incomplete" \
+    --yes-label "Continue" \
+    --no-label "Cancel" \
+    --help-button \
+    --help-label "Back" \
+    --yesno "$text" 12 74
+  local rc=$?
+  ui_clear
+
+  case "$rc" in
+    0) return 0 ;;
+    2) return 2 ;;
+    *) return 1 ;;
+  esac
+}
+
 # окно выбора диска
 # return: 0=Select, 2=Back, 1=Cancel/ESC
 ui_pick_disk() {
@@ -128,6 +150,15 @@ ui_pick_disk() {
     # Только детект и запись флагов (действия будут потом, на стадии установки)
     DISK_RELEASE_APPROVED=0
     disk_detect_usage_flags "$choice"
+
+    if (( DISK_DETECT_INCOMPLETE )); then
+      ui_warn_disk_detect_incomplete
+      case $? in
+        0) : ;;
+        2) continue ;;                 # назад -> снова список дисков
+        *) return 1 ;;                 # отмена/esc
+      esac
+    fi
 
     if (( DISK_NEEDS_RELEASE )); then
       ui_warn_disk_busy_plan_only "$choice"

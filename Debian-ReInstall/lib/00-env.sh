@@ -20,6 +20,7 @@ DISK_HAS_MOUNTS="${DISK_HAS_MOUNTS:-0}"
 DISK_HAS_SWAP="${DISK_HAS_SWAP:-0}"
 DISK_HAS_LVM="${DISK_HAS_LVM:-0}"
 DISK_HAS_MD="${DISK_HAS_MD:-0}"
+DISK_DETECT_INCOMPLETE="${DISK_DETECT_INCOMPLETE:-0}"
 # LVM
 LVM_MODE="${LVM_MODE:-linear}"                      # linear|thin|none
 VG_NAME="${VG_NAME:-pve}"                           # имя VG (если LVM включён)
