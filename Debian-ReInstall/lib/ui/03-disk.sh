@@ -6,6 +6,7 @@ ui_block_current_env_disk() {
   local disk="$1"
   local rc
   local src_root
+  local msg
   src_root="$(findmnt -no SOURCE / 2>/dev/null || true)"
   msg=$(
     cat <<EOF

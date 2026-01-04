@@ -29,6 +29,7 @@ VG_NAME="${VG_NAME:-pve}"                           # имя VG (если LVM в
 THINPOOL_NAME="${THINPOOL_NAME:-data}"              # имя thinpool (если thin)
 # Partitions
 BOOT_SIZE_MIB="${BOOT_SIZE_MIB:-512}"               # /boot (MiB)
+EFI_SIZE_MIB="${EFI_SIZE_MIB:-512}"                 # ESP (MiB)
 SWAP_SIZE_GIB="${SWAP_SIZE_GIB:-1}"                 # swap (GiB)
 ROOT_SIZE_GIB="${ROOT_SIZE_GIB:-30}"                # root (GiB)
 # debian
