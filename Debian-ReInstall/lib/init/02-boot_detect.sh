@@ -13,7 +13,7 @@ detect_boot_mode_strict() {
   fi
 
   # иногда efivars появляется после монтирования efivarfs
-  if command -v mount >/dev/null 2>&1; then
+  if command -v mount >/dev/null 2>&1 && command -v mountpoint >/dev/null 2>&1; then
     if ! mountpoint -q /sys/firmware/efi/efivars 2>/dev/null; then
       mount -t efivarfs efivarfs /sys/firmware/efi/efivars >/dev/null 2>&1 || true
     fi

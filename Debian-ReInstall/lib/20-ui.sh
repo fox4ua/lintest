@@ -35,7 +35,7 @@ source "$UI_DIR/16-root_password.sh"
 source "$UI_DIR/90-summary.sh"
 
 ui_init() {
-  local -a required_cmds=(dialog lsblk ip findmnt pvs swapon)
+  local -a required_cmds=(dialog lsblk ip findmnt pvs swapon mountpoint)
   local -a missing_cmds=()
   local cmd
 
