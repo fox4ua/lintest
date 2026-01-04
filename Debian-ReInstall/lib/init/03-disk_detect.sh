@@ -1,19 +1,61 @@
 #!/usr/bin/env bash
 
-disk_is_current_env_disk() {
-  local disk="$1"
-  local src
+disk_resolve_parent_disk() {
+  local node="$1"
+  local base
+  local parent
 
-  src="$(findmnt -no SOURCE / 2>/dev/null || true)"
-  [[ -n "$src" && "$src" == "$disk"* ]] && return 0
+  node="$(readlink -f "$node" 2>/dev/null || echo "$node")"
+  base="$(basename "$node")"
 
-  src="$(findmnt -no SOURCE /boot 2>/dev/null || true)"
-  [[ -n "$src" && "$src" == "$disk"* ]] && return 0
+  if command -v lsblk >/dev/null 2>&1; then
+    local type
+    type="$(lsblk -no TYPE "$node" 2>/dev/null | head -n1 || true)"
+    if [[ "$type" == "disk" ]]; then
+      printf '%s\n' "$base"
+      return 0
+    fi
 
-  src="$(findmnt -no SOURCE /boot/efi 2>/dev/null || true)"
-  [[ -n "$src" && "$src" == "$disk"* ]] && return 0
+    parent="$(lsblk -no PKNAME "$node" 2>/dev/null | head -n1 || true)"
+    if [[ -n "$parent" ]]; then
+      printf '%s\n' "$parent"
+      return 0
+    fi
+  fi
 
   return 1
+}
+
+disk_is_current_env_disk() {
+  local disk="$1"
+  local src base resolved
+
+  base="$(basename "$disk")"
+
+  for src in / /boot /boot/efi; do
+    src="$(findmnt -no SOURCE "$src" 2>/dev/null || true)"
+    [[ -n "$src" ]] || continue
+
+    if [[ "$src" == "$disk"* ]]; then
+      return 0
+    fi
+
+    if resolved="$(disk_resolve_parent_disk "$src")"; then
+      [[ "$resolved" == "$base" ]] && return 0
+    fi
+  done
+
+  return 1
+}
+
+disk_get_size_bytes() {
+  local disk="$1"
+
+  if ! command -v lsblk >/dev/null 2>&1; then
+    return 1
+  fi
+
+  lsblk -bn -o SIZE "$disk" 2>/dev/null | head -n1
 }
 
 disk_detect_usage_flags() {
