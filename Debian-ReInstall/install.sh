@@ -69,7 +69,7 @@ main() {
         ui_pick_lvm_mode LVM_MODE VG_NAME THINPOOL_NAME || rc=$?
         case "$rc" in
           0) stage "part_boot" ;;
-          2) stage "boot" ;;
+          2) stage "disk" ;;
           *) exit 0 ;;
         esac
         ;;
