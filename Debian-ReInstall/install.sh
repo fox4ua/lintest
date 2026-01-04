@@ -50,7 +50,7 @@ main() {
   stage "welcome"
 
   while :; do
-    case "$stage" in
+    case "$STAGE" in
       # ui_welcome
       welcome)
         ui_welcome || exit 0
