@@ -133,9 +133,9 @@ main() {
         case "$rc" in
           0)
             if validate_partition_sizes; then
-              state="debian"
+              stage "debian"
             else
-              state="part_root"
+              stage "part_root"
               continue
             fi
             ;;
