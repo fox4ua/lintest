@@ -59,7 +59,7 @@ main() {
         else
           HAS_UEFI=0
         fi
-        STAGE "boot"
+        stage "boot"
         ;;
       # ui_boot
       boot)
