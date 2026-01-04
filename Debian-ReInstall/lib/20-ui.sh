@@ -35,31 +35,73 @@ source "$UI_DIR/16-root_password.sh"
 source "$UI_DIR/90-summary.sh"
 
 ui_init() {
-  if command -v dialog >/dev/null 2>&1; then
+  local -a required_cmds=(dialog lsblk ip findmnt pvs swapon)
+  local -a missing_cmds=()
+  local cmd
+
+  for cmd in "${required_cmds[@]}"; do
+    if ! command -v "$cmd" >/dev/null 2>&1; then
+      missing_cmds+=("$cmd")
+    fi
+  done
+
+  if [[ ${#missing_cmds[@]} -eq 0 ]]; then
     return 0
   fi
 
   if command -v apt-get >/dev/null 2>&1; then
+    local -a packages=()
+    local add_pkg
+    add_pkg() {
+      local pkg="$1"
+      local existing
+      for existing in "${packages[@]}"; do
+        [[ "$existing" == "$pkg" ]] && return 0
+      done
+      packages+=("$pkg")
+    }
+
+    for cmd in "${missing_cmds[@]}"; do
+      case "$cmd" in
+        dialog) add_pkg dialog ;;
+        lsblk|findmnt|swapon) add_pkg util-linux ;;
+        ip) add_pkg iproute2 ;;
+        pvs) add_pkg lvm2 ;;
+      esac
+    done
+
     export DEBIAN_FRONTEND=noninteractive
 
     if ! apt-get update -y; then
       echo "Warning: failed to update package lists. Network access may be unavailable." >&2
       exit 1
     fi
-    if ! apt-get install -y --no-install-recommends dialog; then
-      echo "Warning: failed to install dialog. Please ensure network access and try again." >&2
+    if ! apt-get install -y --no-install-recommends "${packages[@]}"; then
+      echo "Warning: failed to install required packages. Please ensure network access and try again." >&2
       exit 1
     fi
 
-    command -v dialog >/dev/null 2>&1 || {
-      echo "Warning: dialog is still unavailable after installation attempt." >&2
-      exit 1
-    }
-    return 0
+    missing_cmds=()
+    for cmd in "${required_cmds[@]}"; do
+      if ! command -v "$cmd" >/dev/null 2>&1; then
+        missing_cmds+=("$cmd")
+      fi
+    done
   fi
 
-  echo "No supported package manager to install dialog automatically." >&2
-  exit 1
+  if [[ ${#missing_cmds[@]} -gt 0 ]]; then
+    local msg
+    msg="Missing required commands: ${missing_cmds[*]}."
+    if command -v dialog >/dev/null 2>&1; then
+      ui_dialog dialog --clear --msgbox "$msg" 10 74
+      ui_clear
+    else
+      echo "$msg" >&2
+    fi
+    exit 1
+  fi
+
+  return 0
 }
 # очистка экрана
 ui_clear() {
@@ -88,4 +130,15 @@ ui_dialog() {
   eval "$old_opts"
 
   return "$rc"
+}
+
+ui_msg() {
+  local msg="${1:-}"
+
+  if command -v dialog >/dev/null 2>&1; then
+    ui_dialog dialog --clear --msgbox "$msg" 10 74
+    ui_clear
+  else
+    echo -e "$msg" >&2
+  fi
 }
