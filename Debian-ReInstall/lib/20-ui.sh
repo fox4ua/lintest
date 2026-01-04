@@ -66,15 +66,6 @@ ui_clear() {
   dialog --clear
   clear
 }
-
-# Вывод конечного результата
-ui_msg() {
-  ui_dialog dialog --clear --title "Информация" --msgbox "$1" 12 74
-  ui_clear
-}
-
-
-
 # ВАЖНО:
 # - временно отключает errexit/errtrace и ERR trap
 # - возвращает реальный exit code dialog (0/1/2/255/…)

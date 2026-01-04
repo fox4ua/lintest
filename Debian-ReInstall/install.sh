@@ -256,8 +256,6 @@ main() {
           *) exit 0 ;;
         esac
         ;;
-
-
       *) exit 1 ;;
     esac
   done
