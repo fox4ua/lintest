@@ -44,38 +44,14 @@ ui_pick_lvm_mode() {
   fi
 
   # Имя VG (для linear и thin)
-  vg="$(
-    ui_dialog dialog --clear --stdout \
-      --title "LVM" \
-      --ok-label "Далее" \
-      --cancel-label "Отмена" \
-      --help-button --help-label "Назад" \
-      --inputbox "Введите имя Volume Group (VG):" 10 74 "$vg"
-  )"
-  rc=$?
-  ui_clear
-  case "$rc" in
-    0) : ;;
-    2) return 2 ;;
-    1|255) return 1 ;;
-    *) return 1 ;;
-  esac
-
-  # Валидация VG: допустимые символы
-  if ! [[ "$vg" =~ ^[A-Za-z0-9+_.-]{1,32}$ ]]; then
-    ui_msg "Некорректное имя VG: $vg\n\nДопустимо: A-Z a-z 0-9 + _ . - (1..32)"
-    return 2
-  fi
-
-  # thinpool имя нужно только для thin
-  if [[ "$mode" == "thin" ]]; then
-    thin="$(
+  while true; do
+    vg="$(
       ui_dialog dialog --clear --stdout \
-        --title "LVM Thin" \
-        --ok-label "Готово" \
+        --title "LVM" \
+        --ok-label "Далее" \
         --cancel-label "Отмена" \
         --help-button --help-label "Назад" \
-        --inputbox "Введите имя thinpool:" 10 74 "$thin"
+        --inputbox "Введите имя Volume Group (VG):" 10 74 "$vg"
     )"
     rc=$?
     ui_clear
@@ -86,10 +62,42 @@ ui_pick_lvm_mode() {
       *) return 1 ;;
     esac
 
-    if ! [[ "$thin" =~ ^[A-Za-z0-9+_.-]{1,32}$ ]]; then
-      ui_msg "Некорректное имя thinpool: $thin\n\nДопустимо: A-Z a-z 0-9 + _ . - (1..32)"
-      return 2
+    # Валидация VG: допустимые символы
+    if ! [[ "$vg" =~ ^[A-Za-z0-9+_.-]{1,32}$ ]]; then
+      ui_msg "Некорректное имя VG: $vg\n\nДопустимо: A-Z a-z 0-9 + _ . - (1..32)"
+      continue
     fi
+
+    break
+  done
+
+  # thinpool имя нужно только для thin
+  if [[ "$mode" == "thin" ]]; then
+    while true; do
+      thin="$(
+        ui_dialog dialog --clear --stdout \
+          --title "LVM Thin" \
+          --ok-label "Готово" \
+          --cancel-label "Отмена" \
+          --help-button --help-label "Назад" \
+          --inputbox "Введите имя thinpool:" 10 74 "$thin"
+      )"
+      rc=$?
+      ui_clear
+      case "$rc" in
+        0) : ;;
+        2) return 2 ;;
+        1|255) return 1 ;;
+        *) return 1 ;;
+      esac
+
+      if ! [[ "$thin" =~ ^[A-Za-z0-9+_.-]{1,32}$ ]]; then
+        ui_msg "Некорректное имя thinpool: $thin\n\nДопустимо: A-Z a-z 0-9 + _ . - (1..32)"
+        continue
+      fi
+
+      break
+    done
   else
     thin=""
   fi
