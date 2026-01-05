@@ -5,36 +5,36 @@
 
 # ui
 # shellcheck source=/dev/null
-source "$UI_DIR/01-welcome.sh"
+source "$UI_DIR/00-welcome.sh"
 source "$UI_DIR/02-bios.sh"
-source "$UI_DIR/03-disk.sh"
+source "$UI_DIR/10-disk.sh"
 # lvm
-source "$UI_DIR/04-lvm.sh"
+source "$UI_DIR/11-lvm.sh"
 # partitions
-source "$UI_DIR/05-boot_size.sh"
-source "$UI_DIR/06-swap_size.sh"
-source "$UI_DIR/07-root_size.sh"
+source "$UI_DIR/12-boot_size.sh"
+source "$UI_DIR/13-swap_size.sh"
+source "$UI_DIR/14-root_size.sh"
 # debian
-source "$UI_DIR/08-debian_version.sh"
+source "$UI_DIR/20-debian_version.sh"
 # mirror
-source "$UI_DIR/09-mirror.sh"
+source "$UI_DIR/21-mirror.sh"
 # hostname / hosts
-source "$UI_DIR/10-hostname.sh"
-source "$UI_DIR/11-hosts.sh"
+source "$UI_DIR/30-hostname.sh"
+source "$UI_DIR/31-hosts.sh"
 
-source "$UI_DIR/12-net_stack.sh"
+source "$UI_DIR/40-net_stack.sh"
 
-source "$UI_DIR/13-net_iface.sh"
+source "$UI_DIR/41-net_iface.sh"
 
-source "$UI_DIR/14-net_mode.sh"
+source "$UI_DIR/42-net_mode.sh"
 
-source "$UI_DIR/15-net_static.sh"
-source "$UI_DIR/16-net6_enable.sh"
-source "$UI_DIR/17-net6_mode.sh"
-source "$UI_DIR/18-net6_static.sh"
+source "$UI_DIR/43-net_static.sh"
+source "$UI_DIR/44-net6_enable.sh"
+source "$UI_DIR/45-net6_mode.sh"
+source "$UI_DIR/46-net6_static.sh"
 
 
-source "$UI_DIR/19-root_password.sh"
+source "$UI_DIR/50-root_password.sh"
 
 source "$UI_DIR/90-summary.sh"
 

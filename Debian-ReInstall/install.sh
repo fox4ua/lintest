@@ -169,7 +169,7 @@ main() {
             if [[ "$NET_MODE" == "static" ]]; then
               stage "net_static"
             else
-              stage "hostname"
+              stage "net6_enable"
             fi
             ;;
           2) stage "net_iface" ;;
@@ -181,31 +181,12 @@ main() {
         rc=0
         ui_pick_net_static NET_ADDR NET_GW NET_DNS || rc=$?
         case "$rc" in
-          0) stage "hostname" ;;
+          0) stage "net6_enable" ;;
           2) stage "net_mode" ;;
           *) exit 0 ;;
         esac
         ;;
-      # ui_hostname
-      hostname)
-        rc=0
-        ui_pick_hostname HOSTNAME_SHORT || rc=$?
-        case "$rc" in
-          0) stage "hosts" ;;
-          2) stage "net_mode" ;;
-          *) exit 0 ;;
-        esac
-        ;;
-      # ui_hosts
-      hosts)
-        rc=0
-        ui_pick_hosts HOSTS_DOMAIN HOSTS_FQDN "$HOSTNAME_SHORT" || rc=$?
-        case "$rc" in
-          0) stage "root_pass" ;;
-          2) stage "hostname" ;;
-          *) exit 0 ;;
-        esac
-        ;;
+
       net6_enable)
         rc=0
         ui_pick_net6_enable NET6_ENABLE || rc=$?
@@ -242,13 +223,32 @@ main() {
         rc=0
         ui_pick_net6_static NET6_ADDR NET6_GW NET6_DNS || rc=$?
         case "$rc" in
-          0) stage "root_pass" ;;
+          0) stage "hostname" ;;
           2) stage "net6_mode" ;;
           *) exit 0 ;;
         esac
         ;;
 
-
+      # ui_hostname
+      hostname)
+        rc=0
+        ui_pick_hostname HOSTNAME_SHORT || rc=$?
+        case "$rc" in
+          0) stage "hosts" ;;
+          2) stage "net_mode" ;;
+          *) exit 0 ;;
+        esac
+        ;;
+      # ui_hosts
+      hosts)
+        rc=0
+        ui_pick_hosts HOSTS_DOMAIN HOSTS_FQDN "$HOSTNAME_SHORT" || rc=$?
+        case "$rc" in
+          0) stage "root_pass" ;;
+          2) stage "hostname" ;;
+          *) exit 0 ;;
+        esac
+        ;;
       # ui_root_pass
       root_pass)
         rc=0
