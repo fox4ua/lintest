@@ -224,7 +224,6 @@ main() {
             if [[ "${NET4_ENABLE:-1}" != "1" && "${NET6_ENABLE:-0}" != "1" ]]; then
               ui_msg "Нужно включить хотя бы один стек: IPv4 или IPv6."
               stage "net6_enable"
-              ;;
             fi
 
             if [[ "$NET6_ENABLE" == "1" ]]; then
