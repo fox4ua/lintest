@@ -140,6 +140,18 @@ main() {
           *) exit 0 ;;
         esac
         ;;
+
+      # ui_net_current
+      net_current)
+        rc=0
+        ui_show_net_current "$NET_STACK" || rc=$?
+        case "$rc" in
+          0) stage "net_stack" ;;
+          2) stage "mirror" ;;
+          *) exit 0 ;;
+        esac
+        ;;
+
       # ui_net_stack
       net_stack)
         rc=0
@@ -155,8 +167,24 @@ main() {
         rc=0
         ui_pick_net_iface NET_IFACE || rc=$?
         case "$rc" in
-          0) stage "net_mode" ;;
+          0) stage "net4_enable" ;;
           2) stage "net_stack" ;;
+          *) exit 0 ;;
+        esac
+        ;;
+
+      net4_enable)
+        rc=0
+        ui_pick_net4_enable NET4_ENABLE || rc=$?
+        case "$rc" in
+          0)
+            if [[ "$NET4_ENABLE" == "1" ]]; then
+              stage "net_mode"
+            else
+              stage "net6_enable"
+            fi
+            ;;
+          2) stage "net_iface" ;;
           *) exit 0 ;;
         esac
         ;;
@@ -192,16 +220,35 @@ main() {
         ui_pick_net6_enable NET6_ENABLE || rc=$?
         case "$rc" in
           0)
+            # нельзя выключить оба стека
+            if [[ "${NET4_ENABLE:-1}" != "1" && "${NET6_ENABLE:-0}" != "1" ]]; then
+              ui_msg "Нужно включить хотя бы один стек: IPv4 или IPv6."
+              stage "net6_enable"
+              ;;
+            fi
+
             if [[ "$NET6_ENABLE" == "1" ]]; then
               stage "net6_mode"
             else
-              stage "root_pass"
+              stage "hostname"
             fi
             ;;
-          2) stage "net_mode" ;;
+          2)
+            if [[ "${NET4_ENABLE:-1}" == "1" ]]; then
+              # если IPv4 включён — назад в IPv4 (static -> net_static, иначе net_mode)
+              if [[ "${NET_MODE:-dhcp}" == "static" ]]; then
+                stage "net_static"
+              else
+                stage "net_mode"
+              fi
+            else
+              stage "net4_enable"
+            fi
+            ;;
           *) exit 0 ;;
         esac
         ;;
+
 
       net6_mode)
         rc=0

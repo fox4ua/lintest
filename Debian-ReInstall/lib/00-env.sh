@@ -44,7 +44,7 @@ HOSTS_FQDN="${HOSTS_FQDN:-}"
 
 NET_STACK="${NET_STACK:-}"   # networkd|ifupdown|"" (если пусто — выберем через UI)
 NET_IFACE="${NET_IFACE:-}"        # выберем позже отдельным окном (пока пусто)
-
+NET4_ENABLE="${NET4_ENABLE:-1}"      # 0|1 (IPv4 on/off)
 NET_MODE="${NET_MODE:-dhcp}"      # dhcp|static
 NET_ADDR="${NET_ADDR:-}"          # static: IP/CIDR, пример 192.168.1.10/24
 NET_GW="${NET_GW:-}"              # static: gateway, пример 192.168.1.1

@@ -21,17 +21,17 @@ source "$UI_DIR/21-mirror.sh"
 # hostname / hosts
 source "$UI_DIR/30-hostname.sh"
 source "$UI_DIR/31-hosts.sh"
+source "$UI_DIR/40-net_current.sh"
+source "$UI_DIR/41-net_stack.sh"
 
-source "$UI_DIR/40-net_stack.sh"
+source "$UI_DIR/42-net_iface.sh"
+source "$UI_DIR/43-net4_enable.sh"
+source "$UI_DIR/44-net_mode.sh"
 
-source "$UI_DIR/41-net_iface.sh"
-
-source "$UI_DIR/42-net_mode.sh"
-
-source "$UI_DIR/43-net_static.sh"
-source "$UI_DIR/44-net6_enable.sh"
-source "$UI_DIR/45-net6_mode.sh"
-source "$UI_DIR/46-net6_static.sh"
+source "$UI_DIR/45-net_static.sh"
+source "$UI_DIR/46-net6_enable.sh"
+source "$UI_DIR/47-net6_mode.sh"
+source "$UI_DIR/48-net6_static.sh"
 
 
 source "$UI_DIR/50-root_password.sh"
