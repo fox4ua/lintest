@@ -29,6 +29,10 @@ source "$UI_DIR/13-net_iface.sh"
 source "$UI_DIR/14-net_mode.sh"
 
 source "$UI_DIR/15-net_static.sh"
+source "$UI_DIR/16-net6_enable.sh"
+source "$UI_DIR/17-net6_mode.sh"
+source "$UI_DIR/18-net6_static.sh"
+
 
 source "$UI_DIR/16-root_password.sh"
 

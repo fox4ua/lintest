@@ -43,13 +43,19 @@ HOSTS_DOMAIN="${HOSTS_DOMAIN:-localdomain}"
 HOSTS_FQDN="${HOSTS_FQDN:-}"
 
 NET_STACK="${NET_STACK:-}"   # networkd|ifupdown|"" (если пусто — выберем через UI)
-
-NET_MODE="${NET_MODE:-dhcp}"      # dhcp|static
 NET_IFACE="${NET_IFACE:-}"        # выберем позже отдельным окном (пока пусто)
 
+NET_MODE="${NET_MODE:-dhcp}"      # dhcp|static
 NET_ADDR="${NET_ADDR:-}"          # static: IP/CIDR, пример 192.168.1.10/24
 NET_GW="${NET_GW:-}"              # static: gateway, пример 192.168.1.1
 NET_DNS="${NET_DNS:-}"            # static: DNS через пробел, пример "1.1.1.1 8.8.8.8"
+
+# IPv6
+NET6_ENABLE="${NET6_ENABLE:-0}"     # 0|1
+NET6_MODE="${NET6_MODE:-dhcp}"      # dhcp|static
+NET6_ADDR="${NET6_ADDR:-}"          # 2001:db8::1/64
+NET6_GW="${NET6_GW:-}"              # 2001:db8::1
+NET6_DNS="${NET6_DNS:-}"             # через пробел
 
 ROOT_PASS="${ROOT_PASS:-}"
 

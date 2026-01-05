@@ -12,6 +12,7 @@ source "$INIT_DIR/01-require_root.sh"
 source "$INIT_DIR/02-boot_detect.sh"
 source "$INIT_DIR/03-disk_detect.sh"
 source "$INIT_DIR/04-validate_partition.sh"
+source "$INIT_DIR/05-validate_required.sh"
 # остальное
 source "$LIB_DIR/20-ui.sh"
 
@@ -22,7 +23,7 @@ main() {
   require_root
   ui_init
 
-  local rc 
+  local rc
   stage "welcome"
 
   while :; do
@@ -205,12 +206,61 @@ main() {
           *) exit 0 ;;
         esac
         ;;
+      net6_enable)
+        rc=0
+        ui_pick_net6_enable NET6_ENABLE || rc=$?
+        case "$rc" in
+          0)
+            if [[ "$NET6_ENABLE" == "1" ]]; then
+              state="net6_mode"
+            else
+              state="root_pass"
+            fi
+            ;;
+          2) state="net_mode" ;;
+          *) exit 0 ;;
+        esac
+        ;;
+
+      net6_mode)
+        rc=0
+        ui_pick_net6_mode NET6_MODE || rc=$?
+        case "$rc" in
+          0)
+            if [[ "$NET6_MODE" == "static" ]]; then
+              state="net6_static"
+            else
+              state="root_pass"
+            fi
+            ;;
+          2) state="net6_enable" ;;
+          *) exit 0 ;;
+        esac
+        ;;
+
+      net6_static)
+        rc=0
+        ui_pick_net6_static NET6_ADDR NET6_GW NET6_DNS || rc=$?
+        case "$rc" in
+          0) state="root_pass" ;;
+          2) state="net6_mode" ;;
+          *) exit 0 ;;
+        esac
+        ;;
+
+
       # ui_root_pass
       root_pass)
         rc=0
         ui_pick_root_password ROOT_PASS || rc=$?
         case "$rc" in
-          0) stage "summary" ;;
+          0)
+            if validate_required_fields; then
+              stage "summary"
+            else
+              stage "${REQUIRED_FIELDS_STAGE:-root_pass}"
+            fi
+            ;;
           2)
             # назад: если static -> net_static, иначе -> net_mode
             if [[ "$NET_MODE" == "static" ]]; then

@@ -32,7 +32,7 @@ ui_pick_root_size() {
 
   # 0 = остаток
   if (( val == 0 )); then
-    printf -v "$out_root" "0"
+    printf -v "$out_root" "%s" "0"
     return 0
   fi
 
