@@ -212,12 +212,12 @@ main() {
         case "$rc" in
           0)
             if [[ "$NET6_ENABLE" == "1" ]]; then
-              state="net6_mode"
+              stage "net6_mode"
             else
-              state="root_pass"
+              stage "root_pass"
             fi
             ;;
-          2) state="net_mode" ;;
+          2) stage "net_mode" ;;
           *) exit 0 ;;
         esac
         ;;
@@ -228,12 +228,12 @@ main() {
         case "$rc" in
           0)
             if [[ "$NET6_MODE" == "static" ]]; then
-              state="net6_static"
+              stage "net6_static"
             else
-              state="root_pass"
+              stage "root_pass"
             fi
             ;;
-          2) state="net6_enable" ;;
+          2) stage "net6_enable" ;;
           *) exit 0 ;;
         esac
         ;;
@@ -242,8 +242,8 @@ main() {
         rc=0
         ui_pick_net6_static NET6_ADDR NET6_GW NET6_DNS || rc=$?
         case "$rc" in
-          0) state="root_pass" ;;
-          2) state="net6_mode" ;;
+          0) stage "root_pass" ;;
+          2) stage "net6_mode" ;;
           *) exit 0 ;;
         esac
         ;;

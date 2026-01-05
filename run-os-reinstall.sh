@@ -5,7 +5,7 @@ umask 077
 REPO_OWNER="fox4ua"
 REPO_NAME="lintest"
 BRANCH="main"
-SUBDIR="OS-reinstall"
+SUBDIR="Debian-ReInstall"
 
 DEST_DIR="/root/${SUBDIR}"
 TARBALL_URL="https://codeload.github.com/${REPO_OWNER}/${REPO_NAME}/tar.gz/refs/heads/${BRANCH}"

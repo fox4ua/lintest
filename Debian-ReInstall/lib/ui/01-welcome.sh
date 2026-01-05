@@ -2,16 +2,7 @@
 
 ui_welcome() {
   local msg
-  msg=$(cat <<EOF
-
-RUN ONLY IN RESCUE MODE.
-
-All data will be destroyed.
-
-Log: ${LOG_FILE}
-
-EOF
-  )
+  msg=$'RUN ONLY IN RESCUE MODE.\n\nAll data will be destroyed.\n\nLog: '"${LOG_FILE}"$'\n'
   ui_dialog dialog --clear \
     --title "Debian Installer (debootstrap)" \
     --ok-label "Continue" \

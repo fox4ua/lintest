@@ -34,7 +34,7 @@ source "$UI_DIR/17-net6_mode.sh"
 source "$UI_DIR/18-net6_static.sh"
 
 
-source "$UI_DIR/16-root_password.sh"
+source "$UI_DIR/19-root_password.sh"
 
 source "$UI_DIR/90-summary.sh"
 

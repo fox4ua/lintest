@@ -8,18 +8,7 @@ ui_block_current_env_disk() {
   local src_root
   local msg
   src_root="$(findmnt -no SOURCE / 2>/dev/null || true)"
-  msg=$(
-    cat <<EOF
-This disk is used by the current environment.
-
-Current / mounted from:
-${src_root:-unknown}
-
-Selected disk: ${disk}
-
-Choose another disk.
-EOF
-  )
+  msg=$'This disk is used by the current environment.\n\nCurrent / mounted from:\n'"${src_root:-unknown}"$'\n\nSelected disk: '"${disk}"$'\n\nChoose another disk.\n'
 
   ui_dialog dialog --clear \
     --title "This disk cannot be selected" \
