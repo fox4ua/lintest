@@ -135,7 +135,7 @@ main() {
         rc=0
         ui_pick_mirror DEBIAN_MIRROR || rc=$?
         case "$rc" in
-          0) stage "net_stack" ;;
+          0) stage "net_current" ;;
           2) stage "debian" ;;
           *) exit 0 ;;
         esac
