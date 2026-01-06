@@ -116,7 +116,7 @@ ui_show_net_current() {
     echo "search: ${ds_search:-'-'}"
     echo
 
-    echo "Tip: this is the CURRENT (rescue) config, not what will be applied after install."
+    echo "This is the CURRENT (rescue) config, for reference purposes only."
   } >"$tmp"
 
   ui_dialog dialog --clear \
