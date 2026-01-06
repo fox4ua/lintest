@@ -38,12 +38,6 @@ source "$UI_DIR/50-root_password.sh"
 # summary info
 source "$UI_DIR/90-summary.sh"
 
-ui_init() {
-  if ! command -v dialog >/dev/null 2>&1; then
-    ui_msg "Missing required command: dialog."
-    exit 1
-  fi
-}
 # очистка экрана
 ui_clear() {
   dialog --clear
