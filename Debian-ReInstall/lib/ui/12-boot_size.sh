@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # ui_pick_boot_size OUT_BOOT_MIB
-# return: 0=ok, 1=cancel/esc, 2=back
+# return: 0=Continue, 1=Cancel/ESC (exit), 2=Back
 ui_pick_boot_size() {
   local out_boot="$1"
   local rc=0
@@ -10,12 +10,12 @@ ui_pick_boot_size() {
   choice="$(
     ui_dialog dialog --clear --stdout \
       --title "/boot" \
-      --ok-label "Далее" \
-      --cancel-label "Отмена" \
-      --help-button --help-label "Назад" \
-      --menu "Выберите размер /boot:" 14 74 6 \
-        256  "256 MiB (минимально)" \
-        512  "512 MiB (рекомендуется)" \
+      --ok-label "Continue" \
+      --cancel-label "Cancel" \
+      --help-button --help-label "Back" \
+      --menu "Select size /boot:" 14 74 6 \
+        256  "256 MiB (minimal)" \
+        512  "512 MiB (recommended)" \
         1024 "1024 MiB" \
         2048 "2048 MiB"
   )"
@@ -31,7 +31,7 @@ ui_pick_boot_size() {
 
   # валидация
   if ! [[ "$choice" =~ ^[0-9]+$ ]] || (( choice < 128 || choice > 8192 )); then
-    ui_msg "Некорректный размер /boot: $choice"
+    ui_msg "Incorrect size /boot: $choice"
     return 2
   fi
 

@@ -23,12 +23,12 @@ source "$UI_DIR/30-hostname.sh"
 source "$UI_DIR/31-hosts.sh"
 source "$UI_DIR/40-net_current.sh"
 source "$UI_DIR/41-net_stack.sh"
-
 source "$UI_DIR/42-net_iface.sh"
+#IPv4
 source "$UI_DIR/43-net4_enable.sh"
-source "$UI_DIR/44-net_mode.sh"
-
-source "$UI_DIR/45-net_static.sh"
+source "$UI_DIR/44-net4_mode.sh"
+source "$UI_DIR/45-net4_static.sh"
+#IPv6
 source "$UI_DIR/46-net6_enable.sh"
 source "$UI_DIR/47-net6_mode.sh"
 source "$UI_DIR/48-net6_static.sh"

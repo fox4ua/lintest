@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # ui_pick_swap_size OUT_SWAP_GIB
-# return: 0=ok, 1=cancel/esc, 2=back
+# return: 0=Continue, 1=Cancel/ESC (exit), 2=Back
 ui_pick_swap_size() {
   local out_swap="$1"
   local rc=0
@@ -10,11 +10,11 @@ ui_pick_swap_size() {
   choice="$(
     ui_dialog dialog --clear --stdout \
       --title "swap" \
-      --ok-label "Далее" \
-      --cancel-label "Отмена" \
-      --help-button --help-label "Назад" \
-      --menu "Выберите размер swap:" 15 74 7 \
-        0  "Без swap" \
+      --ok-label "Continue" \
+      --cancel-label "Cancel" \
+      --help-button --help-label "Back" \
+      --menu "Select size swap:" 15 74 7 \
+        0  "No swap" \
         1  "1 GiB" \
         2  "2 GiB" \
         4  "4 GiB" \
@@ -32,7 +32,7 @@ ui_pick_swap_size() {
   esac
 
   if ! [[ "$choice" =~ ^[0-9]+$ ]] || (( choice < 0 || choice > 512 )); then
-    ui_msg "Некорректный размер swap: $choice"
+    ui_msg "Incorrect size swap: $choice"
     return 2
   fi
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # ui_pick_root_size OUT_ROOT_GIB
-# return: 0=ok, 1=cancel/esc, 2=back
+# return: 0=Continue, 1=Cancel/ESC (exit), 2=Back
 ui_pick_root_size() {
   local out_root="$1"
   local rc=0
@@ -10,10 +10,10 @@ ui_pick_root_size() {
   val="$(
     ui_dialog dialog --clear --stdout \
       --title "root (/)" \
-      --ok-label "Готово" \
-      --cancel-label "Отмена" \
-      --help-button --help-label "Назад" \
-      --inputbox "Введите размер root в GiB.\n\n0 = занять всё остальное.\nРекомендуется: 30+\n\nПример: 30" 13 74 "$val"
+      --ok-label "Continue" \
+      --cancel-label "Cancel" \
+      --help-button --help-label "Back" \
+      --inputbox "Enter the root size in GiB.\n\n0 = use all remaining space.\nRecommended: 30+\n\nExample: 30" 13 74 "$val"
   )"
   rc=$?
   ui_clear
@@ -26,7 +26,7 @@ ui_pick_root_size() {
   esac
 
   if ! [[ "$val" =~ ^[0-9]+$ ]]; then
-    ui_msg "Некорректное значение root: $val\n\nНужно число (GiB)."
+    ui_msg "Incorrect value root: $val\n\nNeed a number (GiB)."
     return 2
   fi
 
@@ -38,7 +38,7 @@ ui_pick_root_size() {
 
   # минимумы/максимумы
   if (( val < 10 || val > 8192 )); then
-    ui_msg "Некорректный размер root: $val\n\nДопустимо: 10..8192 GiB или 0 (остаток)."
+    ui_msg "Incorrect root size: $val\n\nAllowed: 10..8192 GiB or 0 (remaining)."
     return 2
   fi
 

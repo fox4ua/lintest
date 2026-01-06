@@ -22,7 +22,6 @@ main() {
   trap 'on_error $? $LINENO "$BASH_COMMAND"' ERR
   require_root
   ui_init
-
   local rc
   stage "welcome"
 
@@ -151,7 +150,6 @@ main() {
           *) exit 0 ;;
         esac
         ;;
-
       # ui_net_stack
       net_stack)
         rc=0
@@ -172,14 +170,13 @@ main() {
           *) exit 0 ;;
         esac
         ;;
-
       net4_enable)
         rc=0
         ui_pick_net4_enable NET4_ENABLE || rc=$?
         case "$rc" in
           0)
             if [[ "$NET4_ENABLE" == "1" ]]; then
-              stage "net_mode"
+              stage "net4_mode"
             else
               stage "net6_enable"
             fi
@@ -188,13 +185,13 @@ main() {
           *) exit 0 ;;
         esac
         ;;
-      # ui_net_mode
-      net_mode)
+      # ui_net4_mode
+      net4_mode)
         rc=0
-        ui_pick_net_mode NET_MODE || rc=$?
+        ui_pick_net4_mode NET4_MODE || rc=$?
         case "$rc" in
           0)
-            if [[ "$NET_MODE" == "static" ]]; then
+            if [[ "$NET4_MODE" == "static" ]]; then
               stage "net_static"
             else
               stage "net6_enable"
@@ -210,7 +207,7 @@ main() {
         ui_pick_net_static NET_ADDR NET_GW NET_DNS || rc=$?
         case "$rc" in
           0) stage "net6_enable" ;;
-          2) stage "net_mode" ;;
+          2) stage "net4_mode" ;;
           *) exit 0 ;;
         esac
         ;;
@@ -234,11 +231,11 @@ main() {
             ;;
           2)
             if [[ "${NET4_ENABLE:-1}" == "1" ]]; then
-              # если IPv4 включён — назад в IPv4 (static -> net_static, иначе net_mode)
-              if [[ "${NET_MODE:-dhcp}" == "static" ]]; then
+              # если IPv4 включён — назад в IPv4 (static -> net_static, иначе net4_mode)
+              if [[ "${NET4_MODE:-dhcp}" == "static" ]]; then
                 stage "net_static"
               else
-                stage "net_mode"
+                stage "net4_mode"
               fi
             else
               stage "net4_enable"
@@ -257,7 +254,7 @@ main() {
             if [[ "$NET6_MODE" == "static" ]]; then
               stage "net6_static"
             else
-              stage "root_pass"
+              stage "hostname"
             fi
             ;;
           2) stage "net6_enable" ;;
@@ -281,7 +278,7 @@ main() {
         ui_pick_hostname HOSTNAME_SHORT || rc=$?
         case "$rc" in
           0) stage "hosts" ;;
-          2) stage "net_mode" ;;
+          2) stage "net4_mode" ;;
           *) exit 0 ;;
         esac
         ;;
@@ -308,11 +305,11 @@ main() {
             fi
             ;;
           2)
-            # назад: если static -> net_static, иначе -> net_mode
-            if [[ "$NET_MODE" == "static" ]]; then
+            # назад: если static -> net_static, иначе -> net4_mode
+            if [[ "$NET4_MODE" == "static" ]]; then
               stage "net_static"
             else
-              stage "net_mode"
+              stage "net4_mode"
             fi
             ;;
           *) exit 0 ;;

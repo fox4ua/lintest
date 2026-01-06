@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # ui_pick_lvm_mode OUT_LVM_MODE OUT_VG_NAME OUT_THINPOOL_NAME
-# return: 0=ok, 1=cancel/esc, 2=back
+# return: 0=Continue, 1=Cancel/ESC (exit), 2=Back
 ui_pick_lvm_mode() {
   local out_mode="$1"
   local out_vg="$2"
@@ -15,13 +15,13 @@ ui_pick_lvm_mode() {
   choice="$(
     ui_dialog dialog --clear --stdout \
       --title "LVM" \
-      --ok-label "Далее" \
-      --cancel-label "Отмена" \
-      --help-button --help-label "Назад" \
-      --menu "Выберите режим LVM (только планирование):" 16 74 6 \
-        linear "LVM Linear (VG + LV, без thin)" \
+      --ok-label "Continue" \
+      --cancel-label "Cancel" \
+      --help-button --help-label "Back" \
+      --menu "Select LVM mode (planning only):" 16 74 6 \
+        linear "LVM Linear (VG + LV)" \
         thin   "LVM Thin (VG + thinpool + thin LV)" \
-        none   "Без LVM (разделы напрямую)"
+        none   "Without LVM (direct partitions)"
   )"
   rc=$?
   ui_clear
@@ -48,10 +48,10 @@ ui_pick_lvm_mode() {
     vg="$(
       ui_dialog dialog --clear --stdout \
         --title "LVM" \
-        --ok-label "Далее" \
-        --cancel-label "Отмена" \
-        --help-button --help-label "Назад" \
-        --inputbox "Введите имя Volume Group (VG):" 10 74 "$vg"
+        --ok-label "Continue" \
+        --cancel-label "Cancel" \
+        --help-button --help-label "Back" \
+        --inputbox "Enter the name of the Volume Group (VG):" 10 74 "$vg"
     )"
     rc=$?
     ui_clear
@@ -64,7 +64,7 @@ ui_pick_lvm_mode() {
 
     # Валидация VG: допустимые символы
     if ! [[ "$vg" =~ ^[A-Za-z0-9+_.-]{1,32}$ ]]; then
-      ui_msg "Некорректное имя VG: $vg\n\nДопустимо: A-Z a-z 0-9 + _ . - (1..32)"
+      ui_msg "Incorrect name VG: $vg\n\nAllowable: A-Z a-z 0-9 + _ . - (1..32)"
       continue
     fi
 
@@ -77,10 +77,10 @@ ui_pick_lvm_mode() {
       thin="$(
         ui_dialog dialog --clear --stdout \
           --title "LVM Thin" \
-          --ok-label "Готово" \
-          --cancel-label "Отмена" \
-          --help-button --help-label "Назад" \
-          --inputbox "Введите имя thinpool:" 10 74 "$thin"
+          --ok-label "Continue" \
+          --cancel-label "Cancel" \
+          --help-button --help-label "Back" \
+          --inputbox "Enter the name of the thinpool:" 10 74 "$thin"
       )"
       rc=$?
       ui_clear
@@ -92,7 +92,7 @@ ui_pick_lvm_mode() {
       esac
 
       if ! [[ "$thin" =~ ^[A-Za-z0-9+_.-]{1,32}$ ]]; then
-        ui_msg "Некорректное имя thinpool: $thin\n\nДопустимо: A-Z a-z 0-9 + _ . - (1..32)"
+        ui_msg "Incorrect name thinpool: $thin\n\nAllowable: A-Z a-z 0-9 + _ . - (1..32)"
         continue
       fi
 

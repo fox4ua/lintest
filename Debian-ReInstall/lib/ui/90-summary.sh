@@ -7,6 +7,13 @@ ui_confirm_summary() {
 
   local net_block pass_line lvm_block msg
 
+  local root_line
+  if [[ "${ROOT_SIZE_GIB:-}" == "0" ]]; then
+    root_line="disk space remaining"
+  else
+    root_line="${ROOT_SIZE_GIB:-} GiB"
+  fi
+
   if [[ "${NET_MODE:-dhcp}" == "static" ]]; then
     net_block=$(
       cat <<EOF
@@ -52,7 +59,7 @@ Disk   : ${DISK:-}
 Partitions:
   /boot: ${BOOT_SIZE_MIB:-} MiB
   swap : ${SWAP_SIZE_GIB:-} GiB
-  root : ${ROOT_SIZE_GIB:-} GiB (0=остаток)
+  root : ${root_line:-}
 
 ${lvm_block}
 
