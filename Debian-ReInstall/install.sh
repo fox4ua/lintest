@@ -13,6 +13,7 @@ source "$INIT_DIR/02-boot_detect.sh"
 source "$INIT_DIR/03-disk_detect.sh"
 source "$INIT_DIR/04-validate_partition.sh"
 source "$INIT_DIR/05-validate_required.sh"
+source "$INIT_DIR/06-mirror_probe.sh"
 # остальное
 source "$LIB_DIR/20-ui.sh"
 
@@ -204,7 +205,7 @@ main() {
       # ui_net_static
       net_static)
         rc=0
-        ui_pick_net_static NET_ADDR NET_GW NET_DNS || rc=$?
+        ui_pick_net4_static NET4_ADDR NET4_GW NET4_DNS || rc=$?
         case "$rc" in
           0) stage "net6_enable" ;;
           2) stage "net4_mode" ;;

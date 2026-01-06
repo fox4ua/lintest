@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # ui_pick_debian_version OUT_VERSION OUT_SUITE
-# return: 0=ok, 1=cancel/esc, 2=back
+# return: 0=Continue, 1=Cancel/ESC (exit), 2=Back
 ui_pick_debian_version() {
   local out_ver="$1"
   local out_suite="$2"
@@ -11,10 +11,10 @@ ui_pick_debian_version() {
   choice="$(
     ui_dialog dialog --clear --stdout \
       --title "Debian" \
-      --ok-label "Далее" \
-      --cancel-label "Отмена" \
-      --help-button --help-label "Назад" \
-      --menu "Выберите версию Debian для установки:" 14 74 6 \
+      --ok-label "Continue" \
+      --cancel-label "Cancel" \
+      --help-button --help-label "Back" \
+      --menu "Select the Debian version to install:" 14 74 6 \
         11 "Debian 11 (bullseye)" \
         12 "Debian 12 (bookworm)" \
         13 "Debian 13 (trixie)"
@@ -34,7 +34,7 @@ ui_pick_debian_version() {
     11) suite="bullseye" ;;
     12) suite="bookworm" ;;
     13) suite="trixie" ;;
-    *)  ui_msg "Некорректный выбор Debian: $ver"; return 2 ;;
+    *)  ui_msg "Incorrect selection Debian: $ver"; return 2 ;;
   esac
 
   printf -v "$out_ver" "%s" "$ver"

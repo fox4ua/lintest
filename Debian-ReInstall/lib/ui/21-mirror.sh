@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # ui_pick_mirror OUT_MIRROR
-# return: 0=ok, 1=cancel/esc, 2=back
+# return: 0=Continue, 1=Cancel/ESC (exit), 2=Back
 ui_pick_mirror() {
   local out_mirror="$1"
   local rc choice mirror
@@ -11,15 +11,15 @@ ui_pick_mirror() {
   choice="$(
     ui_dialog dialog --clear --stdout \
       --title "Debian mirror" \
-      --ok-label "Далее" \
-      --cancel-label "Отмена" \
-      --help-button --help-label "Назад" \
-      --menu "Выберите зеркало Debian:" 16 74 8 \
-        "http://deb.debian.org/debian" "deb.debian.org (рекомендуется)" \
+      --ok-label "Continue" \
+      --cancel-label "Cancel" \
+      --help-button --help-label "Back" \
+      --menu "Select a mirror Debian:" 16 74 8 \
+        "http://deb.debian.org/debian" "deb.debian.org (recommended)" \
         "http://ftp.debian.org/debian" "ftp.debian.org" \
-        "http://mirror.yandex.ru/debian" "mirror.yandex.ru (если доступен)" \
-        "http://ftp.ua.debian.org/debian" "ua.debian.org (если доступен)" \
-        custom "Ввести вручную"
+        "http://mirror.yandex.ru/debian" "mirror.yandex.ru (if available)" \
+        "http://ftp.ua.debian.org/debian" "ua.debian.org (if available)" \
+        custom "Custom"
   )"
   rc=$?
   ui_clear
@@ -35,10 +35,10 @@ ui_pick_mirror() {
     mirror="$(
       ui_dialog dialog --clear --stdout \
         --title "Debian mirror" \
-        --ok-label "Далее" \
-        --cancel-label "Отмена" \
-        --help-button --help-label "Назад" \
-        --inputbox "Введите URL зеркала Debian (пример: http://deb.debian.org/debian):" 10 74 "$mirror"
+        --ok-label "Continue" \
+        --cancel-label "Cancel" \
+        --help-button --help-label "Back" \
+        --inputbox "Enter the URL of the Debian mirror (example: http://deb.debian.org/debian):" 10 74 "$mirror"
     )"
     rc=$?
     ui_clear
@@ -55,10 +55,13 @@ ui_pick_mirror() {
 
   # базовая валидация
   if ! [[ "$mirror" =~ ^https?://[^[:space:]]+$ ]]; then
-    ui_msg "Некорректный URL зеркала:\n$mirror"
+    ui_msg "Incorrect mirror URL:\n$mirror"
     return 2
   fi
-
+  if ! mirror_probe_suite "$mirror" "${DEBIAN_SUITE:-}"; then
+    ui_msg "The mirror is unavailable or does not contain the selected version Debian.\n\nSuite: ${DEBIAN_SUITE:-unknown}\nMirror: $mirror\n\n${MIRROR_PROBE_ERR:-}"
+    return 2
+  fi
   printf -v "$out_mirror" "%s" "$mirror"
   return 0
 }

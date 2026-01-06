@@ -14,14 +14,14 @@ ui_confirm_summary() {
     root_line="${ROOT_SIZE_GIB:-} GiB"
   fi
 
-  if [[ "${NET_MODE:-dhcp}" == "static" ]]; then
+  if [[ "${NET4_MODE:-dhcp}" == "static" ]]; then
     net_block=$(
       cat <<EOF
 Mode: static
 Iface: ${NET_IFACE:-}
-Addr : ${NET_ADDR:-}
-GW   : ${NET_GW:-}
-DNS  : ${NET_DNS:-}
+Addr : ${NET4_ADDR:-}
+GW   : ${NET4_GW:-}
+DNS  : ${NET4_DNS:-}
 EOF
     )
   else

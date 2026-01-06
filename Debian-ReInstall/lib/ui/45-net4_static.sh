@@ -2,16 +2,16 @@
 
 # ui_pick_net_static OUT_ADDR OUT_GW OUT_DNS
 # return: 0=ok, 1=cancel/esc, 2=back
-ui_pick_net_static() {
+ui_pick_net4_static() {
   local out_addr="$1"
   local out_gw="$2"
   local out_dns="$3"
 
   local rc addr gw dns
 
-  addr="${NET_ADDR:-}"
-  gw="${NET_GW:-}"
-  dns="${NET_DNS:-}"
+  addr="${NET4_ADDR:-}"
+  gw="${NET4_GW:-}"
+  dns="${NET4_DNS:-}"
 
   # IP/CIDR
   addr="$(

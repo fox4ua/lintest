@@ -23,9 +23,9 @@ validate_required_fields() {
   [[ -z "${HOSTNAME_SHORT:-}" ]] && add_missing_field "HOSTNAME_SHORT" "hostname"
   [[ -z "${ROOT_PASS:-}" ]] && add_missing_field "ROOT_PASS" "root_pass"
 
-  if [[ "${NET_MODE:-}" == "static" ]]; then
-    [[ -z "${NET_ADDR:-}" ]] && add_missing_field "NET_ADDR" "net_static"
-    [[ -z "${NET_GW:-}" ]] && add_missing_field "NET_GW" "net_static"
+  if [[ "${NET4_MODE:-}" == "static" ]]; then
+    [[ -z "${NET4_ADDR:-}" ]] && add_missing_field "NET4_ADDR" "net_static"
+    [[ -z "${NET4_GW:-}" ]] && add_missing_field "NET4_GW" "net_static"
   fi
 
   if [[ ${#missing_fields[@]} -gt 0 ]]; then

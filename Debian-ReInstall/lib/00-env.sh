@@ -46,10 +46,10 @@ NET_STACK="${NET_STACK:-}"           # networkd|ifupdown|"" (если пусто
 NET_IFACE="${NET_IFACE:-}"           # выберем позже отдельным окном (пока пусто)
 # IPv4
 NET4_ENABLE="${NET4_ENABLE:-1}"      # 0|1 (IPv4 on/off)
-NET4_MODE="${NET_MODE:-dhcp}"        # dhcp|static
-NET4_ADDR="${NET_ADDR:-}"            # IP/CIDR: 192.168.1.10/24
-NET4_GW="${NET_GW:-}"                # gateway: 192.168.1.1
-NET4_DNS="${NET_DNS:-}"              # DNS через пробел, пример "1.1.1.1 8.8.8.8"
+NET4_MODE="${NET4_MODE:-dhcp}"       # dhcp|static
+NET4_ADDR="${NET4_ADDR:-}"           # IP/CIDR: 192.168.1.10/24
+NET4_GW="${NET4_GW:-}"               # gateway: 192.168.1.1
+NET4_DNS="${NET4_DNS:-}"             # DNS через пробел, пример "1.1.1.1 8.8.8.8"
 # IPv6
 NET6_ENABLE="${NET6_ENABLE:-0}"      # 0|1 (IPv6 on/off)
 NET6_MODE="${NET6_MODE:-dhcp}"       # dhcp|static

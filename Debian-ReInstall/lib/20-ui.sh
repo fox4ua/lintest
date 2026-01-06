@@ -21,14 +21,15 @@ source "$UI_DIR/21-mirror.sh"
 # hostname / hosts
 source "$UI_DIR/30-hostname.sh"
 source "$UI_DIR/31-hosts.sh"
+# network
 source "$UI_DIR/40-net_current.sh"
 source "$UI_DIR/41-net_stack.sh"
 source "$UI_DIR/42-net_iface.sh"
-#IPv4
+# IPv4
 source "$UI_DIR/43-net4_enable.sh"
 source "$UI_DIR/44-net4_mode.sh"
 source "$UI_DIR/45-net4_static.sh"
-#IPv6
+# IPv6
 source "$UI_DIR/46-net6_enable.sh"
 source "$UI_DIR/47-net6_mode.sh"
 source "$UI_DIR/48-net6_static.sh"
@@ -39,7 +40,7 @@ source "$UI_DIR/50-root_password.sh"
 source "$UI_DIR/90-summary.sh"
 
 ui_init() {
-  local -a required_cmds=(dialog lsblk ip findmnt pvs swapon mountpoint)
+  local -a required_cmds=(dialog lsblk ip findmnt pvs swapon mountpoint curl)
   local -a missing_cmds=()
   local cmd
 
@@ -71,6 +72,7 @@ ui_init() {
         lsblk|findmnt|swapon) add_pkg util-linux ;;
         ip) add_pkg iproute2 ;;
         pvs) add_pkg lvm2 ;;
+        curl) add_pkg curl ;;
       esac
     done
 
