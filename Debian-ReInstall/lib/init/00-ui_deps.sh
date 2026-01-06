@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-ui_deps_init() {
+ui_init() {
   local -a required_cmds=(dialog lsblk ip findmnt pvs swapon mountpoint curl)
   local -a missing_cmds=()
   local cmd
