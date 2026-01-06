@@ -4,7 +4,7 @@
 
 
 # ui
-# shellcheck source=/dev/null
+# welcome
 source "$UI_DIR/00-welcome.sh"
 source "$UI_DIR/02-bios.sh"
 source "$UI_DIR/10-disk.sh"
@@ -18,25 +18,24 @@ source "$UI_DIR/14-root_size.sh"
 source "$UI_DIR/20-debian_version.sh"
 # mirror
 source "$UI_DIR/21-mirror.sh"
-# hostname / hosts
-source "$UI_DIR/30-hostname.sh"
-source "$UI_DIR/31-hosts.sh"
 # network
-source "$UI_DIR/40-net_current.sh"
-source "$UI_DIR/41-net_stack.sh"
-source "$UI_DIR/42-net_iface.sh"
+source "$UI_DIR/30-net_current.sh"
+source "$UI_DIR/31-net_stack.sh"
+source "$UI_DIR/32-net_iface.sh"
 # IPv4
-source "$UI_DIR/43-net4_enable.sh"
-source "$UI_DIR/44-net4_mode.sh"
-source "$UI_DIR/45-net4_static.sh"
+source "$UI_DIR/33-net4_enable.sh"
+source "$UI_DIR/34-net4_mode.sh"
+source "$UI_DIR/35-net4_static.sh"
 # IPv6
-source "$UI_DIR/46-net6_enable.sh"
-source "$UI_DIR/47-net6_mode.sh"
-source "$UI_DIR/48-net6_static.sh"
-
-
+source "$UI_DIR/36-net6_enable.sh"
+source "$UI_DIR/37-net6_mode.sh"
+source "$UI_DIR/38-net6_static.sh"
+# hostname / hosts
+source "$UI_DIR/40-hostname.sh"
+source "$UI_DIR/41-hosts.sh"
+# root password
 source "$UI_DIR/50-root_password.sh"
-
+# summary info
 source "$UI_DIR/90-summary.sh"
 
 ui_init() {

@@ -14,6 +14,7 @@ source "$INIT_DIR/03-disk_detect.sh"
 source "$INIT_DIR/04-validate_partition.sh"
 source "$INIT_DIR/05-validate_required.sh"
 source "$INIT_DIR/06-mirror_probe.sh"
+source "$INIT_DIR/07-net_current.sh"
 # остальное
 source "$LIB_DIR/20-ui.sh"
 
