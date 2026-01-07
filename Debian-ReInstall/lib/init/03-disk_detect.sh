@@ -58,6 +58,38 @@ disk_get_size_bytes() {
   lsblk -bn -o SIZE "$disk" 2>/dev/null | head -n1
 }
 
+disk_list_candidates() {
+  if ! command -v lsblk >/dev/null 2>&1; then
+    return 1
+  fi
+
+  local -a items=()
+  while IFS= read -r line; do
+    local name type size model
+    name="$(awk '{print $1}' <<<"$line")"
+    type="$(awk '{print $2}' <<<"$line")"
+    size="$(awk '{print $3}' <<<"$line")"
+    model="$(cut -d' ' -f4- <<<"$line")"
+
+    [[ "$type" == "disk" ]] || continue
+
+    local dev="/dev/$name"
+    [[ -b "$dev" ]] || continue
+
+    [[ -n "$model" ]] || model="-"
+    items+=("${dev}" "${size}" "${model}")
+  done < <(lsblk -dn -o NAME,TYPE,SIZE,MODEL 2>/dev/null | sed 's/[[:space:]]\+/ /g')
+
+  if [[ ${#items[@]} -eq 0 ]]; then
+    return 1
+  fi
+
+  local i
+  for ((i = 0; i < ${#items[@]}; i += 3)); do
+    printf '%s\t%s\t%s\n' "${items[i]}" "${items[i+1]}" "${items[i+2]}"
+  done
+}
+
 disk_detect_usage_flags() {
   local disk="$1"
   DISK_HAS_MOUNTS=0

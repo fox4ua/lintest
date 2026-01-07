@@ -81,22 +81,11 @@ ui_pick_disk() {
   local choice rc warn_rc
   local -a items=()
 
-  # собираем /dev/sdX, /dev/nvme0n1 и т.п.
-  while IFS= read -r line; do
-    local name type size model
-    name="$(awk '{print $1}' <<<"$line")"
-    type="$(awk '{print $2}' <<<"$line")"
-    size="$(awk '{print $3}' <<<"$line")"
-    model="$(cut -d' ' -f4- <<<"$line")"
-
-    [[ "$type" == "disk" ]] || continue
-
-    local dev="/dev/$name"
-    [[ -b "$dev" ]] || continue
-
-    [[ -n "$model" ]] || model="-"
+  local line
+  while IFS=$'\t' read -r dev size model; do
+    [[ -n "$dev" ]] || continue
     items+=("$dev" "${size}  ${model}")
-  done < <(lsblk -dn -o NAME,TYPE,SIZE,MODEL 2>/dev/null | sed 's/[[:space:]]\+/ /g')
+   done < <(disk_list_candidates || true)
 
   if [[ ${#items[@]} -eq 0 ]]; then
     ui_msg "No available disks found (lsblk returned empty)."

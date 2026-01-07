@@ -159,7 +159,7 @@ main() {
         ui_pick_net_stack NET_STACK "$DEBIAN_VERSION" "$DEBIAN_SUITE" || rc=$?
         case "$rc" in
           0) stage "net_iface" ;;
-          2) stage "debian" ;;
+          2) stage "net_current" ;;
           *) exit 0 ;;
         esac
         ;;
@@ -224,6 +224,7 @@ main() {
             if [[ "${NET4_ENABLE:-1}" != "1" && "${NET6_ENABLE:-0}" != "1" ]]; then
               ui_msg "Нужно включить хотя бы один стек: IPv4 или IPv6."
               stage "net6_enable"
+              continue
             fi
 
             if [[ "$NET6_ENABLE" == "1" ]]; then
@@ -281,7 +282,23 @@ main() {
         ui_pick_hostname HOSTNAME_SHORT || rc=$?
         case "$rc" in
           0) stage "hosts" ;;
-          2) stage "net4_mode" ;;
+          2)
+            if [[ "${NET6_ENABLE:-0}" == "1" ]]; then
+              if [[ "${NET6_MODE:-dhcp}" == "static" ]]; then
+                stage "net6_static"
+              else
+                stage "net6_mode"
+              fi
+            elif [[ "${NET4_ENABLE:-1}" == "1" ]]; then
+              if [[ "${NET4_MODE:-dhcp}" == "static" ]]; then
+                stage "net_static"
+              else
+                stage "net4_mode"
+              fi
+            else
+              stage "net6_enable"
+            fi
+            ;;
           *) exit 0 ;;
         esac
         ;;
@@ -308,11 +325,20 @@ main() {
             fi
             ;;
           2)
-            # назад: если static -> net_static, иначе -> net4_mode
-            if [[ "$NET4_MODE" == "static" ]]; then
-              stage "net_static"
+            if [[ "${NET6_ENABLE:-0}" == "1" ]]; then
+              if [[ "${NET6_MODE:-dhcp}" == "static" ]]; then
+                stage "net6_static"
+              else
+                stage "net6_mode"
+              fi
+            elif [[ "${NET4_ENABLE:-1}" == "1" ]]; then
+              if [[ "${NET4_MODE:-dhcp}" == "static" ]]; then
+                stage "net_static"
+              else
+                stage "net4_mode"
+              fi
             else
-              stage "net4_mode"
+              stage "net6_enable"
             fi
             ;;
           *) exit 0 ;;
