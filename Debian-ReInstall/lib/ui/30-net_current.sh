@@ -60,14 +60,28 @@ ui_show_net_current() {
 
           mapfile -t v4_cidrs < <(ip -o -4 addr show dev "$iface" scope global 2>/dev/null | awk '{print $4}' || true)
           if ((${#v4_cidrs[@]} == 0)); then
-            echo "  IPv4: -, -, $gw4, $dns"
+            echo "  IPv4:"
+            echo "    address: -"
+            echo "    netmask: -"
+            echo "    gateway: $gw4"
+            echo "    dns: $dns"
           else
-            local cidr ip4 p mask
+            local cidr ip4 p mask idx
+            idx=1
             for cidr in "${v4_cidrs[@]}"; do
               ip4="${cidr%/*}"
               p="${cidr#*/}"
               mask="$(net_current_cidr_to_mask "$p")"
-              echo "  IPv4: $ip4, $mask, $gw4, $dns"
+              if ((${#v4_cidrs[@]} > 1)); then
+                echo "  IPv4 #$idx:"
+              else
+                echo "  IPv4:"
+              fi
+              echo "    address: $ip4"
+              echo "    netmask: $mask"
+              echo "    gateway: $gw4"
+              echo "    dns: $dns"
+              ((idx++))
             done
           fi
 
@@ -78,13 +92,27 @@ ui_show_net_current() {
           fi
 
           if ((${#v6_cidrs[@]} == 0)); then
-            echo "  IPv6: -, -, $gw6, $dns"
+            echo "  IPv6:"
+            echo "    address: -"
+            echo "    prefix: -"
+            echo "    gateway: $gw6"
+            echo "    dns: $dns"
           else
-            local cidr6 ip6 p6
+            local cidr6 ip6 p6 idx6
+            idx6=1
             for cidr6 in "${v6_cidrs[@]}"; do
               ip6="${cidr6%/*}"
               p6="${cidr6#*/}"
-              echo "  IPv6: $ip6, /$p6, $gw6, $dns"
+              if ((${#v6_cidrs[@]} > 1)); then
+                echo "  IPv6 #$idx6:"
+              else
+                echo "  IPv6:"
+              fi
+              echo "    address: $ip6"
+              echo "    prefix: /$p6"
+              echo "    gateway: $gw6"
+              echo "    dns: $dns"
+              ((idx6++))
             done
           fi
 
@@ -122,8 +150,8 @@ ui_show_net_current() {
   ui_dialog dialog --clear \
     --title "Current network config" \
     --ok-label "Continue" \
+    --cancel-label "Back" \
     --extra-button --extra-label "Cancel" \
-    --help-button --help-label "Back" \
     --textbox "$tmp" 24 90
   rc=$?
   ui_clear
@@ -131,9 +159,8 @@ ui_show_net_current() {
 
   case "$rc" in
     0) return 0 ;;
-    2) return 2 ;;
     3) return 1 ;;     # extra = Cancel
-    1|255) return 1 ;;
+    1|255) return 2 ;; # cancel/esc = Back
     *) return 1 ;;
   esac
 }
