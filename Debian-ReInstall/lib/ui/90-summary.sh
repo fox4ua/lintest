@@ -14,24 +14,60 @@ ui_confirm_summary() {
     root_line="${ROOT_SIZE_GIB:-} GiB"
   fi
 
-  if [[ "${NET4_MODE:-dhcp}" == "static" ]]; then
-    net_block=$(
-      cat <<EOF
-Mode: static
-Iface: ${NET_IFACE:-}
-Addr : ${NET4_ADDR:-}
-GW   : ${NET4_GW:-}
-DNS  : ${NET4_DNS:-}
+  local net4_block net6_block
+  if [[ "${NET4_ENABLE:-1}" == "1" ]]; then
+    if [[ "${NET4_MODE:-dhcp}" == "static" ]]; then
+      net4_block=$(
+        cat <<EOF
+IPv4:
+  Mode: static
+  Iface: ${NET_IFACE:-}
+  Addr : ${NET4_ADDR:-}
+  GW   : ${NET4_GW:-}
+  DNS  : ${NET4_DNS:-}
 EOF
-    )
+      )
+    else
+      net4_block=$(
+        cat <<EOF
+IPv4:
+  Mode: dhcp
+  Iface: ${NET_IFACE:-}
+EOF
+      )
+    fi
   else
-    net_block=$(
-      cat <<EOF
-Mode: dhcp
-Iface: ${NET_IFACE:-}
-EOF
-    )
+    net4_block="IPv4: disabled"
   fi
+
+  if [[ "${NET6_ENABLE:-0}" == "1" ]]; then
+    if [[ "${NET6_MODE:-dhcp}" == "static" ]]; then
+      net6_block=$(
+        cat <<EOF
+IPv6:
+  Mode: static
+  Iface: ${NET_IFACE:-}
+  Addr : ${NET6_ADDR:-}
+  GW   : ${NET6_GW:-}
+  DNS  : ${NET6_DNS:-}
+EOF
+      )
+    else
+      net6_block=$(
+        cat <<EOF
+IPv6:
+  Mode: dhcp
+  Iface: ${NET_IFACE:-}
+EOF
+      )
+    fi
+  else
+    net6_block="IPv6: disabled"
+  fi
+
+  net_block="${net4_block}
+${net6_block}"
+
 
   pass_line="not set"
   [[ -n "${ROOT_PASS:-}" ]] && pass_line="set"

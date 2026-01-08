@@ -39,7 +39,7 @@ ui_init() {
 
     export DEBIAN_FRONTEND=noninteractive
 
-    if ! apt-get update -y; then
+    if ! apt-get update; then
       echo "Warning: failed to update package lists. Network access may be unavailable." >&2
       exit 1
     fi

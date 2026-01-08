@@ -28,6 +28,11 @@ validate_required_fields() {
     [[ -z "${NET4_GW:-}" ]] && add_missing_field "NET4_GW" "net_static"
   fi
 
+  if [[ "${NET6_MODE:-}" == "static" ]]; then
+    [[ -z "${NET6_ADDR:-}" ]] && add_missing_field "NET6_ADDR" "net6_static"
+    [[ -z "${NET6_GW:-}" ]] && add_missing_field "NET6_GW" "net6_static"
+  fi
+
   if [[ ${#missing_fields[@]} -gt 0 ]]; then
     local msg="Отсутствуют обязательные поля:\n"
     local field
