@@ -150,9 +150,10 @@ ui_show_net_current() {
   ui_dialog dialog --clear \
     --title "Current network config" \
     --ok-label "Continue" \
-    --cancel-label "Back" \
+    --yes-label "Continue" \
+    --no-label "Back" \
     --extra-button --extra-label "Cancel" \
-    --textbox "$tmp" 24 90
+    --yesno "$(cat "$tmp")" 24 90
   rc=$?
   ui_clear
   rm -f "$tmp" 2>/dev/null || true
