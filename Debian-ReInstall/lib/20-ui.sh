@@ -2,7 +2,6 @@
 
 : "${UI_DIR:?}"
 
-
 # ui
 # welcome
 source "$UI_DIR/00-welcome.sh"
