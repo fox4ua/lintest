@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # ui_pick_net6_mode OUT_MODE
-# return: 0=ok, 1=cancel, 2=back
+# return: 0=Continue, 1=Cancel/ESC (exit), 2=Back
 ui_pick_net6_mode() {
   local out="$1"
   local rc choice
@@ -9,10 +9,10 @@ ui_pick_net6_mode() {
   choice="$(
     ui_dialog dialog --clear --stdout \
       --title "IPv6 mode" \
-      --ok-label "Далее" \
-      --cancel-label "Отмена" \
-      --help-button --help-label "Назад" \
-      --menu "Режим IPv6:" 12 60 4 \
+      --ok-label "Continue" \
+      --cancel-label "Cancel" \
+      --help-button --help-label "Back" \
+      --menu "IPv6 mode:" 12 60 4 \
         dhcp   "DHCPv6 / SLAAC" \
         static "Static IPv6"
   )"

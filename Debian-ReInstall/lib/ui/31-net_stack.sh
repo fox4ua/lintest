@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # ui_pick_net_stack OUT_NET_STACK DEBIAN_VERSION DEBIAN_SUITE
-# return: 0=ok, 1=cancel/esc, 2=back
+# return: 0=Continue, 1=Cancel/ESC (exit), 2=Back
 ui_pick_net_stack() {
   local out_stack="$1"
   local deb_ver="$2"
@@ -18,16 +18,16 @@ ui_pick_net_stack() {
     *) recommended="networkd" ;;
   esac
 
-  msg="Выберите систему настройки сети.\n\nDebian: ${deb_ver} (${deb_suite})\nРекомендовано: ${recommended}\n\nnetworkd: /etc/systemd/network/*.network\nifupdown: /etc/network/interfaces"
+  msg="Select the network configuration system.\n\nDebian: ${deb_ver} (${deb_suite})\Recommended: ${recommended}\n\nnetworkd: /etc/systemd/network/*.network\nifupdown: /etc/network/interfaces"
 
   # Ставим курсор на рекомендованное (через порядок пунктов)
   if [[ "$recommended" == "networkd" ]]; then
     choice="$(
       ui_dialog dialog --clear --stdout \
         --title "Network stack" \
-        --ok-label "Далее" \
-        --cancel-label "Отмена" \
-        --help-button --help-label "Назад" \
+        --ok-label "Continue" \
+        --cancel-label "Cancel" \
+        --help-button --help-label "Back" \
         --menu "$msg" 18 74 6 \
           networkd "systemd-networkd (recommended for 12/13)" \
           ifupdown "ifupdown (legacy)"
@@ -36,9 +36,9 @@ ui_pick_net_stack() {
     choice="$(
       ui_dialog dialog --clear --stdout \
         --title "Network stack" \
-        --ok-label "Далее" \
-        --cancel-label "Отмена" \
-        --help-button --help-label "Назад" \
+        --ok-label "Continue" \
+        --cancel-label "Cancel" \
+        --help-button --help-label "Back" \
         --menu "$msg" 18 74 6 \
           ifupdown "ifupdown (recommended for 11)" \
           networkd "systemd-networkd"
@@ -57,7 +57,7 @@ ui_pick_net_stack() {
 
   case "$choice" in
     networkd|ifupdown) : ;;
-    *) ui_msg "Некорректный выбор: $choice"; return 2 ;;
+    *) ui_msg "Incorrect selection: $choice"; return 2 ;;
   esac
 
   printf -v "$out_stack" "%s" "$choice"

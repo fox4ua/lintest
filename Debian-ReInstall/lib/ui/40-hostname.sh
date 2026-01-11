@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # ui_pick_hostname OUT_HOSTNAME_SHORT
-# return: 0=ok, 1=cancel/esc, 2=back
+# return: 0=Continue, 1=Cancel/ESC (exit), 2=Back
 ui_pick_hostname() {
   local out_var="$1"
   local rc val
@@ -11,10 +11,10 @@ ui_pick_hostname() {
   val="$(
     ui_dialog dialog --clear --stdout \
       --title "Hostname" \
-      --ok-label "Далее" \
-      --cancel-label "Отмена" \
-      --help-button --help-label "Назад" \
-      --inputbox "Введите hostname (короткое имя, без точек).\n\nПример: pve, debian, node1" 12 74 "$val"
+      --ok-label "Continue" \
+      --cancel-label "Cancel" \
+      --help-button --help-label "Back" \
+      --inputbox "Enter hostname (short name, without dots).\n\nExample: pve, debian, node1" 12 74 "$val"
   )"
   rc=$?
   ui_clear
@@ -31,7 +31,7 @@ ui_pick_hostname() {
 
   # validation: 1..63, starts/ends alnum, inside alnum or '-'
   if ! [[ "$val" =~ ^[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?$ ]]; then
-    ui_msg "Некорректный hostname: $val\n\nПравило: без точек, 1..63 символов, буквы/цифры/дефис, не начинать/заканчивать дефисом."
+    ui_msg "Incorrect hostname: $val\n\nRule: no dots, 1–63 characters, letters/numbers/hyphens, do not start/end with a hyphen."
     return 2
   fi
 

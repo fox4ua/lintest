@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # ui_pick_net_iface OUT_IFACE
-# return: 0=ok, 1=cancel/esc, 2=back
+# return: 0=Continue, 1=Cancel/ESC (exit), 2=Back
 ui_pick_net_iface() {
   local out_iface="$1"
   local rc choice
@@ -21,17 +21,17 @@ ui_pick_net_iface() {
   done < <(ip -o link show 2>/dev/null | awk -F': ' '{print $2}' | grep -v '^lo$' || true)
 
   if [[ ${#items[@]} -eq 0 ]]; then
-    ui_msg "Не найдено сетевых интерфейсов (кроме lo)."
+    ui_msg "No network interfaces found (except lo)."
     return 1
   fi
 
   choice="$(
     ui_dialog dialog --clear --stdout \
       --title "Network interface" \
-      --ok-label "Далее" \
-      --cancel-label "Отмена" \
-      --help-button --help-label "Назад" \
-      --menu "Выберите сетевой интерфейс для установки:" 18 74 10 \
+      --ok-label "Continue" \
+      --cancel-label "Cancel" \
+      --help-button --help-label "Back" \
+      --menu "Select the network interface for installation:" 18 74 10 \
         "${items[@]}"
   )"
   rc=$?
@@ -46,7 +46,7 @@ ui_pick_net_iface() {
 
   # validate existence
   if [[ ! -d "/sys/class/net/$choice" ]]; then
-    ui_msg "Интерфейс не найден: $choice"
+    ui_msg "Interface not found: $choice"
     return 2
   fi
 
