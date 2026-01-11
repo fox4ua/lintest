@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # ui_pick_hosts OUT_DOMAIN OUT_FQDN HOSTNAME_SHORT
-# return: 0=ok, 1=cancel/esc, 2=back
+# return: 0=Continue, 1=Cancel/ESC (exit), 2=Back
 ui_pick_hosts() {
   local out_domain="$1"
   local out_fqdn="$2"
@@ -16,9 +16,9 @@ ui_pick_hosts() {
   domain="$(
     ui_dialog dialog --clear --stdout \
       --title "/etc/hosts" \
-      --ok-label "Далее" \
-      --cancel-label "Отмена" \
-      --help-button --help-label "Назад" \
+      --ok-label "Continue" \
+      --cancel-label "Cancel" \
+      --help-button --help-label "Back" \
       --inputbox "Введите домен (опционально).\n\nМожно оставить пустым.\nПример: example.com" 12 74 "$domain"
   )"
   rc=$?
@@ -45,9 +45,9 @@ ui_pick_hosts() {
   fqdn="$(
     ui_dialog dialog --clear --stdout \
       --title "/etc/hosts" \
-      --ok-label "Готово" \
-      --cancel-label "Отмена" \
-      --help-button --help-label "Назад" \
+      --ok-label "Continue" \
+      --cancel-label "Cancel" \
+      --help-button --help-label "Back" \
       --inputbox "Введите FQDN (опционально).\n\nМожно оставить пустым — тогда будет использован только hostname.\nПример: ${hn_short}.example.com" 12 74 "$fqdn"
   )"
   rc=$?
