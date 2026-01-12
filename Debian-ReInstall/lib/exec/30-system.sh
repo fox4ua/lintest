@@ -75,7 +75,11 @@ install_base_packages() {
   fi
   
   # Ensure apt works
-  chroot_run "apt-get update"
+  if ! chroot_run "apt-get update"; then
+    log "[!] apt-get update failed; retrying with fallback DNS."
+    write_resolv_conf_defaults
+    chroot_run "apt-get update" || fatal "apt-get update failed after retry (check network/DNS)."
+  fi
 
   local arch grub_pkg kernel_pkg
   arch="$(dpkg --print-architecture 2>/dev/null || true)"
@@ -219,6 +223,21 @@ write_host_resolv_conf() {
 
   if [[ ${#dns_list[@]} -eq 0 ]]; then
     dns_list=("1.1.1.1" "8.8.8.8")
+  fi
+
+  {
+    for ns in "${dns_list[@]}"; do
+      echo "nameserver $ns"
+    done
+  } >"$TARGET_DIR/etc/resolv.conf"
+}
+
+write_resolv_conf_defaults() {
+  prepare_target_resolv_conf
+  local -a dns_list=("1.1.1.1" "8.8.8.8")
+
+  if [[ "${NET6_ENABLE:-0}" == "1" ]]; then
+    dns_list+=("2606:4700:4700::1111" "2001:4860:4860::8888")
   fi
 
   {
