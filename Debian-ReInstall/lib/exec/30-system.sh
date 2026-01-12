@@ -180,7 +180,8 @@ write_resolv_conf_fallback() {
 
 write_host_resolv_conf() {
   local src=""
-
+  local dns=""
+  
   if [[ -e /etc/resolv.conf ]]; then
     if grep -qE '^\s*nameserver\s+127\.0\.0\.53(\s|$)' /etc/resolv.conf; then
       if [[ -e /run/systemd/resolve/resolv.conf ]]; then
@@ -199,6 +200,20 @@ write_host_resolv_conf() {
 
   if [[ -n "$src" ]]; then
     cp -f "$src" "$TARGET_DIR/etc/resolv.conf"
+    return 0
+  fi
+
+  if [[ -n "${NET_IFACE:-}" ]]; then
+    dns="$(net_current_get_dns "$NET_IFACE" || true)"
+  fi
+
+  if [[ -n "$dns" ]]; then
+    {
+      for ns in $dns; do
+        [[ "$ns" == "127.0.0.53" ]] && continue
+        echo "nameserver $ns"
+      done
+    } >"$TARGET_DIR/etc/resolv.conf"
   fi
 }
 
