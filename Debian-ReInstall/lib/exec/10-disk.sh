@@ -47,10 +47,8 @@ disk_release_resources() {
     local md
     while IFS= read -r md; do
       [[ -n "$md" ]] || continue
-      if grep -q "$base" /proc/mdstat; then
-        run_quiet mdadm --stop "/dev/$md" || true
-      fi
-    done < <(awk '/^md[0-9]+/ {print $1}' /proc/mdstat || true)
+      run_quiet mdadm --stop "/dev/$md" || true
+    done < <(awk -v disk="$base" '$1 ~ /^md[0-9]+/ && $0 ~ disk {print $1}' /proc/mdstat || true)
   fi
 }
 

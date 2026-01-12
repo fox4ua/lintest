@@ -71,28 +71,61 @@ install_base_packages() {
   # Ensure apt works
   chroot_run "apt-get update"
 
-  local grub_pkg kernel_pkg
-  kernel_pkg="linux-image-amd64"
+  local arch grub_pkg kernel_pkg
+  arch="$(dpkg --print-architecture 2>/dev/null || true)"
+  if [[ -z "$arch" ]]; then
+    case "$(uname -m 2>/dev/null || true)" in
+      x86_64) arch="amd64" ;;
+      i386|i686) arch="i386" ;;
+      aarch64) arch="arm64" ;;
+      armv7l) arch="armhf" ;;
+      ppc64le) arch="ppc64el" ;;
+      s390x) arch="s390x" ;;
+    esac
+  fi
+  [[ -n "$arch" ]] || fatal "Unable to detect target architecture for package install"
+
+  case "$arch" in
+    amd64) kernel_pkg="linux-image-amd64" ;;
+    i386) kernel_pkg="linux-image-686-pae" ;;
+    arm64) kernel_pkg="linux-image-arm64" ;;
+    armhf) kernel_pkg="linux-image-armmp" ;;
+    ppc64el) kernel_pkg="linux-image-ppc64el" ;;
+    s390x) kernel_pkg="linux-image-s390x" ;;
+    *) kernel_pkg="linux-image-$arch" ;;
+  esac
 
   case "$BOOT_MODE" in
     uefi)
-      grub_pkg="grub-efi-amd64"
+      grub_pkg="grub-efi-$arch"
       ;;
     *)
-      grub_pkg="grub-pc"
+      case "$arch" in
+        amd64|i386) grub_pkg="grub-pc" ;;
+        *) grub_pkg="grub-efi-$arch" ;;
+      esac
       ;;
   esac
 
-  local net_pkgs=""
+  local net_pkgs="" dhcp_pkg=""
   case "$NET_STACK" in
     ifupdown) net_pkgs="ifupdown" ;;
     networkd|*) net_pkgs="" ;;
   esac
-
+  
+  if [[ "$NET_STACK" == "ifupdown" ]]; then
+    if [[ "${NET4_ENABLE:-1}" == "1" && "${NET4_MODE:-dhcp}" == "dhcp" ]]; then
+      dhcp_pkg="isc-dhcp-client"
+    fi
+    if [[ "${NET6_ENABLE:-0}" == "1" && "${NET6_MODE:-dhcp}" == "dhcp" ]]; then
+      dhcp_pkg="isc-dhcp-client"
+    fi
+  fi
+  
   local lvm_pkgs=""
   [[ "$LVM_MODE" != "none" ]] && lvm_pkgs="lvm2"
 
-  chroot_run "apt-get install -y --no-install-recommends ca-certificates systemd-sysv $kernel_pkg $grub_pkg $net_pkgs $lvm_pkgs"
+  chroot_run "apt-get install -y --no-install-recommends ca-certificates systemd-sysv $kernel_pkg $grub_pkg $net_pkgs $dhcp_pkg $lvm_pkgs"
 }
 
 write_hostname_hosts() {
@@ -101,7 +134,14 @@ write_hostname_hosts() {
   echo "$HOSTNAME_SHORT" >"$TARGET_DIR/etc/hostname"
 
   # hosts
-  local fqdn="${HOSTS_FQDN:-$HOSTNAME_SHORT.$HOSTS_DOMAIN}"
+  local fqdn
+  if [[ -n "${HOSTS_FQDN:-}" ]]; then
+    fqdn="$HOSTS_FQDN"
+  elif [[ -n "${HOSTS_DOMAIN:-}" ]]; then
+    fqdn="$HOSTNAME_SHORT.$HOSTS_DOMAIN"
+  else
+    fqdn="$HOSTNAME_SHORT"
+  fi
   cat >"$TARGET_DIR/etc/hosts" <<EOF
 127.0.0.1	localhost
 127.0.1.1	$fqdn	$HOSTNAME_SHORT
