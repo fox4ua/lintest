@@ -68,6 +68,12 @@ install_base_packages() {
 
   mount_chroot_helpers
 
+  if [[ -n "${NET4_DNS:-}" || -n "${NET6_DNS:-}" ]]; then
+    write_resolv_conf_fallback
+  elif [[ -e /etc/resolv.conf ]]; then
+    cp -f /etc/resolv.conf "$TARGET_DIR/etc/resolv.conf"
+  fi
+  
   # Ensure apt works
   chroot_run "apt-get update"
 
