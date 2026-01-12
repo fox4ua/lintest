@@ -19,23 +19,23 @@ lvm_prepare_root() {
   case "$LVM_MODE" in
     linear)
       if (( ROOT_SIZE_GIB == 0 )); then
-        run lvcreate -l 100%FREE --wipesignatures y -n root "$VG_NAME"
+        run lvcreate -l 100%FREE --wipesignatures y -y -n root "$VG_NAME"
       else
         local vg_free_bytes requested_bytes
         vg_free_bytes=$(vgs --noheadings --units b -o vg_free "$VG_NAME" 2>/dev/null | awk '{gsub(/[^0-9]/,"",$1);print $1;exit}')
         requested_bytes=$(( ROOT_SIZE_GIB * 1024 * 1024 * 1024 ))
         if [[ -n "$vg_free_bytes" && "$vg_free_bytes" =~ ^[0-9]+$ && $requested_bytes -ge $vg_free_bytes ]]; then
           log "[!] Requested root size ${ROOT_SIZE_GIB}G exceeds available space; using 100%FREE instead."
-          run lvcreate -l 100%FREE --wipesignatures y -n root "$VG_NAME"
+          run lvcreate -l 100%FREE --wipesignatures y -y -n root "$VG_NAME"
         else
-          run lvcreate -L "${ROOT_SIZE_GIB}G" --wipesignatures y -n root "$VG_NAME"
+          run lvcreate -L "${ROOT_SIZE_GIB}G" --wipesignatures y -y -n root "$VG_NAME"
         fi
       fi
       ROOT_DEV="/dev/${VG_NAME}/root"
       ;;
     thin)
       # Create thinpool using all free space, then thin root LV.
-      run lvcreate -l 100%FREE --type thin-pool -n "$THINPOOL_NAME" "$VG_NAME"
+      run lvcreate -l 100%FREE --type thin-pool -y -n "$THINPOOL_NAME" "$VG_NAME"
 
       local vsize_g
       if (( ROOT_SIZE_GIB == 0 )); then
@@ -47,7 +47,7 @@ lvm_prepare_root() {
         vsize_g="$ROOT_SIZE_GIB"
       fi
 
-      run lvcreate -V "${vsize_g}G" -T "${VG_NAME}/${THINPOOL_NAME}" --wipesignatures y -n root
+      run lvcreate -V "${vsize_g}G" -T "${VG_NAME}/${THINPOOL_NAME}" --wipesignatures y -y -n root
       ROOT_DEV="/dev/${VG_NAME}/root"
       ;;
     *)
