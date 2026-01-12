@@ -42,6 +42,22 @@ disk_release_resources() {
     done < <(pvs --noheadings -o vg_name "$disk"* 2>/dev/null | awk '{$1=$1;print}' | sort -u || true)
   fi
 
+  # remove VGs/PVs on that disk to avoid stale LVM metadata
+  if command -v pvs >/dev/null 2>&1 && command -v vgremove >/dev/null 2>&1; then
+    local vg
+    while IFS= read -r vg; do
+      [[ -n "$vg" ]] || continue
+      run_quiet vgremove -ff "$vg" || true
+    done < <(pvs --noheadings -o vg_name "$disk"* 2>/dev/null | awk '{$1=$1;print}' | sort -u || true)
+  fi
+  if command -v pvs >/dev/null 2>&1 && command -v pvremove >/dev/null 2>&1; then
+    local pv
+    while IFS= read -r pv; do
+      [[ -n "$pv" ]] || continue
+      run_quiet pvremove -ff "$pv" || true
+    done < <(pvs --noheadings -o pv_name "$disk"* 2>/dev/null | awk '{$1=$1;print}' | sort -u || true)
+  fi
+  
   # stop mdraid arrays that mention disk
   if [[ -r /proc/mdstat ]] && command -v mdadm >/dev/null 2>&1; then
     local md

@@ -12,6 +12,7 @@ lvm_prepare_root() {
   stage "lvm"
   log "[=] LVM mode: $LVM_MODE"
 
+  run wipefs -a "$PART_ROOT" || true
   run pvcreate -ff -y "$PART_ROOT"
   run vgcreate "$VG_NAME" "$PART_ROOT"
 
