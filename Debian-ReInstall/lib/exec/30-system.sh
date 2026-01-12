@@ -51,7 +51,7 @@ write_sources_list() {
       comps="main contrib non-free"
       ;;
     bookworm|trixie|*)
-      comps="main contrib non-free-firmware"
+      comps="main contrib non-free non-free-firmware"
       ;;
   esac
 

@@ -5,6 +5,7 @@
 LIB_DIR="${LIB_DIR:-$BASE_DIR/lib}"
 INIT_DIR="${INIT_DIR:-$LIB_DIR/init}"
 UI_DIR="${UI_DIR:-$LIB_DIR/ui}"
+EXEC_DIR="${EXEC_DIR:-$LIB_DIR/exec}"
 # Файл логов
 LOG_FILE="${LOG_FILE:-/root/debian_installer.log}"
 # Глобальные значения мастера (заполняются по мере прохождения)
@@ -63,5 +64,3 @@ ROOT_PASS="${ROOT_PASS:-}"
 
 # Файлы/папки
 TARGET_DIR="${TARGET_DIR:-/mnt/target}"
-
-
