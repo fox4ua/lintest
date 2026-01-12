@@ -75,10 +75,10 @@ install_base_packages() {
   fi
   
   # Ensure apt works
-  if ! chroot_run "apt-get update"; then
+  if ! chroot_apt_update; then
     log "[!] apt-get update failed; retrying with fallback DNS."
     write_resolv_conf_defaults
-    chroot_run "apt-get update" || fatal "apt-get update failed after retry (check network/DNS)."
+    chroot_apt_update || fatal "apt-get update failed after retry (check network/DNS)."
   fi
 
   local arch grub_pkg kernel_pkg
@@ -136,6 +136,25 @@ install_base_packages() {
   [[ "$LVM_MODE" != "none" ]] && lvm_pkgs="lvm2"
 
   chroot_run "apt-get install -y --no-install-recommends ca-certificates systemd-sysv $kernel_pkg $grub_pkg $net_pkgs $dhcp_pkg $lvm_pkgs"
+}
+
+
+chroot_apt_update() {
+  local output
+  output="$(mktemp -t apt-update.XXXXXX)"
+  log "[chroot] apt-get update"
+  chroot "$TARGET_DIR" /usr/bin/env -i \
+    HOME=/root \
+    PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+    DEBIAN_FRONTEND=noninteractive \
+    bash -lc "apt-get update -o Acquire::Retries=3" >"$output" 2>&1
+  local rc=$?
+  cat "$output" >>"$LOG_FILE"
+  if grep -Eq 'Temporary failure resolving|Failed to fetch|Could not resolve|No address associated with hostname' "$output"; then
+    rc=1
+  fi
+  rm -f "$output"
+  return $rc
 }
 
 write_hostname_hosts() {
