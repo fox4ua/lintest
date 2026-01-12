@@ -181,6 +181,7 @@ write_resolv_conf_fallback() {
 write_host_resolv_conf() {
   local src=""
   local dns=""
+  local -a dns_list=()
   
   if [[ -e /etc/resolv.conf ]]; then
     if grep -qE '^\s*nameserver\s+127\.0\.0\.53(\s|$)' /etc/resolv.conf; then
@@ -208,13 +209,21 @@ write_host_resolv_conf() {
   fi
 
   if [[ -n "$dns" ]]; then
-    {
-      for ns in $dns; do
-        [[ "$ns" == "127.0.0.53" ]] && continue
-        echo "nameserver $ns"
-      done
-    } >"$TARGET_DIR/etc/resolv.conf"
+    for ns in $dns; do
+      [[ "$ns" == "127.0.0.53" ]] && continue
+      dns_list+=("$ns")
+    done
   fi
+
+  if [[ ${#dns_list[@]} -eq 0 ]]; then
+    dns_list=("1.1.1.1" "8.8.8.8")
+  fi
+
+  {
+    for ns in "${dns_list[@]}"; do
+      echo "nameserver $ns"
+    done
+  } >"$TARGET_DIR/etc/resolv.conf"
 }
 
 
