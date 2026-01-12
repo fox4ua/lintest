@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # ui_pick_root_password OUT_PASS
-# return: 0=ok, 1=cancel/esc, 2=back
+# return: 0=Continue, 1=Cancel/ESC (exit), 2=Back
 ui_pick_root_password() {
   local out_pass="$1"
   local rc p1 p2
@@ -10,11 +10,11 @@ ui_pick_root_password() {
     p1="$(
       ui_dialog dialog --clear --stdout \
         --title "Root password" \
-        --ok-label "Далее" \
-        --cancel-label "Отмена" \
-        --help-button --help-label "Назад" \
+        --ok-label "Continue" \
+        --cancel-label "Cancel" \
+        --help-button --help-label "Back" \
         --insecure \
-        --passwordbox "Введите пароль для root:" 10 74
+        --passwordbox "Enter your password for root:" 10 74
     )"
     rc=$?
     ui_clear
@@ -29,11 +29,11 @@ ui_pick_root_password() {
     p2="$(
       ui_dialog dialog --clear --stdout \
         --title "Root password" \
-        --ok-label "Готово" \
-        --cancel-label "Отмена" \
-        --help-button --help-label "Назад" \
+        --ok-label "Continue" \
+        --cancel-label "Cancel" \
+        --help-button --help-label "Back" \
         --insecure \
-        --passwordbox "Повторите пароль для root:" 10 74
+        --passwordbox "Repeat your password for root:" 10 74
     )"
     rc=$?
     ui_clear
@@ -46,18 +46,18 @@ ui_pick_root_password() {
     esac
 
     if [[ -z "$p1" ]]; then
-      ui_msg "Пароль не может быть пустым."
+      ui_msg "The password cannot be blank."
       continue
     fi
 
     if [[ "$p1" != "$p2" ]]; then
-      ui_msg "Пароли не совпадают. Повторите ввод."
+      ui_msg "The passwords do not match. Please re-enter them."
       continue
     fi
 
     # базовая минимальная проверка длины
     if (( ${#p1} < 8 )); then
-      ui_msg "Слишком короткий пароль (минимум 8 символов)."
+      ui_msg "Password too short (minimum 8 characters)."
       continue
     fi
 

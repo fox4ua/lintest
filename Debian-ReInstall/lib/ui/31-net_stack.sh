@@ -18,7 +18,7 @@ ui_pick_net_stack() {
     *) recommended="networkd" ;;
   esac
 
-  msg="Select the network configuration system.\n\nDebian: ${deb_ver} (${deb_suite})\Recommended: ${recommended}\n\nnetworkd: /etc/systemd/network/*.network\nifupdown: /etc/network/interfaces"
+  msg="Select the network configuration system.\n\nDebian: ${deb_ver} (${deb_suite})\nRecommended: ${recommended}\n\nnetworkd: /etc/systemd/network/*.network\nifupdown: /etc/network/interfaces"
 
   # Ставим курсор на рекомендованное (через порядок пунктов)
   if [[ "$recommended" == "networkd" ]]; then

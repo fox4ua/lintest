@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # ui_confirm_summary
-# return: 0=install/continue, 1=cancel/esc, 2=back
+# return: 0=Continue, 1=Cancel/ESC (exit), 2=Back
 ui_confirm_summary() {
   local rc
 
@@ -113,17 +113,17 @@ EOF
 
   ui_dialog dialog --clear --cr-wrap \
     --title "Summary" \
-    --yes-label "Установить" \
-    --no-label "Отмена" \
-    --help-button --help-label "Назад" \
+    --yes-label "Continue" \
+    --no-label "Cancel" \
+    --help-button --help-label "Back" \
     --yesno "$msg" 26 86
   rc=$?
   ui_clear
 
   case "$rc" in
-    0) return 0 ;;      # Yes = Установить
-    2) return 2 ;;      # Help = Назад
-    1|255) return 1 ;;  # No/ESC = Отмена
+    0) return 0 ;;      # Yes = Continue
+    2) return 2 ;;      # Help = Back
+    1|255) return 1 ;;  # No/ESC = Cancel
     *) return 1 ;;
   esac
 }

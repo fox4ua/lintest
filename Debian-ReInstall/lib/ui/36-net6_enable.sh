@@ -11,7 +11,7 @@ ui_pick_net6_enable() {
       --title "IPv6" \
       --ok-label "Continue" \
       --cancel-label "Cancel" \
-      --help-button --help-label "Back" 
+      --help-button --help-label "Back" \
       --menu "Enable IPv6?" 12 60 4 \
         1 "Yes (use IPv6)" \
         0 "No (IPv6 disabled)"

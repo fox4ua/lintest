@@ -19,7 +19,7 @@ ui_pick_hosts() {
       --ok-label "Continue" \
       --cancel-label "Cancel" \
       --help-button --help-label "Back" \
-      --inputbox "Введите домен (опционально).\n\nМожно оставить пустым.\nПример: example.com" 12 74 "$domain"
+      --inputbox "Enter domain (optional)).\n\nMay be left blank.\nExampleр: example.com" 12 74 "$domain"
   )"
   rc=$?
   ui_clear
@@ -36,7 +36,7 @@ ui_pick_hosts() {
   # domain can be empty; validate only if non-empty
   if [[ -n "$domain" ]]; then
     if ! [[ "$domain" =~ ^[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*$ ]]; then
-      ui_msg "Некорректный домен: $domain"
+      ui_msg "Incorrect domain: $domain"
       return 2
     fi
   fi
@@ -48,7 +48,7 @@ ui_pick_hosts() {
       --ok-label "Continue" \
       --cancel-label "Cancel" \
       --help-button --help-label "Back" \
-      --inputbox "Введите FQDN (опционально).\n\nМожно оставить пустым — тогда будет использован только hostname.\nПример: ${hn_short}.example.com" 12 74 "$fqdn"
+      --inputbox "Enter FQDN (optional).\n\nMay be left blank — then only hostname.\nExampleр: ${hn_short}.example.com" 12 74 "$fqdn"
   )"
   rc=$?
   ui_clear
@@ -65,7 +65,7 @@ ui_pick_hosts() {
   # fqdn can be empty; validate only if non-empty
   if [[ -n "$fqdn" ]]; then
     if ! [[ "$fqdn" =~ ^[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$ ]]; then
-      ui_msg "Некорректный FQDN: $fqdn"
+      ui_msg "Incorrect FQDN: $fqdn"
       return 2
     fi
   fi
