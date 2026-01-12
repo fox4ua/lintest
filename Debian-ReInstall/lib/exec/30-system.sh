@@ -76,8 +76,12 @@ install_base_packages() {
   
   # Ensure apt works
   if ! chroot_apt_update; then
+    log "[!] apt-get update failed; current target resolv.conf:"
+    log_target_resolv_conf
     log "[!] apt-get update failed; retrying with fallback DNS."
     write_resolv_conf_defaults
+    log "[!] retrying apt-get update with fallback resolv.conf:"
+    log_target_resolv_conf
     chroot_apt_update || fatal "apt-get update failed after retry (check network/DNS)."
   fi
 
@@ -136,6 +140,14 @@ install_base_packages() {
   [[ "$LVM_MODE" != "none" ]] && lvm_pkgs="lvm2"
 
   chroot_run "apt-get install -y --no-install-recommends ca-certificates systemd-sysv $kernel_pkg $grub_pkg $net_pkgs $dhcp_pkg $lvm_pkgs"
+}
+
+log_target_resolv_conf() {
+  if [[ -f "$TARGET_DIR/etc/resolv.conf" ]]; then
+    sed 's/^/[debug] /' "$TARGET_DIR/etc/resolv.conf" >>"$LOG_FILE"
+  else
+    log "[debug] $TARGET_DIR/etc/resolv.conf is missing"
+  fi
 }
 
 
