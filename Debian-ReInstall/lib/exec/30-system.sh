@@ -70,8 +70,8 @@ install_base_packages() {
 
   if [[ -n "${NET4_DNS:-}" || -n "${NET6_DNS:-}" ]]; then
     write_resolv_conf_fallback
-  elif [[ -e /etc/resolv.conf ]]; then
-    cp -f /etc/resolv.conf "$TARGET_DIR/etc/resolv.conf"
+  else
+    write_host_resolv_conf
   fi
   
   # Ensure apt works
@@ -177,6 +177,31 @@ write_resolv_conf_fallback() {
     done
   } >"$TARGET_DIR/etc/resolv.conf"
 }
+
+write_host_resolv_conf() {
+  local src=""
+
+  if [[ -e /etc/resolv.conf ]]; then
+    if grep -qE '^\s*nameserver\s+127\.0\.0\.53(\s|$)' /etc/resolv.conf; then
+      if [[ -e /run/systemd/resolve/resolv.conf ]]; then
+        src="/run/systemd/resolve/resolv.conf"
+      elif [[ -e /run/resolvconf/resolv.conf ]]; then
+        src="/run/resolvconf/resolv.conf"
+      fi
+    else
+      src="/etc/resolv.conf"
+    fi
+  elif [[ -e /run/systemd/resolve/resolv.conf ]]; then
+    src="/run/systemd/resolve/resolv.conf"
+  elif [[ -e /run/resolvconf/resolv.conf ]]; then
+    src="/run/resolvconf/resolv.conf"
+  fi
+
+  if [[ -n "$src" ]]; then
+    cp -f "$src" "$TARGET_DIR/etc/resolv.conf"
+  fi
+}
+
 
 write_network_config() {
   stage "network"
