@@ -104,8 +104,8 @@ Domain  : ${HOSTS_DOMAIN:-}
 FQDN    : ${HOSTS_FQDN:-}
 
 Network:
-${net_block}
 Stack   : ${NET_STACK:-}
+${net_block}
 
 Root password: ${pass_line}
 EOF

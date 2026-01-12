@@ -5,7 +5,21 @@ debootstrap_install() {
 
   mkdir -p "$TARGET_DIR"
 
-  run debootstrap --arch amd64 "$DEBIAN_SUITE" "$TARGET_DIR" "$DEBIAN_MIRROR"
+  local arch
+  arch="$(dpkg --print-architecture 2>/dev/null || true)"
+  if [[ -z "$arch" ]]; then
+    case "$(uname -m 2>/dev/null || true)" in
+      x86_64) arch="amd64" ;;
+      i386|i686) arch="i386" ;;
+      aarch64) arch="arm64" ;;
+      armv7l) arch="armhf" ;;
+      ppc64le) arch="ppc64el" ;;
+      s390x) arch="s390x" ;;
+    esac
+  fi
+  [[ -n "$arch" ]] || fatal "Unable to detect target architecture for debootstrap"
+
+  run debootstrap --arch "$arch" "$DEBIAN_SUITE" "$TARGET_DIR" "$DEBIAN_MIRROR"
 }
 
 cidr_to_netmask4() {
@@ -174,12 +188,20 @@ EOF
       mkdir -p "$TARGET_DIR/etc/systemd/network"
 
       local dhcp="no"
-      if [[ "${NET4_ENABLE:-1}" == "1" && "${NET4_MODE:-dhcp}" == "dhcp" && "${NET6_ENABLE:-0}" != "1" ]]; then
-        dhcp="ipv4"
-      elif [[ "${NET6_ENABLE:-0}" == "1" && "${NET6_MODE:-dhcp}" == "dhcp" && "${NET4_ENABLE:-1}" != "1" ]]; then
-        dhcp="ipv6"
-      elif [[ "${NET4_ENABLE:-1}" == "1" && "${NET4_MODE:-dhcp}" == "dhcp" && "${NET6_ENABLE:-0}" == "1" && "${NET6_MODE:-dhcp}" == "dhcp" ]]; then
+      local v4_dhcp=0
+      local v6_dhcp=0
+      if [[ "${NET4_ENABLE:-1}" == "1" && "${NET4_MODE:-dhcp}" == "dhcp" ]]; then
+        v4_dhcp=1
+      fi
+      if [[ "${NET6_ENABLE:-0}" == "1" && "${NET6_MODE:-dhcp}" == "dhcp" ]]; then
+        v6_dhcp=1
+      fi
+      if (( v4_dhcp && v6_dhcp )); then
         dhcp="yes"
+      elif (( v4_dhcp )); then
+        dhcp="ipv4"
+      elif (( v6_dhcp )); then
+        dhcp="ipv6"
       fi
 
       cat >"$TARGET_DIR/etc/systemd/network/10-$iface.network" <<EOF
@@ -210,8 +232,10 @@ EOF
         done
       fi
 
-      # Enable networkd
+      # Enable networkd/resolved
       chroot_run "systemctl enable systemd-networkd" || true
+      chroot_run "systemctl enable systemd-resolved" || true
+      chroot_run "ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf" || true
       ;;
   esac
 }
@@ -219,5 +243,5 @@ EOF
 set_root_password() {
   stage "root_pass"
   [[ -n "${ROOT_PASS:-}" ]] || fatal "ROOT_PASS is empty"
-  chroot_run "echo 'root:${ROOT_PASS}' | chpasswd"
+  printf 'root:%s\n' "$ROOT_PASS" | chroot_run_quiet "chpasswd"
 }

@@ -125,3 +125,11 @@ chroot_run() {
     DEBIAN_FRONTEND=noninteractive \
     bash -lc "$*" >>"$LOG_FILE" 2>&1
 }
+chroot_run_quiet() {
+  # Usage: chroot_run_quiet <command...> (no logging, for secrets)
+  chroot "$TARGET_DIR" /usr/bin/env -i \
+    HOME=/root \
+    PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+    DEBIAN_FRONTEND=noninteractive \
+    bash -lc "$*" >>"$LOG_FILE" 2>&1
+}
