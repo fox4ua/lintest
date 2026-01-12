@@ -44,7 +44,7 @@ exec_install_deps() {
     required+=(mkfs.vfat)
   fi
   if [[ "${LVM_MODE:-none}" != "none" ]]; then
-    required+=(pvcreate vgcreate lvcreate vgchange pvs)
+    required+=(pvcreate vgcreate lvcreate vgchange pvs vgs)
   fi
 
   local -a missing=()
@@ -80,7 +80,7 @@ exec_install_deps() {
       mkfs.vfat) add_pkg dosfstools ;;
       debootstrap) add_pkg debootstrap ;;
       # grub-* are installed inside the target; host grub is not required
-      pvcreate|vgcreate|lvcreate|vgchange|pvs) add_pkg lvm2 ;;
+      pvcreate|vgcreate|lvcreate|vgchange|pvs|vgs) add_pkg lvm2 ;;
     esac
   done
 
