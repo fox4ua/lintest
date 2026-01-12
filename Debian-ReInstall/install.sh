@@ -18,7 +18,7 @@ source "$INIT_DIR/06-mirror_probe.sh"
 source "$INIT_DIR/07-net_current.sh"
 # остальное
 source "$LIB_DIR/20-ui.sh"
-
+source "$LIB_DIR/30-exec.sh"
 main() {
   log_init
   trap 'on_error $? $LINENO "$BASH_COMMAND"' ERR
@@ -356,6 +356,7 @@ main() {
       *) exit 1 ;;
     esac
   done
+  execute_install
 }
 
 
