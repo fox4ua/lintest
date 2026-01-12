@@ -161,6 +161,7 @@ EOF
 
 write_resolv_conf_fallback() {
   # For ifupdown or static DNS fallback.
+  prepare_target_resolv_conf
   local dns=""
   if [[ "${NET4_ENABLE:-1}" == "1" && -n "${NET4_DNS:-}" ]]; then
     dns+=" ${NET4_DNS}"
@@ -179,6 +180,7 @@ write_resolv_conf_fallback() {
 }
 
 write_host_resolv_conf() {
+  prepare_target_resolv_conf
   local src=""
   local dns=""
   local -a dns_list=()
@@ -224,6 +226,14 @@ write_host_resolv_conf() {
       echo "nameserver $ns"
     done
   } >"$TARGET_DIR/etc/resolv.conf"
+}
+
+
+prepare_target_resolv_conf() {
+  mkdir -p "$TARGET_DIR/etc"
+  if [[ -L "$TARGET_DIR/etc/resolv.conf" ]]; then
+    rm -f "$TARGET_DIR/etc/resolv.conf"
+  fi
 }
 
 
