@@ -150,7 +150,6 @@ log_target_resolv_conf() {
   fi
 }
 
-
 chroot_apt_update() {
   local output
   output="$(mktemp -t apt-update.XXXXXX)"
