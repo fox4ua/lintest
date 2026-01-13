@@ -248,40 +248,31 @@ chroot_has_cmd() {
 }
 
 exec_net_check_target() {
+  local prev_stage="${STAGE:-}"
+
   stage "net_check_target"
   log "[=] target(chroot) DNS/connectivity check"
 
-  # resolv.conf в target сначала копируем с хоста + подстраховываем nsswitch
   write_target_resolv_conf_from_host
   ensure_target_nsswitch_dns
 
-  log "[debug] target resolv.conf:"
-  sed 's/^/[debug] /' "$TARGET_DIR/etc/resolv.conf" || true
-  [[ -f "$TARGET_DIR/etc/nsswitch.conf" ]] && \
-    grep -nE '^hosts:' "$TARGET_DIR/etc/nsswitch.conf" | sed 's/^/[debug] /' || true
-
-  # 1) Проверка DNS в chroot (именно то, что ломается у вас)
-  if chroot "$TARGET_DIR" /bin/bash -lc 'getent hosts deb.debian.org >/dev/null 2>&1'; then
-    log "[+] chroot DNS: deb.debian.org OK"
-  else
-    log "[!] chroot DNS failed for deb.debian.org; retrying with fallback DNS"
-    write_resolv_conf_defaults  # ваша существующая функция (1.1.1.1/8.8.8.8)
-    if ! chroot "$TARGET_DIR" /bin/bash -lc 'getent hosts deb.debian.org >/dev/null 2>&1'; then
-      log "[!] still failing; target resolv.conf now:"
-      sed 's/^/[debug] /' "$TARGET_DIR/etc/resolv.conf" || true
-      fatal "DNS inside chroot is not working (cannot resolve deb.debian.org)."
-    fi
-    log "[+] chroot DNS OK after fallback"
+  # Проверяем резолв в тех же условиях, что и apt (env -i через chroot_run*)
+  if ! chroot_run_quiet "getent hosts deb.debian.org >/dev/null"; then
+    log "[!] chroot DNS failed for deb.debian.org; fallback resolv.conf"
+    write_resolv_conf_defaults
+    chroot_run_quiet "getent hosts deb.debian.org >/dev/null" || fatal "DNS in chroot broken (deb.debian.org)"
   fi
 
-  # 2) (опционально) Проверка reachability по IP из chroot, если есть ping
-  if chroot_has_cmd ping; then
-    if chroot "$TARGET_DIR" /bin/bash -lc 'ping -c1 -W2 8.8.8.8 >/dev/null 2>&1'; then
-      log "[+] chroot ping 8.8.8.8 OK"
-    else
-      log "[!] chroot ping 8.8.8.8 failed (ICMP may be blocked); continuing"
-    fi
-  else
-    log "[!] ping not installed in target yet; skipping chroot ping check"
+  if ! chroot_run_quiet "getent hosts security.debian.org >/dev/null"; then
+    log "[!] chroot DNS failed for security.debian.org; fallback resolv.conf"
+    write_resolv_conf_defaults
+    chroot_run_quiet "getent hosts security.debian.org >/dev/null" || fatal "DNS in chroot broken (security.debian.org)"
   fi
+
+  # (опционально) ping IP — не про DNS
+  chroot_run_quiet "ping -c1 -W2 8.8.8.8 >/dev/null" && log "[+] chroot ping 8.8.8.8 OK" || true
+
+  # вернуть прежнюю стадию, чтобы apt логировался как [apt_install]
+  STAGE="$prev_stage"
 }
+

@@ -268,19 +268,16 @@ write_host_resolv_conf() {
 }
 
 write_resolv_conf_defaults() {
-  prepare_target_resolv_conf
-  local -a dns_list=()
-
-  while IFS= read -r ns; do
-    dns_list+=("$ns")
-  done < <(get_fallback_dns_list)
-
-  {
-    for ns in "${dns_list[@]}"; do
-      echo "nameserver $ns"
-    done
-  } >"$TARGET_DIR/etc/resolv.conf"
+  rm -f "$TARGET_DIR/etc/resolv.conf"
+  cat >"$TARGET_DIR/etc/resolv.conf" <<'EOF'
+options timeout:1 attempts:2 rotate
+nameserver 1.1.1.1
+nameserver 8.8.8.8
+nameserver 2606:4700:4700::1111
+nameserver 2001:4860:4860::8888
+EOF
 }
+
 
 get_fallback_dns_list() {
   local -a dns_list=()
