@@ -27,6 +27,7 @@ prepare_install_resolv_conf() {
   ensure_target_nsswitch_dns
 }
 
+
 ensure_chroot_dns() {
   if [[ -f "$TARGET_DIR/etc/resolv.conf" ]]; then
     ensure_target_nsswitch_dns
@@ -36,31 +37,37 @@ ensure_chroot_dns() {
     fi
   fi
 
-
   prepare_install_resolv_conf
 
-  if chroot_run_quiet "getent hosts deb.debian.org >/dev/null"; then
+  if chroot_run_quiet "getent hosts deb.debian.org >/dev/null" \
+    && chroot_run_quiet "getent hosts security.debian.org >/dev/null"; then
     return 0
   fi
 
   log "[!] chroot DNS failed; trying fallback resolv.conf"
   write_resolv_conf_defaults
   ensure_target_nsswitch_dns
-  if chroot_run_quiet "getent hosts deb.debian.org >/dev/null"; then
+  if chroot_run_quiet "getent hosts deb.debian.org >/dev/null" \
+    && chroot_run_quiet "getent hosts security.debian.org >/dev/null"; then
     return 0
   fi
 
   log "[!] fallback DNS failed; trying public resolvers"
   write_resolv_conf_public
   ensure_target_nsswitch_dns
-  if chroot_run_quiet "getent hosts deb.debian.org >/dev/null"; then
+  if chroot_run_quiet "getent hosts deb.debian.org >/dev/null" \
+    && chroot_run_quiet "getent hosts security.debian.org >/dev/null"; then
     return 0
   fi
 
   log "[!] public resolvers failed; restoring host resolv.conf"
   write_target_resolv_conf_from_host
   ensure_target_nsswitch_dns
-  chroot_run_quiet "getent hosts deb.debian.org >/dev/null" || fatal "DNS in chroot broken (deb.debian.org)"
+  if chroot_run_quiet "getent hosts deb.debian.org >/dev/null" \
+    && chroot_run_quiet "getent hosts security.debian.org >/dev/null"; then
+    return 0
+  fi
+  fatal "DNS in chroot broken (deb.debian.org/security.debian.org)"
 }
 
 install_base_packages() {
