@@ -216,30 +216,46 @@ write_resolv_conf_fallback() {
   } >"$TARGET_DIR/etc/resolv.conf"
 }
 
+
+host_resolv_conf_source() {
+  local -a candidates=()
+
+  if [[ -e /etc/resolv.conf ]]; then
+    if grep -qE '^\s*nameserver\s+127\.0\.0\.53(\s|$)' /etc/resolv.conf; then
+      candidates+=(/run/systemd/resolve/resolv.conf)
+      candidates+=(/run/NetworkManager/resolv.conf)
+      candidates+=(/run/resolvconf/resolv.conf)
+    else
+      candidates+=(/etc/resolv.conf)
+      candidates+=(/run/systemd/resolve/resolv.conf)
+      candidates+=(/run/NetworkManager/resolv.conf)
+      candidates+=(/run/resolvconf/resolv.conf)
+    fi
+  else
+    candidates+=(/run/systemd/resolve/resolv.conf)
+    candidates+=(/run/NetworkManager/resolv.conf)
+    candidates+=(/run/resolvconf/resolv.conf)
+  fi
+
+  for src in "${candidates[@]}"; do
+    if [[ -e "$src" ]] && grep -qE '^\s*nameserver\s+' "$src"; then
+      echo "$src"
+      return 0
+    fi
+  done
+  return 1
+}
+
 write_host_resolv_conf() {
   prepare_target_resolv_conf
   local src=""
   local dns=""
   local -a dns_list=()
 
-  if [[ -e /etc/resolv.conf ]]; then
-    if grep -qE '^\s*nameserver\s+127\.0\.0\.53(\s|$)' /etc/resolv.conf; then
-      if [[ -e /run/systemd/resolve/resolv.conf ]]; then
-        src="/run/systemd/resolve/resolv.conf"
-      elif [[ -e /run/NetworkManager/resolv.conf ]]; then
-        src="/run/NetworkManager/resolv.conf"
-      elif [[ -e /run/resolvconf/resolv.conf ]]; then
-        src="/run/resolvconf/resolv.conf"
-      fi
-    else
-      src="/etc/resolv.conf"
-    fi
-  elif [[ -e /run/systemd/resolve/resolv.conf ]]; then
-    src="/run/systemd/resolve/resolv.conf"
-  elif [[ -e /run/NetworkManager/resolv.conf ]]; then
-    src="/run/NetworkManager/resolv.conf"
-  elif [[ -e /run/resolvconf/resolv.conf ]]; then
-    src="/run/resolvconf/resolv.conf"
+  if src="$(host_resolv_conf_source)"; then
+    :
+  else
+    src=""
   fi
 
   if [[ -n "$src" ]]; then
@@ -317,24 +333,10 @@ prepare_target_resolv_conf() {
 get_host_nameservers() {
   local src=""
 
-  if [[ -e /etc/resolv.conf ]]; then
-    if grep -qE '^\s*nameserver\s+127\.0\.0\.53(\s|$)' /etc/resolv.conf; then
-      if [[ -e /run/systemd/resolve/resolv.conf ]]; then
-        src="/run/systemd/resolve/resolv.conf"
-      elif [[ -e /run/NetworkManager/resolv.conf ]]; then
-        src="/run/NetworkManager/resolv.conf"
-      elif [[ -e /run/resolvconf/resolv.conf ]]; then
-        src="/run/resolvconf/resolv.conf"
-      fi
-    else
-      src="/etc/resolv.conf"
-    fi
-  elif [[ -e /run/systemd/resolve/resolv.conf ]]; then
-    src="/run/systemd/resolve/resolv.conf"
-  elif [[ -e /run/NetworkManager/resolv.conf ]]; then
-    src="/run/NetworkManager/resolv.conf"
-  elif [[ -e /run/resolvconf/resolv.conf ]]; then
-    src="/run/resolvconf/resolv.conf"
+  if src="$(host_resolv_conf_source)"; then
+    :
+  else
+    src=""
   fi
 
   if [[ -n "$src" ]]; then
