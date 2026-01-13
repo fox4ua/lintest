@@ -34,6 +34,7 @@ ui_init() {
         ip) add_pkg iproute2 ;;
         pvs) add_pkg lvm2 ;;
         curl) add_pkg curl ;;
+        sgdisk) add_pkg gdisk ;;
       esac
     done
 
