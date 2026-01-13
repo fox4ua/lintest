@@ -18,48 +18,52 @@ chroot_apt_update() {
   return $rc
 }
 
-prepare_install_resolv_conf() {
-  if [[ -n "${NET4_DNS:-}" || -n "${NET6_DNS:-}" ]]; then
-    write_resolv_conf_fallback
+mount_host_resolv_conf_for_chroot() {
+  local src=""
+  if src="$(host_resolv_conf_source)"; then
+    :
+  elif [[ -f /etc/resolv.conf ]]; then
+    src="/etc/resolv.conf"
   else
-    write_host_resolv_conf
+    fatal "Unable to locate host resolv.conf for chroot bind mount."
   fi
+
+  mkdir -p "$TARGET_DIR/etc"
+  : >"$TARGET_DIR/etc/resolv.conf"
+  run mount --bind "$src" "$TARGET_DIR/etc/resolv.conf"
   ensure_target_nsswitch_dns
 }
 
+unmount_host_resolv_conf_for_chroot() {
+  if mountpoint -q "$TARGET_DIR/etc/resolv.conf" 2>/dev/null; then
+    run_quiet umount "$TARGET_DIR/etc/resolv.conf" || true
+  fi
+}
+
 ensure_chroot_dns() {
-  prepare_install_resolv_conf
+  mount_host_resolv_conf_for_chroot
 
   if chroot_run_quiet "getent hosts deb.debian.org >/dev/null"; then
     return 0
   fi
 
-  log "[!] chroot DNS failed; trying fallback resolv.conf"
-  write_resolv_conf_defaults
-  ensure_target_nsswitch_dns
-  if chroot_run_quiet "getent hosts deb.debian.org >/dev/null"; then
-    return 0
-  fi
-
-  log "[!] fallback DNS failed; restoring host resolv.conf"
-  write_target_resolv_conf_from_host
-  ensure_target_nsswitch_dns
-  chroot_run_quiet "getent hosts deb.debian.org >/dev/null" || fatal "DNS in chroot broken (deb.debian.org)"
+  log "[!] chroot DNS failed with host resolv.conf"
+  fatal "DNS in chroot broken (deb.debian.org)"
 }
 
 install_base_packages() {
   stage "apt_install"
 
   mount_chroot_helpers
-  exec_net_check_target
   ensure_chroot_dns
 
   if ! chroot_apt_update; then
     log "[!] apt-get update failed; current target resolv.conf:"
     log_target_resolv_conf
-    log "[!] apt-get update failed; retrying with fallback DNS."
-    write_resolv_conf_defaults
-    log "[!] retrying apt-get update with fallback resolv.conf:"
+    log "[!] apt-get update failed; retrying with host resolv.conf."
+    unmount_host_resolv_conf_for_chroot
+    mount_host_resolv_conf_for_chroot
+    log "[!] retrying apt-get update with host resolv.conf:"
     log_target_resolv_conf
     chroot_apt_update || fatal "apt-get update failed after retry (check network/DNS)."
   fi
@@ -109,4 +113,5 @@ install_base_packages() {
   [[ "$LVM_MODE" != "none" ]] && lvm_pkgs="lvm2"
 
   chroot_run "apt-get install -y --no-install-recommends ca-certificates systemd-sysv $kernel_pkg $grub_pkg $net_pkgs $dhcp_pkg $lvm_pkgs"
+  unmount_host_resolv_conf_for_chroot
 }

@@ -8,6 +8,9 @@ exec_cleanup() {
   if mountpoint -q "$TARGET_DIR/boot/efi" 2>/dev/null; then
     run_quiet umount "$TARGET_DIR/boot/efi" || true
   fi
+  if mountpoint -q "$TARGET_DIR/etc/resolv.conf" 2>/dev/null; then
+    run_quiet umount "$TARGET_DIR/etc/resolv.conf" || true
+  fi
   if mountpoint -q "$TARGET_DIR/boot" 2>/dev/null; then
     run_quiet umount "$TARGET_DIR/boot" || true
   fi
