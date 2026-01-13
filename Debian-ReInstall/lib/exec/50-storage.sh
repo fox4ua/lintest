@@ -34,12 +34,10 @@ lvm_prepare_root() {
       ROOT_DEV="/dev/${VG_NAME}/root"
       ;;
     thin)
-      # Create thinpool using all free space, then thin root LV.
       run lvcreate -l 100%FREE --type thin-pool -y -n "$THINPOOL_NAME" "$VG_NAME"
 
       local vsize_g
       if (( ROOT_SIZE_GIB == 0 )); then
-        # Use PV size as a safe default for virtual size.
         vsize_g=$(pvs --noheadings --units g -o pv_size "$PART_ROOT" 2>/dev/null | awk '{gsub(/[^0-9.]/,"",$1);print $1}' | head -n1)
         vsize_g=${vsize_g%.*}
         [[ -n "$vsize_g" && "$vsize_g" =~ ^[0-9]+$ ]] || vsize_g=20
@@ -60,19 +58,15 @@ mkfs_and_mount() {
   stage "mkfs"
   mkdir -p "$TARGET_DIR"
 
-  # /boot
   require_cmd mkfs.ext4 || fatal "mkfs.ext4 not found"
   run mkfs.ext4 -F "$PART_BOOT"
 
-  # swap
   if [[ -n "${PART_SWAP:-}" ]]; then
     run mkswap "$PART_SWAP"
   fi
 
-  # root dev (plain or LVM)
   run mkfs.ext4 -F "$ROOT_DEV"
 
-  # ESP
   if [[ "$BOOT_MODE" == "uefi" ]]; then
     require_cmd mkfs.vfat || fatal "mkfs.vfat not found (dosfstools)"
     run mkfs.vfat -F 32 "$PART_EFI"
