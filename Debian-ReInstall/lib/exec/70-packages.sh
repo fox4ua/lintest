@@ -59,6 +59,7 @@ install_base_packages() {
     log_target_resolv_conf
     log "[!] apt-get update failed; retrying with fallback DNS."
     write_resolv_conf_defaults
+    ensure_target_nsswitch_dns
     log "[!] retrying apt-get update with fallback resolv.conf:"
     log_target_resolv_conf
     chroot_apt_update || fatal "apt-get update failed after retry (check network/DNS)."

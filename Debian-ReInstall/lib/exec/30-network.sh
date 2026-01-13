@@ -144,14 +144,14 @@ get_fallback_dns_list() {
 }
 
 write_resolv_conf_defaults() {
-  rm -f "$TARGET_DIR/etc/resolv.conf"
-  cat >"$TARGET_DIR/etc/resolv.conf" <<'EOF'
-options timeout:1 attempts:2 rotate
-nameserver 1.1.1.1
-nameserver 8.8.8.8
-nameserver 2606:4700:4700::1111
-nameserver 2001:4860:4860::8888
-EOF
+  prepare_target_resolv_conf
+  {
+    echo "options timeout:1 attempts:2 rotate"
+    local ns
+    while IFS= read -r ns; do
+      [[ -n "$ns" ]] && echo "nameserver $ns"
+    done < <(get_fallback_dns_list)
+  } >"$TARGET_DIR/etc/resolv.conf"
 }
 
 write_target_resolv_conf_from_host() {
