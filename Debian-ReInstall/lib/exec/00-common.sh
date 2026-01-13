@@ -207,3 +207,67 @@ exec_net_check_host() {
     log "[!] ping $host_test failed (ICMP may be blocked). DNS works, continuing."
   fi
 }
+
+write_target_resolv_conf_from_host() {
+  # копируем "реальный" resolv.conf хоста (не stub) в target как обычный файл
+  local src="/etc/resolv.conf"
+  [[ -f /run/systemd/resolve/resolv.conf ]] && src="/run/systemd/resolve/resolv.conf"
+  [[ -f /run/NetworkManager/resolv.conf ]] && src="/run/NetworkManager/resolv.conf"
+
+  rm -f "$TARGET_DIR/etc/resolv.conf"
+  install -m 0644 "$src" "$TARGET_DIR/etc/resolv.conf"
+}
+
+ensure_target_nsswitch_dns() {
+  # если hosts: без dns — DNS в chroot может не работать
+  local f="$TARGET_DIR/etc/nsswitch.conf"
+  [[ -f "$f" ]] || return 0
+
+  if ! grep -qE '^hosts:.*\sdns(\s|$)' "$f"; then
+    sed -i 's/^hosts:.*/hosts:          files dns/' "$f"
+  fi
+}
+
+chroot_has_cmd() {
+  local cmd="$1"
+  chroot "$TARGET_DIR" /bin/bash -lc "command -v $cmd" >/dev/null 2>&1
+}
+
+exec_net_check_target() {
+  stage "net_check_target"
+  log "[=] target(chroot) DNS/connectivity check"
+
+  # resolv.conf в target сначала копируем с хоста + подстраховываем nsswitch
+  write_target_resolv_conf_from_host
+  ensure_target_nsswitch_dns
+
+  log "[debug] target resolv.conf:"
+  sed 's/^/[debug] /' "$TARGET_DIR/etc/resolv.conf" || true
+  [[ -f "$TARGET_DIR/etc/nsswitch.conf" ]] && \
+    grep -nE '^hosts:' "$TARGET_DIR/etc/nsswitch.conf" | sed 's/^/[debug] /' || true
+
+  # 1) Проверка DNS в chroot (именно то, что ломается у вас)
+  if chroot "$TARGET_DIR" /bin/bash -lc 'getent hosts deb.debian.org >/dev/null 2>&1'; then
+    log "[+] chroot DNS: deb.debian.org OK"
+  else
+    log "[!] chroot DNS failed for deb.debian.org; retrying with fallback DNS"
+    write_resolv_conf_defaults  # ваша существующая функция (1.1.1.1/8.8.8.8)
+    if ! chroot "$TARGET_DIR" /bin/bash -lc 'getent hosts deb.debian.org >/dev/null 2>&1'; then
+      log "[!] still failing; target resolv.conf now:"
+      sed 's/^/[debug] /' "$TARGET_DIR/etc/resolv.conf" || true
+      fatal "DNS inside chroot is not working (cannot resolve deb.debian.org)."
+    fi
+    log "[+] chroot DNS OK after fallback"
+  fi
+
+  # 2) (опционально) Проверка reachability по IP из chroot, если есть ping
+  if chroot_has_cmd ping; then
+    if chroot "$TARGET_DIR" /bin/bash -lc 'ping -c1 -W2 8.8.8.8 >/dev/null 2>&1'; then
+      log "[+] chroot ping 8.8.8.8 OK"
+    else
+      log "[!] chroot ping 8.8.8.8 failed (ICMP may be blocked); continuing"
+    fi
+  else
+    log "[!] ping not installed in target yet; skipping chroot ping check"
+  fi
+}

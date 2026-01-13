@@ -139,6 +139,8 @@ install_base_packages() {
   local lvm_pkgs=""
   [[ "$LVM_MODE" != "none" ]] && lvm_pkgs="lvm2"
 
+  exec_net_check_target
+
   chroot_run "apt-get install -y --no-install-recommends ca-certificates systemd-sysv $kernel_pkg $grub_pkg $net_pkgs $dhcp_pkg $lvm_pkgs"
 }
 
