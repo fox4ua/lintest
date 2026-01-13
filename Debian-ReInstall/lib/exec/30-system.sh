@@ -218,22 +218,21 @@ write_resolv_conf_fallback() {
 
 host_resolv_conf_source() {
   local -a candidates=()
+  local include_etc=0
 
   if [[ -e /etc/resolv.conf ]]; then
     if grep -qE '^\s*nameserver\s+127\.0\.0\.53(\s|$)' /etc/resolv.conf; then
-      candidates+=(/run/systemd/resolve/resolv.conf)
-      candidates+=(/run/NetworkManager/resolv.conf)
-      candidates+=(/run/resolvconf/resolv.conf)
+      include_etc=0
     else
-      candidates+=(/etc/resolv.conf)
-      candidates+=(/run/systemd/resolve/resolv.conf)
-      candidates+=(/run/NetworkManager/resolv.conf)
-      candidates+=(/run/resolvconf/resolv.conf)
+      include_etc=1
     fi
-  else
-    candidates+=(/run/systemd/resolve/resolv.conf)
-    candidates+=(/run/NetworkManager/resolv.conf)
-    candidates+=(/run/resolvconf/resolv.conf)
+  fi
+
+  candidates+=(/run/systemd/resolve/resolv.conf)
+  candidates+=(/run/NetworkManager/resolv.conf)
+  candidates+=(/run/resolvconf/resolv.conf)
+  if (( include_etc )); then
+    candidates+=(/etc/resolv.conf)
   fi
 
   for src in "${candidates[@]}"; do
