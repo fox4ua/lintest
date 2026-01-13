@@ -30,26 +30,32 @@ disk_release_resources() {
   fi
 
   if command -v pvs >/dev/null 2>&1 && command -v vgchange >/dev/null 2>&1; then
+    local -a vgs=()
+    mapfile -t vgs < <(pvs --noheadings -o vg_name "$disk"* 2>/dev/null | awk '{$1=$1;print}' | sort -u || true)
     local vg
-    while IFS= read -r vg; do
+    for vg in "${vgs[@]}"; do
       [[ -n "$vg" ]] || continue
       run_quiet vgchange -an "$vg" || true
-    done < <(pvs --noheadings -o vg_name "$disk"* 2>/dev/null | awk '{$1=$1;print}' | sort -u || true)
+    done
   fi
 
   if command -v pvs >/dev/null 2>&1 && command -v vgremove >/dev/null 2>&1; then
+    local -a vgs=()
+    mapfile -t vgs < <(pvs --noheadings -o vg_name "$disk"* 2>/dev/null | awk '{$1=$1;print}' | sort -u || true)
     local vg
-    while IFS= read -r vg; do
+    for vg in "${vgs[@]}"; do
       [[ -n "$vg" ]] || continue
       run_quiet vgremove -ff "$vg" || true
-    done < <(pvs --noheadings -o vg_name "$disk"* 2>/dev/null | awk '{$1=$1;print}' | sort -u || true)
+    done
   fi
   if command -v pvs >/dev/null 2>&1 && command -v pvremove >/dev/null 2>&1; then
+    local -a pvs_list=()
+    mapfile -t pvs_list < <(pvs --noheadings -o pv_name "$disk"* 2>/dev/null | awk '{$1=$1;print}' | sort -u || true)
     local pv
-    while IFS= read -r pv; do
+    for pv in "${pvs_list[@]}"; do
       [[ -n "$pv" ]] || continue
       run_quiet pvremove -ff "$pv" || true
-    done < <(pvs --noheadings -o pv_name "$disk"* 2>/dev/null | awk '{$1=$1;print}' | sort -u || true)
+    done
   fi
 
   if [[ -r /proc/mdstat ]] && command -v mdadm >/dev/null 2>&1; then
