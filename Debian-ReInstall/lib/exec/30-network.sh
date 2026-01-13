@@ -154,6 +154,19 @@ write_resolv_conf_defaults() {
   } >"$TARGET_DIR/etc/resolv.conf"
 }
 
+write_resolv_conf_public() {
+  prepare_target_resolv_conf
+  {
+    echo "options timeout:2 attempts:3"
+    echo "nameserver 1.1.1.1"
+    echo "nameserver 8.8.8.8"
+    if [[ "${NET6_ENABLE:-0}" == "1" ]]; then
+      echo "nameserver 2606:4700:4700::1111"
+      echo "nameserver 2001:4860:4860::8888"
+    fi
+  } >"$TARGET_DIR/etc/resolv.conf"
+}
+
 write_target_resolv_conf_from_host() {
   local src="/etc/resolv.conf"
   [[ -f /run/systemd/resolve/resolv.conf ]] && src="/run/systemd/resolve/resolv.conf"
@@ -264,13 +277,21 @@ exec_net_check_target() {
   if ! chroot_run_quiet "getent hosts deb.debian.org >/dev/null"; then
     log "[!] chroot DNS failed for deb.debian.org; fallback resolv.conf"
     write_resolv_conf_defaults
-    chroot_run_quiet "getent hosts deb.debian.org >/dev/null" || fatal "DNS in chroot broken (deb.debian.org)"
+   if ! chroot_run_quiet "getent hosts deb.debian.org >/dev/null"; then
+      log "[!] fallback DNS failed for deb.debian.org; using public resolvers"
+      write_resolv_conf_public
+      chroot_run_quiet "getent hosts deb.debian.org >/dev/null" || fatal "DNS in chroot broken (deb.debian.org)"
+    fi
   fi
 
   if ! chroot_run_quiet "getent hosts security.debian.org >/dev/null"; then
     log "[!] chroot DNS failed for security.debian.org; fallback resolv.conf"
     write_resolv_conf_defaults
-    chroot_run_quiet "getent hosts security.debian.org >/dev/null" || fatal "DNS in chroot broken (security.debian.org)"
+    if ! chroot_run_quiet "getent hosts security.debian.org >/dev/null"; then
+      log "[!] fallback DNS failed for security.debian.org; using public resolvers"
+      write_resolv_conf_public
+      chroot_run_quiet "getent hosts security.debian.org >/dev/null" || fatal "DNS in chroot broken (security.debian.org)"
+    fi
   fi
 
   chroot_run_quiet "ping -c1 -W2 1.1.1.1 >/dev/null" && log "[+] chroot ping 1.1.1.1 OK" || true

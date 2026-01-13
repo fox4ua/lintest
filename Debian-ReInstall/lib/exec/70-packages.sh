@@ -41,7 +41,14 @@ ensure_chroot_dns() {
     return 0
   fi
 
-  log "[!] fallback DNS failed; restoring host resolv.conf"
+  log "[!] fallback DNS failed; trying public resolvers"
+  write_resolv_conf_public
+  ensure_target_nsswitch_dns
+  if chroot_run_quiet "getent hosts deb.debian.org >/dev/null"; then
+    return 0
+  fi
+
+  log "[!] public resolvers failed; restoring host resolv.conf"
   write_target_resolv_conf_from_host
   ensure_target_nsswitch_dns
   chroot_run_quiet "getent hosts deb.debian.org >/dev/null" || fatal "DNS in chroot broken (deb.debian.org)"
@@ -62,7 +69,14 @@ install_base_packages() {
     ensure_target_nsswitch_dns
     log "[!] retrying apt-get update with fallback resolv.conf:"
     log_target_resolv_conf
-    chroot_apt_update || fatal "apt-get update failed after retry (check network/DNS)."
+    if ! chroot_apt_update; then
+      log "[!] fallback DNS failed; retrying with public resolvers."
+      write_resolv_conf_public
+      ensure_target_nsswitch_dns
+      log "[!] retrying apt-get update with public resolvers:"
+      log_target_resolv_conf
+      chroot_apt_update || fatal "apt-get update failed after retry (check network/DNS)."
+    fi
   fi
 
   local arch grub_pkg kernel_pkg
