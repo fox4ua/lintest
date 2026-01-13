@@ -73,7 +73,7 @@ install_base_packages() {
   else
     write_host_resolv_conf
   fi
-  
+
   # Ensure apt works
   if ! chroot_apt_update; then
     log "[!] apt-get update failed; current target resolv.conf:"
@@ -126,7 +126,7 @@ install_base_packages() {
     ifupdown) net_pkgs="ifupdown" ;;
     networkd|*) net_pkgs="" ;;
   esac
-  
+
   if [[ "$NET_STACK" == "ifupdown" ]]; then
     if [[ "${NET4_ENABLE:-1}" == "1" && "${NET4_MODE:-dhcp}" == "dhcp" ]]; then
       dhcp_pkg="isc-dhcp-client"
@@ -135,7 +135,7 @@ install_base_packages() {
       dhcp_pkg="isc-dhcp-client"
     fi
   fi
-  
+
   local lvm_pkgs=""
   [[ "$LVM_MODE" != "none" ]] && lvm_pkgs="lvm2"
 
@@ -218,7 +218,7 @@ write_host_resolv_conf() {
   local src=""
   local dns=""
   local -a dns_list=()
-  
+
   if [[ -e /etc/resolv.conf ]]; then
     if grep -qE '^\s*nameserver\s+127\.0\.0\.53(\s|$)' /etc/resolv.conf; then
       if [[ -e /run/systemd/resolve/resolv.conf ]]; then
@@ -252,7 +252,9 @@ write_host_resolv_conf() {
   fi
 
   if [[ ${#dns_list[@]} -eq 0 ]]; then
-    dns_list=("1.1.1.1" "8.8.8.8")
+    while IFS= read -r ns; do
+      dns_list+=("$ns")
+    done < <(get_fallback_dns_list)
   fi
 
   {
@@ -264,11 +266,11 @@ write_host_resolv_conf() {
 
 write_resolv_conf_defaults() {
   prepare_target_resolv_conf
-  local -a dns_list=("1.1.1.1" "8.8.8.8")
+  local -a dns_list=()
 
-  if [[ "${NET6_ENABLE:-0}" == "1" ]]; then
-    dns_list+=("2606:4700:4700::1111" "2001:4860:4860::8888")
-  fi
+  while IFS= read -r ns; do
+    dns_list+=("$ns")
+  done < <(get_fallback_dns_list)
 
   {
     for ns in "${dns_list[@]}"; do
@@ -277,6 +279,22 @@ write_resolv_conf_defaults() {
   } >"$TARGET_DIR/etc/resolv.conf"
 }
 
+get_fallback_dns_list() {
+  local -a dns_list=()
+
+  if [[ -n "${NET_FALLBACK_DNS:-}" ]]; then
+    for ns in $NET_FALLBACK_DNS; do
+      dns_list+=("$ns")
+    done
+  else
+    dns_list=("1.1.1.1" "8.8.8.8")
+    if [[ "${NET6_ENABLE:-0}" == "1" ]]; then
+      dns_list+=("2606:4700:4700::1111" "2001:4860:4860::8888")
+    fi
+  fi
+
+  printf '%s\n' "${dns_list[@]}"
+}
 
 prepare_target_resolv_conf() {
   mkdir -p "$TARGET_DIR/etc"

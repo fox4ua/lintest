@@ -57,6 +57,7 @@ NET6_MODE="${NET6_MODE:-dhcp}"       # dhcp|static
 NET6_ADDR="${NET6_ADDR:-}"           # IP/CIDR: 2001:db8::1/64
 NET6_GW="${NET6_GW:-}"               # gateway: 2001:db8::1
 NET6_DNS="${NET6_DNS:-}"             # через пробел
+NET_FALLBACK_DNS="${NET_FALLBACK_DNS:-}" # fallback DNS через пробел (если пусто — публичные DNS)
 
 ROOT_PASS="${ROOT_PASS:-}"
 
