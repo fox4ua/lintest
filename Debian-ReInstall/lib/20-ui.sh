@@ -35,7 +35,7 @@ source "$UI_DIR/41-hosts.sh"
 # root password
 source "$UI_DIR/50-root_password.sh"
 # summary info
-source "$UI_DIR/90-summary.sh"
+source "$UI_DIR/70-summary.sh"
 
 # очистка экрана
 ui_clear() {
