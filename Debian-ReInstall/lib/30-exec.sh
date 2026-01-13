@@ -2,23 +2,16 @@
 
 : "${EXEC_DIR:?}"
 
-# Common helpers
-source "$EXEC_DIR/00-common.sh"
-
-# Disk release / partitioning
-source "$EXEC_DIR/10-disk.sh"
-
-# FS/LVM and mounts
-source "$EXEC_DIR/20-storage.sh"
-
-# debootstrap + base config
-source "$EXEC_DIR/30-system.sh"
-
-# GRUB install
-source "$EXEC_DIR/40-bootloader.sh"
-
-# Cleanup (umount, vgchange -an)
-source "$EXEC_DIR/90-cleanup.sh"
-
-# Orchestrator
+source "$EXEC_DIR/00-core.sh"
+source "$EXEC_DIR/05-preflight.sh"
+source "$EXEC_DIR/10-deps.sh"
+source "$EXEC_DIR/20-chroot.sh"
+source "$EXEC_DIR/30-network.sh"
+source "$EXEC_DIR/40-disk.sh"
+source "$EXEC_DIR/50-storage.sh"
+source "$EXEC_DIR/60-debootstrap.sh"
+source "$EXEC_DIR/70-packages.sh"
+source "$EXEC_DIR/80-config.sh"
+source "$EXEC_DIR/90-bootloader.sh"
+source "$EXEC_DIR/95-cleanup.sh"
 source "$EXEC_DIR/99-execute.sh"

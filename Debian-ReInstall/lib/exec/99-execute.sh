@@ -3,20 +3,11 @@
 execute_install() {
   stage "execute"
 
-  # Basic preflight
-  [[ -n "${DISK:-}" ]] || fatal "DISK is not set"
-  [[ -b "${DISK:-}" ]] || fatal "DISK is not a block device: $DISK"
-  [[ -n "${BOOT_MODE:-}" ]] || fatal "BOOT_MODE is not set"
-  [[ -n "${DEBIAN_SUITE:-}" ]] || fatal "DEBIAN_SUITE is not set"
-  [[ -n "${DEBIAN_MIRROR:-}" ]] || fatal "DEBIAN_MIRROR is not set"
-
-  # Ensure commands exist
+  preflight_validate_env
   exec_install_deps
 
-  # Network preflight (before destructive disk ops)
   exec_net_check_host
 
-  # Always clean on exit from execute
   trap 'exec_cleanup' EXIT
 
   disk_release_resources
