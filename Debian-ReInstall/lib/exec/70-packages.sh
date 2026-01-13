@@ -30,10 +30,12 @@ prepare_install_resolv_conf() {
 ensure_chroot_dns() {
   if [[ -f "$TARGET_DIR/etc/resolv.conf" ]]; then
     ensure_target_nsswitch_dns
-    if chroot_run_quiet "getent hosts deb.debian.org >/dev/null"; then
+    if chroot_run_quiet "getent hosts deb.debian.org >/dev/null" \
+      && chroot_run_quiet "getent hosts security.debian.org >/dev/null"; then
       return 0
     fi
   fi
+
 
   prepare_install_resolv_conf
 
