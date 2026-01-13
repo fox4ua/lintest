@@ -281,19 +281,25 @@ write_resolv_conf_defaults() {
 
 get_fallback_dns_list() {
   local -a dns_list=()
+  local -a host_dns=()
 
   if [[ -n "${NET_FALLBACK_DNS:-}" ]]; then
     for ns in $NET_FALLBACK_DNS; do
       dns_list+=("$ns")
     done
   else
-    dns_list=("1.1.1.1" "8.8.8.8")
+    while IFS= read -r ns; do
+      host_dns+=("$ns")
+    done < <(get_host_nameservers)
+
+    dns_list+=("${host_dns[@]}")
+    dns_list+=("1.1.1.1" "8.8.8.8")
     if [[ "${NET6_ENABLE:-0}" == "1" ]]; then
       dns_list+=("2606:4700:4700::1111" "2001:4860:4860::8888")
     fi
   fi
 
-  printf '%s\n' "${dns_list[@]}"
+  printf '%s\n' "${dns_list[@]}" | awk '!seen[$0]++'
 }
 
 prepare_target_resolv_conf() {
@@ -303,6 +309,30 @@ prepare_target_resolv_conf() {
   fi
 }
 
+
+get_host_nameservers() {
+  local src=""
+
+  if [[ -e /etc/resolv.conf ]]; then
+    if grep -qE '^\s*nameserver\s+127\.0\.0\.53(\s|$)' /etc/resolv.conf; then
+      if [[ -e /run/systemd/resolve/resolv.conf ]]; then
+        src="/run/systemd/resolve/resolv.conf"
+      elif [[ -e /run/resolvconf/resolv.conf ]]; then
+        src="/run/resolvconf/resolv.conf"
+      fi
+    else
+      src="/etc/resolv.conf"
+    fi
+  elif [[ -e /run/systemd/resolve/resolv.conf ]]; then
+    src="/run/systemd/resolve/resolv.conf"
+  elif [[ -e /run/resolvconf/resolv.conf ]]; then
+    src="/run/resolvconf/resolv.conf"
+  fi
+
+  if [[ -n "$src" ]]; then
+    awk '/^nameserver[[:space:]]+/{print $2}' "$src" 2>/dev/null | awk '$1!="127.0.0.53"'
+  fi
+}
 
 write_network_config() {
   stage "network"
