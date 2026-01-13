@@ -67,7 +67,7 @@ install_base_packages() {
   stage "apt_install"
 
   mount_chroot_helpers
-
+  exec_net_check_target
   if [[ -n "${NET4_DNS:-}" || -n "${NET6_DNS:-}" ]]; then
     write_resolv_conf_fallback
   else
@@ -139,7 +139,7 @@ install_base_packages() {
   local lvm_pkgs=""
   [[ "$LVM_MODE" != "none" ]] && lvm_pkgs="lvm2"
 
-  exec_net_check_target
+
 
   chroot_run "apt-get install -y --no-install-recommends ca-certificates systemd-sysv $kernel_pkg $grub_pkg $net_pkgs $dhcp_pkg $lvm_pkgs"
 }
