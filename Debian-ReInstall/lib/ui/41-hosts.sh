@@ -19,7 +19,7 @@ ui_pick_hosts() {
       --ok-label "Continue" \
       --cancel-label "Cancel" \
       --help-button --help-label "Back" \
-      --inputbox "Enter domain (optional)).\n\nMay be left blank.\nExampleр: example.com" 12 74 "$domain"
+      --inputbox "Enter domain (optional).\n\nMay be left blank.\nExample: example.com" 12 74 "$domain"
   )"
   rc=$?
   ui_clear

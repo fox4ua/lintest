@@ -229,30 +229,41 @@ EOF_SFDISK
 
 exec_partition_wait_devices() {
   local disk="$1"
-  local ok=1
+  local timeout="${2:-60}"
+  local start="$SECONDS"
+  local missing
 
-  # Determine which partitions should exist and wait for them.
-  if [[ "$BOOT_MODE" == "uefi" ]]; then
-    exec_wait_for_part "$disk" 1 20 || ok=0
-    exec_wait_for_part "$disk" 2 20 || ok=0
-  elif [[ "$BOOT_MODE" == "biosgpt" ]]; then
-    exec_wait_for_part "$disk" 1 20 || ok=0
-    exec_wait_for_part "$disk" 2 20 || ok=0
-  else
-    # MBR: at least partition 1 must exist
-    exec_wait_for_part "$disk" 1 20 || ok=0
-  fi
+  while (( SECONDS - start < timeout )); do
+    missing=()
 
-  # swap/root/pv partitions depend on choices; just wait for what we set.
-  [[ -z "$PART_SWAP" ]] || exec_wait_for_path "$PART_SWAP" 20 || ok=0
-  [[ -z "$PART_ROOT" ]] || exec_wait_for_path "$PART_ROOT" 20 || ok=0
-  [[ -z "$PART_PV"   ]] || exec_wait_for_path "$PART_PV"   20 || ok=0
+    # Wait for exactly what we created (more reliable than hardcoding numbers).
+    [[ -z "${PART_EFI:-}"       || -e "$PART_EFI" ]]       || missing+=("$PART_EFI")
+    [[ -z "${PART_BIOS_GRUB:-}" || -e "$PART_BIOS_GRUB" ]] || missing+=("$PART_BIOS_GRUB")
+    [[ -z "${PART_BOOT:-}"      || -e "$PART_BOOT" ]]      || missing+=("$PART_BOOT")
+    [[ -z "${PART_SWAP:-}"      || -e "$PART_SWAP" ]]      || missing+=("$PART_SWAP")
+    [[ -z "${PART_ROOT:-}"      || -e "$PART_ROOT" ]]      || missing+=("$PART_ROOT")
+    [[ -z "${PART_PV:-}"        || -e "$PART_PV" ]]        || missing+=("$PART_PV")
 
-  if (( ok == 0 )); then
-    log "[!] partition: some partition nodes did not appear in time"
-    ui_msg "Partition devices did not appear in time. See log: ${LOG_FILE}"
-    return 1
-  fi
+    if (( ${#missing[@]} == 0 )); then
+      return 0
+    fi
 
-  return 0
+    # Force re-scan + udev settle, then retry.
+    exec_refresh_parttable "$disk"
+    sleep 1
+  done
+
+  log "[!] partition: missing nodes after ${timeout}s: ${missing[*]:-unknown}"
+  {
+    echo "---- partition debug: lsblk ($disk) ----"
+    lsblk -o NAME,MAJ:MIN,SIZE,TYPE,PTTYPE,PARTLABEL,PARTUUID "$disk" 2>&1 || true
+    echo "---- partition debug: blkid ($disk*) ----"
+    blkid "${disk}"* 2>&1 || true
+    echo "---- partition debug: /proc/partitions (tail) ----"
+    tail -n 40 /proc/partitions 2>&1 || true
+    echo "---- end ----"
+  } >>"$LOG_FILE"
+
+  ui_msg "Partition devices did not appear in time:\n${missing[*]}\n\nSee log: ${LOG_FILE}"
+  return 1
 }

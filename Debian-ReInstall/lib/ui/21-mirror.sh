@@ -14,7 +14,7 @@ ui_pick_mirror() {
       --ok-label "Continue" \
       --cancel-label "Cancel" \
       --help-button --help-label "Back" \
-      --menu "Select a mirror Debian:" 16 74 8 \
+      --menu "Select a Debian mirror:" 16 74 8 \
         "http://deb.debian.org/debian" "deb.debian.org (recommended)" \
         "http://ftp.debian.org/debian" "ftp.debian.org" \
         "http://mirror.yandex.ru/debian" "mirror.yandex.ru (if available)" \
