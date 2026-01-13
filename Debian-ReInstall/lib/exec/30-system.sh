@@ -73,6 +73,7 @@ install_base_packages() {
   else
     write_host_resolv_conf
   fi
+  ensure_target_nsswitch_dns
 
   # Ensure apt works
   if ! chroot_apt_update; then

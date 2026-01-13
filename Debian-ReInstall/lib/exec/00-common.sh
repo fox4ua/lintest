@@ -221,8 +221,22 @@ write_target_resolv_conf_from_host() {
 ensure_target_nsswitch_dns() {
   # если hosts: без dns — DNS в chroot может не работать
   local f="$TARGET_DIR/etc/nsswitch.conf"
-  [[ -f "$f" ]] || return 0
+  if [[ ! -f "$f" ]]; then
+    cat >"$f" <<'EOF'
+passwd:         files
+group:          files
+shadow:         files
 
+hosts:          files dns
+networks:       files
+
+protocols:      db files
+services:       db files
+ethers:         db files
+rpc:            db files
+EOF
+    return 0
+  fi
   if ! grep -qE '^hosts:.*\sdns(\s|$)' "$f"; then
     sed -i 's/^hosts:.*/hosts:          files dns/' "$f"
   fi
