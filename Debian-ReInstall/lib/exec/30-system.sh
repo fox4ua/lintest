@@ -226,6 +226,8 @@ write_host_resolv_conf() {
     if grep -qE '^\s*nameserver\s+127\.0\.0\.53(\s|$)' /etc/resolv.conf; then
       if [[ -e /run/systemd/resolve/resolv.conf ]]; then
         src="/run/systemd/resolve/resolv.conf"
+      elif [[ -e /run/NetworkManager/resolv.conf ]]; then
+        src="/run/NetworkManager/resolv.conf"
       elif [[ -e /run/resolvconf/resolv.conf ]]; then
         src="/run/resolvconf/resolv.conf"
       fi
@@ -234,6 +236,8 @@ write_host_resolv_conf() {
     fi
   elif [[ -e /run/systemd/resolve/resolv.conf ]]; then
     src="/run/systemd/resolve/resolv.conf"
+  elif [[ -e /run/NetworkManager/resolv.conf ]]; then
+    src="/run/NetworkManager/resolv.conf"
   elif [[ -e /run/resolvconf/resolv.conf ]]; then
     src="/run/resolvconf/resolv.conf"
   fi
@@ -320,6 +324,8 @@ get_host_nameservers() {
     if grep -qE '^\s*nameserver\s+127\.0\.0\.53(\s|$)' /etc/resolv.conf; then
       if [[ -e /run/systemd/resolve/resolv.conf ]]; then
         src="/run/systemd/resolve/resolv.conf"
+      elif [[ -e /run/NetworkManager/resolv.conf ]]; then
+        src="/run/NetworkManager/resolv.conf"
       elif [[ -e /run/resolvconf/resolv.conf ]]; then
         src="/run/resolvconf/resolv.conf"
       fi
@@ -328,6 +334,8 @@ get_host_nameservers() {
     fi
   elif [[ -e /run/systemd/resolve/resolv.conf ]]; then
     src="/run/systemd/resolve/resolv.conf"
+  elif [[ -e /run/NetworkManager/resolv.conf ]]; then
+    src="/run/NetworkManager/resolv.conf"
   elif [[ -e /run/resolvconf/resolv.conf ]]; then
     src="/run/resolvconf/resolv.conf"
   fi
