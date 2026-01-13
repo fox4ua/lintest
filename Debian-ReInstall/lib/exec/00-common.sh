@@ -133,3 +133,77 @@ chroot_run_quiet() {
     DEBIAN_FRONTEND=noninteractive \
     bash -lc "$*" >>"$LOG_FILE" 2>&1
 }
+
+net_try_ping() {
+  # Usage: net_try_ping <target> [tries] [timeout_sec]
+  local target="${1:-}"
+  local tries="${2:-3}"
+  local to="${3:-2}"
+
+  require_cmd ping || return 2
+
+  local i
+  for ((i=1; i<=tries; i++)); do
+    if ping -c1 -W"$to" "$target" >/dev/null 2>&1; then
+      return 0
+    fi
+    sleep 1
+  done
+  return 1
+}
+
+net_try_tcp() {
+  # Usage: net_try_tcp <ip_or_host> <port> [timeout_sec]
+  local host="${1:-}"
+  local port="${2:-}"
+  local to="${3:-3}"
+
+  # bash /dev/tcp (fallback when ping is unavailable/blocked)
+  timeout "$to" bash -c "cat </dev/null >/dev/tcp/$host/$port" >/dev/null 2>&1
+}
+
+exec_net_check_host() {
+  stage "net_check"
+
+  local ip_test="8.8.8.8"
+  local host_test="google.com"
+
+  log "[=] host connectivity check: ping $ip_test and ping $host_test"
+
+  # 1) Internet reachability (IP)
+  local ip_ok=0
+  if net_try_ping "$ip_test" 3 2; then
+    ip_ok=1
+    log "[+] ping $ip_test OK"
+  else
+    log "[!] ping $ip_test failed; trying TCP check to $ip_test:53"
+    if net_try_tcp "$ip_test" 53 3; then
+      ip_ok=1
+      log "[+] TCP $ip_test:53 OK (ICMP may be blocked)"
+    fi
+  fi
+
+  if [[ "$ip_ok" != "1" ]]; then
+    log "[!] No external connectivity."
+    run ip -br addr || true
+    run ip route || true
+    run cat /etc/resolv.conf || true
+    fatal "No internet connectivity: cannot reach $ip_test (ping and TCP:53 failed)."
+  fi
+
+  # 2) DNS resolution check
+  if getent hosts "$host_test" >/dev/null 2>&1; then
+    log "[+] DNS resolve $host_test OK"
+  else
+    log "[!] DNS resolve $host_test FAILED"
+    run cat /etc/resolv.conf || true
+    fatal "DNS is not working on host: cannot resolve $host_test (check /etc/resolv.conf)."
+  fi
+
+  # 3) Optional: ping hostname (may fail if ICMP blocked; do not hard-fail)
+  if net_try_ping "$host_test" 2 2; then
+    log "[+] ping $host_test OK"
+  else
+    log "[!] ping $host_test failed (ICMP may be blocked). DNS works, continuing."
+  fi
+}

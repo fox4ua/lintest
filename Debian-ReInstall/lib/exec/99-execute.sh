@@ -13,6 +13,9 @@ execute_install() {
   # Ensure commands exist
   exec_install_deps
 
+  # Network preflight (before destructive disk ops)
+  exec_net_check_host
+
   # Always clean on exit from execute
   trap 'exec_cleanup' EXIT
 
