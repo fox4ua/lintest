@@ -69,3 +69,52 @@ exec_try() {
   return 0
 }
 
+exec_part_path() {
+  local disk="$1"
+  local part="$2"
+
+  [[ -n "$disk" && -n "$part" ]] || return 1
+
+  if [[ "$disk" =~ [0-9]$ ]]; then
+    printf '%sp%s\n' "$disk" "$part"
+  else
+    printf '%s%s\n' "$disk" "$part"
+  fi
+}
+
+exec_refresh_parttable() {
+  local disk="$1"
+  [[ -n "$disk" ]] || return 1
+
+  if command -v partprobe >/dev/null 2>&1; then
+    exec_try partprobe "$disk"
+  fi
+  if command -v partx >/dev/null 2>&1; then
+    exec_try partx -u "$disk"
+  fi
+  if command -v blockdev >/dev/null 2>&1; then
+    exec_try blockdev --rereadpt "$disk"
+  fi
+  if command -v udevadm >/dev/null 2>&1; then
+    exec_try udevadm settle
+  fi
+  return 0
+}
+
+exec_wait_for_path() {
+  local path="$1"
+  local timeout="${2:-30}"
+  local start="$SECONDS"
+
+  [[ -n "$path" ]] || return 1
+
+  while (( SECONDS - start < timeout )); do
+    if [[ -e "$path" ]]; then
+      return 0
+    fi
+    sleep 1
+  done
+
+  log "[!] wait: path did not appear after ${timeout}s: ${path}"
+  return 1
+}
