@@ -16,7 +16,7 @@ source "$EXEC_DIR/35-mount.sh"
 source "$EXEC_DIR/40-debootstrap.sh"
 source "$EXEC_DIR/45-chroot_mounts.sh"
 source "$EXEC_DIR/50-chroot_dns.sh"
-
+source "$EXEC_DIR/55-apt_install.sh"
 # ---- step wrappers for runner ----
 
 exec_release_disk_step() {
@@ -69,6 +69,11 @@ exec_chroot_dns_step() {
   return 0
 }
 
+exec_apt_install_step() {
+  exec_apt_install_all || return 1
+  return 0
+}
+
 # ---- main entry ----
 
 execute_install() {
@@ -112,7 +117,7 @@ execute_install() {
   exec_runner_add_step "debootstrap" "Debootstrap base system"                25 exec_debootstrap_step
   exec_runner_add_step "chroot_mounts" "Chroot mounts (/dev,/proc,/sys,/run)" 8  exec_chroot_mounts_step
   exec_runner_add_step "chroot_dns"    "Chroot DNS (resolv.conf)"             2  exec_chroot_dns_step
-
+  exec_runner_add_step "apt" "APT + base packages + kernel + GRUB"            25 exec_apt_install_step
 
   exec_runner_run "Installer" "Starting execution...\nLog: ${LOG_FILE}" || return 1
 
