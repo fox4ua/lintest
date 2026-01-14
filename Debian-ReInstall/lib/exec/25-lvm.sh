@@ -60,7 +60,7 @@ exec_lvm_create() {
 
     exec_progress 55 "Creating thin-pool ${VG_NAME}/${pool}..."
     if ! lvs --noheadings -o lv_name,vg_name 2>/dev/null | awk '{$1=$1;print}' | grep -q "^${pool} ${VG_NAME}\$"; then
-      exec_run lvcreate -l 95%VG -T "${VG_NAME}/${pool}" || return 1
+      exec_run lvcreate --yes --wipesignatures y -l 95%VG -T "${VG_NAME}/${pool}" || return 1
     fi
 
     LV_THINPOOL="/dev/${VG_NAME}/${pool}"
@@ -73,12 +73,12 @@ exec_lvm_create() {
     fi
 
     if ! lvs --noheadings -o lv_name,vg_name 2>/dev/null | awk '{$1=$1;print}' | grep -q "^root ${VG_NAME}\$"; then
-      exec_run lvcreate -V "${ROOT_SIZE_GIB}G" -T "${VG_NAME}/${pool}" -n root || return 1
+      exec_run lvcreate --yes --wipesignatures y -V "${ROOT_SIZE_GIB}G" -T "${VG_NAME}/${pool}" -n root || return 1
     fi
   else
     exec_progress 70 "Creating linear LV root..."
     if ! lvs --noheadings -o lv_name,vg_name 2>/dev/null | awk '{$1=$1;print}' | grep -q "^root ${VG_NAME}\$"; then
-      exec_run lvcreate -n root -l 100%FREE "${VG_NAME}" || return 1
+      exec_run lvcreate --yes --wipesignatures y -n root -l 100%FREE "${VG_NAME}" || return 1
     fi
   fi
 
