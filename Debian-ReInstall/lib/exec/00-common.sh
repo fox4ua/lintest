@@ -118,3 +118,14 @@ exec_wait_for_path() {
   log "[!] wait: path did not appear after ${timeout}s: ${path}"
   return 1
 }
+
+exec_disk_has_mounts() {
+  local disk="$1"
+  lsblk -rno MOUNTPOINT "$disk" 2>/dev/null | awk 'NF{found=1} END{exit !found}'
+}
+
+exec_disk_dump_mounts() {
+  local disk="$1"
+  log "[=] busy mounts for ${disk}:"
+  lsblk -rno NAME,TYPE,MOUNTPOINT "$disk" 2>/dev/null | awk 'NF{print}'
+}

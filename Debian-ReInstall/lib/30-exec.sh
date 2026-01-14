@@ -63,12 +63,18 @@ execute_install() {
   exec_log_config
   exec_require_tools \
     dialog \
+    lsblk \
+    blkid \
     findmnt \
     swapon \
     umount \
     swapoff \
     pvs \
     vgchange \
+    dmsetup \
+    blockdev \
+    partx \
+    udevadm \
     wipefs \
     sfdisk || return 1
 
