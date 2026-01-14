@@ -60,7 +60,7 @@ exec_lvm_create() {
 
     exec_progress 55 "Creating thin-pool ${VG_NAME}/${pool}..."
     if ! lvs --noheadings -o lv_name,vg_name 2>/dev/null | awk '{$1=$1;print}' | grep -q "^${pool} ${VG_NAME}\$"; then
-      exec_run lvcreate -L 95%VG -T "${VG_NAME}/${pool}" || return 1
+      exec_run lvcreate -l 95%VG -T "${VG_NAME}/${pool}" || return 1
     fi
 
     LV_THINPOOL="/dev/${VG_NAME}/${pool}"
