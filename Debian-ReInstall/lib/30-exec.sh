@@ -13,7 +13,7 @@ source "$EXEC_DIR/20-partition.sh"
 source "$EXEC_DIR/25-lvm.sh"
 source "$EXEC_DIR/30-mkfs.sh"
 source "$EXEC_DIR/35-mount.sh"
-source "$EXEC_DIR/06-debootstrap.sh"
+source "$EXEC_DIR/40-debootstrap.sh"
 # source "$EXEC_DIR/05-debootstrap.sh"
 # source "$EXEC_DIR/06-chroot.sh"
 
