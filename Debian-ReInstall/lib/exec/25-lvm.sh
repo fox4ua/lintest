@@ -2,28 +2,12 @@
 # shellcheck shell=bash
 
 # lib/exec/03-lvm.sh
-#
-# Creates LVM structures on PART_PV:
-# - pvcreate on PART_PV
-# - vgcreate (VG_NAME)
-# - if LVM_MODE=thin: create thin-pool (THINPOOL_NAME)
-# - create root LV
-#
-# Exports:
-#   LV_ROOT          (e.g. /dev/pve/root)
-#   LV_THINPOOL      (e.g. /dev/pve/thinpool) if thin
-#
-# Requires variables:
-#   LVM_MODE: none|linear|thin
-#   VG_NAME
-#   THINPOOL_NAME (for thin, default: thinpool)
-#   ROOT_SIZE_GIB (for thin virtual size is recommended >0)
-#   PART_PV (device path like /dev/sdb3)
 
 exec_lvm_create() {
   : "${LVM_MODE:?}"
   : "${VG_NAME:?}"
   : "${PART_PV:?}"
+  : "${DISK:?}"
 
   LV_ROOT=""
   LV_THINPOOL=""
@@ -40,36 +24,42 @@ exec_lvm_create() {
   fi
 
   exec_progress 0 "Preparing LVM tools..."
-  exec_require_tools pvcreate vgcreate vgchange lvcreate pvs vgs lvs pvscan vgscan || return 1
+  exec_require_tools pvcreate vgcreate vgchange lvcreate pvs vgs lvs pvscan vgscan dmsetup || return 1
 
-  exec_progress 10 "Scanning for existing LVM metadata..."
-  exec_try pvscan --cache
-  exec_try vgscan --cache
+  exec_progress 10 "Ensuring PV is free (deactivate + dm cleanup + wipefs)..."
+  exec_lvm_force_free_pv "${DISK}" "${PART_PV}" || return 1
 
   exec_progress 20 "Creating PV on ${PART_PV}..."
-  # -ff/-y: overwrite any old signatures; safe because disk already selected/confirmed
-  exec_run pvcreate -ff -y "${PART_PV}" || return 1
-
-  exec_progress 40 "Creating/activating VG ${VG_NAME}..."
-  if vgs --noheadings -o vg_name 2>/dev/null | awk '{$1=$1;print}' | grep -qx "${VG_NAME}"; then
-    # VG exists: ensure our PV is inside it; otherwise extend
-    if ! pvs --noheadings -o pv_name,vg_name 2>/dev/null | awk '{$1=$1;print}' | grep -q "^${PART_PV} ${VG_NAME}\$"; then
-      exec_run vgextend "${VG_NAME}" "${PART_PV}" || return 1
-    fi
-  else
-    exec_run vgcreate "${VG_NAME}" "${PART_PV}" || return 1
+  # overwrite old signatures (if any)
+  if ! exec_run pvcreate -ff -y "${PART_PV}"; then
+    exec_lvm_dump_busy_state "${DISK}" "${PART_PV}"
+    ui_msg "pvcreate failed on ${PART_PV}.\nMost likely the device is still busy.\nSee log: ${LOG_FILE}"
+    return 1
   fi
 
+  exec_progress 40 "Creating VG ${VG_NAME}..."
+  # Always create fresh VG on this PV (avoid reusing stale cached VG metadata).
+  # If VG_NAME exists but is NOT on this disk -> refuse (safety).
+  if vgs --noheadings -o vg_name 2>/dev/null | awk '{$1=$1;print}' | grep -qx "${VG_NAME}"; then
+    if ! pvs --noheadings -o pv_name,vg_name 2>/dev/null | awk '{$1=$1;print}' | grep -q "^${DISK}.* ${VG_NAME}\$"; then
+      log "[!] lvm: VG ${VG_NAME} exists on another disk; refusing to reuse"
+      ui_msg "VG ${VG_NAME} already exists (not on selected disk).\nChoose another VG name.\nLog: ${LOG_FILE}"
+      return 1
+    fi
+    # VG exists on this disk (stale) -> make sure it's inactive and remove LVs (best-effort), then vgremove.
+    exec_try vgchange -an "${VG_NAME}"
+    exec_try lvremove -fy "${VG_NAME}" >/dev/null 2>&1 || true
+    exec_try vgremove -fy "${VG_NAME}" >/dev/null 2>&1 || true
+  fi
+
+  exec_run vgcreate "${VG_NAME}" "${PART_PV}" || return 1
   exec_run vgchange -ay "${VG_NAME}" || return 1
 
-  # THIN mode
   if [[ "${LVM_MODE}" == "thin" ]]; then
     local pool="${THINPOOL_NAME:-thinpool}"
 
     exec_progress 55 "Creating thin-pool ${VG_NAME}/${pool}..."
-    # If pool exists — keep it
     if ! lvs --noheadings -o lv_name,vg_name 2>/dev/null | awk '{$1=$1;print}' | grep -q "^${pool} ${VG_NAME}\$"; then
-      # Use most of free space for pool, keep small margin
       exec_run lvcreate -L 95%VG -T "${VG_NAME}/${pool}" || return 1
     fi
 
@@ -77,10 +67,8 @@ exec_lvm_create() {
     exec_try lvchange -ay "${VG_NAME}/${pool}"
 
     exec_progress 70 "Creating thin LV root..."
-    # For thin LV you SHOULD have explicit virtual size.
     if [[ "${ROOT_SIZE_GIB:-0}" -le 0 ]]; then
-      log "[!] lvm(thin): ROOT_SIZE_GIB must be > 0 for thin volume"
-      ui_msg "LVM thin mode requires ROOT_SIZE_GIB > 0 (virtual size).\nSet root size in UI.\nLog: ${LOG_FILE}"
+      ui_msg "LVM thin mode requires ROOT_SIZE_GIB > 0.\nSet root size in UI.\nLog: ${LOG_FILE}"
       return 1
     fi
 
@@ -88,10 +76,8 @@ exec_lvm_create() {
       exec_run lvcreate -V "${ROOT_SIZE_GIB}G" -T "${VG_NAME}/${pool}" -n root || return 1
     fi
   else
-    # LINEAR mode
     exec_progress 70 "Creating linear LV root..."
     if ! lvs --noheadings -o lv_name,vg_name 2>/dev/null | awk '{$1=$1;print}' | grep -q "^root ${VG_NAME}\$"; then
-      # root consumes all remaining extents in VG
       exec_run lvcreate -n root -l 100%FREE "${VG_NAME}" || return 1
     fi
   fi
@@ -102,10 +88,9 @@ exec_lvm_create() {
   exec_try lvchange -ay "${VG_NAME}/root"
 
   exec_progress 92 "Waiting for device nodes..."
-  exec_wait_for_path "${LV_ROOT}" 30 || {
+  exec_wait_for_path "${LV_ROOT}" 60 || {
     log "[!] lvm: LV root device not appeared: ${LV_ROOT}"
-    exec_try ls -l "/dev/${VG_NAME}" || true
-    exec_try lvs -a -o +devices "${VG_NAME}" || true
+    exec_lvm_dump_busy_state "${DISK}" "${PART_PV}"
     ui_msg "LVM: root LV device did not appear: ${LV_ROOT}\nSee log: ${LOG_FILE}"
     return 1
   }
@@ -115,4 +100,65 @@ exec_lvm_create() {
 
   exec_progress 100 "LVM created."
   return 0
+}
+
+exec_lvm_force_free_pv() {
+  local disk="$1"
+  local pv="$2"
+
+  # 1) deactivate any VG that uses PVs on this disk
+  exec_try vgchange -an $(pvs --noheadings -o vg_name,pv_name 2>/dev/null \
+    | awk -v d="$disk" '$2 ~ "^"d {print $1}' | sort -u) >/dev/null 2>&1 || true
+
+  # 2) remove dm devices depending on this disk (prevents "Device or resource busy")
+  exec_lvm_dm_remove_by_disk "$disk"
+
+  # 3) wipe signatures on PV partition itself
+  exec_try wipefs -a "$pv"
+
+  # 4) settle udev
+  exec_try udevadm settle
+
+  return 0
+}
+
+exec_lvm_dm_remove_by_disk() {
+  local disk="$1"
+  command -v dmsetup >/dev/null 2>&1 || return 0
+
+  local base
+  base="$(basename "$disk")"
+
+  local name deps
+  while IFS= read -r name; do
+    [[ -n "$name" ]] || continue
+    deps="$(dmsetup deps -o devname "$name" 2>/dev/null || true)"
+    if grep -q "${base}" <<<"$deps"; then
+      log "[>] dmsetup remove -f ${name} (deps: ${deps//$'\n'/ })"
+      dmsetup remove -f "$name" >/dev/null 2>&1 || log "[!] dmsetup remove failed: ${name}"
+    fi
+  done < <(dmsetup ls --noheadings -o name 2>/dev/null || true)
+
+  return 0
+}
+
+exec_lvm_dump_busy_state() {
+  local disk="$1"
+  local pv="$2"
+
+  log "[=] debug: lsblk -f ${disk}"
+  exec_try lsblk -f "$disk" || true
+
+  log "[=] debug: lsblk -f ${pv}"
+  exec_try lsblk -f "$pv" || true
+
+  if command -v dmsetup >/dev/null 2>&1; then
+    log "[=] debug: dmsetup ls --tree"
+    exec_try dmsetup ls --tree || true
+  fi
+
+  if command -v fuser >/dev/null 2>&1; then
+    log "[=] debug: fuser -vm ${pv}"
+    exec_try fuser -vm "$pv" || true
+  fi
 }
