@@ -14,8 +14,8 @@ source "$EXEC_DIR/25-lvm.sh"
 source "$EXEC_DIR/30-mkfs.sh"
 source "$EXEC_DIR/35-mount.sh"
 source "$EXEC_DIR/40-debootstrap.sh"
-# source "$EXEC_DIR/05-debootstrap.sh"
-# source "$EXEC_DIR/06-chroot.sh"
+source "$EXEC_DIR/45-chroot_mounts.sh"
+source "$EXEC_DIR/50-chroot_dns.sh"
 
 # ---- step wrappers for runner ----
 
@@ -55,6 +55,20 @@ exec_debootstrap_step() {
   return 0
 }
 
+exec_chroot_mounts_step() {
+  exec_progress 0 "Mounting chroot filesystems..."
+  exec_chroot_mounts_up || return 1
+  exec_progress 100 "Chroot mounts ready."
+  return 0
+}
+
+exec_chroot_dns_step() {
+  exec_progress 0 "Applying resolv.conf inside target..."
+  exec_chroot_dns_apply || return 1
+  exec_progress 100 "Chroot DNS ready."
+  return 0
+}
+
 # ---- main entry ----
 
 execute_install() {
@@ -90,14 +104,15 @@ execute_install() {
 
   # Build runner plan
   exec_runner_reset
-  exec_runner_add_step "release"  "Release disk (umount/swapoff/LVM off)"  10 exec_release_disk_step
-  exec_runner_add_step "partition" "Partition disk (GPT/MBR)"              20 exec_partition_step
-  exec_runner_add_step "lvm" "Create LVM (PV/VG/LV root)"                  15 exec_lvm_step
-  exec_runner_add_step "mkfs" "Create filesystems (EFI/boot/root/swap)"    15 exec_mkfs_step
-  exec_runner_add_step "mount" "Mount target filesystem tree"              10 exec_mount_step
-  exec_runner_add_step "debootstrap" "Debootstrap base system"             25 exec_debootstrap_step
-  # Далее будут добавляться по мере реализации:
-  # exec_runner_add_step "chroot" "Chroot config + GRUB" 20 exec_chroot_step
+  exec_runner_add_step "release"  "Release disk (umount/swapoff/LVM off)"     10 exec_release_disk_step
+  exec_runner_add_step "partition" "Partition disk (GPT/MBR)"                 20 exec_partition_step
+  exec_runner_add_step "lvm" "Create LVM (PV/VG/LV root)"                     15 exec_lvm_step
+  exec_runner_add_step "mkfs" "Create filesystems (EFI/boot/root/swap)"       15 exec_mkfs_step
+  exec_runner_add_step "mount" "Mount target filesystem tree"                 10 exec_mount_step
+  exec_runner_add_step "debootstrap" "Debootstrap base system"                25 exec_debootstrap_step
+  exec_runner_add_step "chroot_mounts" "Chroot mounts (/dev,/proc,/sys,/run)" 8 exec_chroot_mounts_step
+  exec_runner_add_step "chroot_dns"    "Chroot DNS (resolv.conf)"             2 exec_chroot_dns_step
+
 
   exec_runner_run "Installer" "Starting execution...\nLog: ${LOG_FILE}" || return 1
 
