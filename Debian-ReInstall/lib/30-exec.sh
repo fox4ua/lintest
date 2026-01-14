@@ -8,9 +8,10 @@ source "$EXEC_DIR/00-common.sh"
 source "$EXEC_DIR/10-runner.sh"
 
 # exec steps (подключай по мере реализации)
-source "$EXEC_DIR/20-release_disk.sh"
-source "$EXEC_DIR/30-partition.sh"
-source "$EXEC_DIR/40-lvm.sh"
+source "$EXEC_DIR/15-release_disk.sh"
+source "$EXEC_DIR/20-partition.sh"
+source "$EXEC_DIR/25-lvm.sh"
+source "$EXEC_DIR/30-mkfs.sh"
 # source "$EXEC_DIR/03-mkfs.sh"
 # source "$EXEC_DIR/04-mount.sh"
 # source "$EXEC_DIR/05-debootstrap.sh"
@@ -41,6 +42,11 @@ exec_lvm_step() {
     return 0
   fi
   exec_lvm_create || return 1
+  return 0
+}
+
+exec_mkfs_step() {
+  exec_mkfs_all || return 1
   return 0
 }
 
@@ -75,10 +81,9 @@ execute_install() {
   exec_runner_reset
   exec_runner_add_step "release"  "Release disk (umount/swapoff/LVM off)"  10 exec_release_disk_step
   exec_runner_add_step "partition" "Partition disk (GPT/MBR)"              20 exec_partition_step
-  exec_runner_add_step "lvm" "Create LVM (PV/VG/LV root)" 15 exec_lvm_step
-
+  exec_runner_add_step "lvm" "Create LVM (PV/VG/LV root)"                  15 exec_lvm_step
+  exec_runner_add_step "mkfs" "Create filesystems (EFI/boot/root/swap)"    15 exec_mkfs_step
   # Далее будут добавляться по мере реализации:
-  # exec_runner_add_step "fs" "Create filesystems" 15 exec_mkfs_step
   # exec_runner_add_step "mount" "Mount target" 10 exec_mount_step
   # exec_runner_add_step "bootstrap" "Debootstrap" 25 exec_debootstrap_step
   # exec_runner_add_step "chroot" "Chroot config + GRUB" 20 exec_chroot_step

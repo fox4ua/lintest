@@ -29,20 +29,43 @@ exec_require_tools() {
   return 0
 }
 
+# Close all inherited FDs >=3 for a child process.
+exec__close_extra_fds() {
+  local fd path
+  shopt -s nullglob
+  for path in /proc/$$/fd/*; do
+    fd="${path##*/}"
+    [[ "$fd" =~ ^[0-9]+$ ]] || continue
+    (( fd >= 3 )) || continue
+    eval "exec ${fd}>&-" 2>/dev/null || true
+  done
+  shopt -u nullglob
+}
+
 exec_run() {
-  # Log command line as it will be executed.
   log "[>] $*"
-  "$@"
+  (
+    exec__close_extra_fds
+    "$@" >>"$LOG_FILE" 2>&1
+  ) || {
+    local rc=$?
+    log "[!] command failed rc=${rc}: $*"
+    return $rc
+  }
+  return 0
 }
 
 exec_try() {
-  # Best-effort command. Non-zero rc is logged but not fatal.
   local rc
   log "[>] $*"
-  "$@" || rc=$?
+  (
+    exec__close_extra_fds
+    "$@" >>"$LOG_FILE" 2>&1
+  ) || rc=$?
   rc=${rc:-0}
   if (( rc != 0 )); then
     log "[!] command failed rc=${rc}: $*"
   fi
   return 0
 }
+
