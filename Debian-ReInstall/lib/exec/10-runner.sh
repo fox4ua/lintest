@@ -1,27 +1,12 @@
 #!/usr/bin/env bash
 # shellcheck shell=bash
 
-# lib/exec/10-runner.sh
-#
 # Unified exec runner with step progress (dialog gauge if ui_progress_* exists).
-#
-# Requires:
-#   - log() function
-#   - ui_msg() function
-#   - LOG_FILE variable (path to log)
-# Optional (for gauge):
-#   - ui_progress_open(title, msg, h, w)
-#   - ui_progress_set(percent, msg)
-#   - ui_progress_close()
-#
 # Step format: "id|title|weight|fn"
 
-# Minimum time (seconds) to keep each step visible in gauge.
-# Set to 0 to disable delays.
 : "${EXEC_RUNNER_MIN_STEP_SECONDS:=2}"
 
 EXEC_RUNNER_STEPS=()
-
 EXEC_RUNNER_TOTAL_WEIGHT=0
 EXEC_RUNNER_DONE_WEIGHT=0
 EXEC_RUNNER_CUR_STEP_WEIGHT=0
@@ -73,7 +58,7 @@ exec_runner__ensure_gauge_open() {
   local msg="${1:-Starting...}"
   if exec_runner__has_gauge; then
     if (( EXEC_RUNNER_GAUGE_OPEN == 0 )); then
-      ui_progress_open "$EXEC_RUNNER_UI_TITLE" "$msg" 10 74
+      ui_progress_open "$EXEC_RUNNER_UI_TITLE" "$msg" 12 74
       EXEC_RUNNER_GAUGE_OPEN=1
     fi
   fi
@@ -150,6 +135,8 @@ exec_runner_run() {
   local item id title weight fn
   local abs_percent
   local step_start
+  local old_exit_trap old_int_trap old_term_trap
+
 
   : "${LOG_FILE:?LOG_FILE is required}"
 
@@ -161,10 +148,15 @@ exec_runner_run() {
 
   EXEC_RUNNER_UI_TITLE="$ui_title"
   EXEC_RUNNER_DONE_WEIGHT=0
+  old_exit_trap="$(trap -p EXIT 2>/dev/null || true)"
+  old_int_trap="$(trap -p INT 2>/dev/null || true)"
+  old_term_trap="$(trap -p TERM 2>/dev/null || true)"
+  trap 'exec_runner__close_gauge; declare -F ui_term_restore >/dev/null 2>&1 && ui_term_restore' EXIT INT TERM
+
 
   # Open gauge once (if available)
   if exec_runner__has_gauge; then
-    ui_progress_open "$ui_title" "$start_msg" 10 74
+    ui_progress_open "$ui_title" "$start_msg" 12 74
     EXEC_RUNNER_GAUGE_OPEN=1
     ui_progress_set 0 "$start_msg"
   else
@@ -186,6 +178,11 @@ exec_runner_run() {
     if ! "$fn"; then
       log "[!] step:${id} failed (${title})"
       exec_runner__fail "$title"
+      trap - EXIT INT TERM
+      [[ -n "$old_exit_trap" ]] && eval "$old_exit_trap"
+      [[ -n "$old_int_trap"  ]] && eval "$old_int_trap"
+      [[ -n "$old_term_trap" ]] && eval "$old_term_trap"
+
       return 1
     fi
     log "[=] step:${id} done (${title})"
@@ -197,5 +194,11 @@ exec_runner_run() {
 
   exec_runner_progress_abs 100 "Done\nLog: ${LOG_FILE}"
   exec_runner__close_gauge
+
+  trap - EXIT INT TERM
+  [[ -n "$old_exit_trap" ]] && eval "$old_exit_trap"
+  [[ -n "$old_int_trap"  ]] && eval "$old_int_trap"
+  [[ -n "$old_term_trap" ]] && eval "$old_term_trap"
+
   return 0
 }
