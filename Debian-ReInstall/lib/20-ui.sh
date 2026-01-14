@@ -40,8 +40,12 @@ source "$UI_DIR/70-summary.sh"
 source "$UI_DIR/90-progress.sh"
 # очистка экрана
 ui_clear() {
-  dialog --clear
-  clear
+  local tty_out="/dev/null"
+  if [[ -w /dev/tty ]]; then
+    tty_out="/dev/tty"
+  fi
+  dialog --clear >"$tty_out" 2>/dev/null || true
+  clear >"$tty_out" 2>/dev/null || true
 }
 # ВАЖНО:
 # - временно отключает errexit/errtrace и ERR trap

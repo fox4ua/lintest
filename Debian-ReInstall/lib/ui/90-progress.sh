@@ -5,12 +5,17 @@
 
 ui_term_restore() {
   # Best-effort terminal restore for ncurses apps (dialog, mc, etc.)
+  local tty_out="/dev/null"
+  if [[ -w /dev/tty ]]; then
+    tty_out="/dev/tty"
+  fi
+
   stty sane 2>/dev/null || true
-  tput sgr0 2>/dev/null || true
-  tput cnorm 2>/dev/null || true
-  tput rmcup 2>/dev/null || true
-  dialog --clear 2>/dev/null || true
-  clear 2>/dev/null || true
+  tput sgr0 >"$tty_out" 2>/dev/null || true
+  tput cnorm >"$tty_out" 2>/dev/null || true
+  tput rmcup >"$tty_out" 2>/dev/null || true
+  dialog --clear >"$tty_out" 2>/dev/null || true
+  clear >"$tty_out" 2>/dev/null || true
   # If running under Midnight Commander, a stronger reset helps avoid screen corruption
   if [[ -n "${MC_SID:-}" ]]; then
     reset 2>/dev/null || true

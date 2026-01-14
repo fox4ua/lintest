@@ -110,8 +110,8 @@ execute_install() {
   exec_runner_add_step "mkfs" "Create filesystems (EFI/boot/root/swap)"       15 exec_mkfs_step
   exec_runner_add_step "mount" "Mount target filesystem tree"                 10 exec_mount_step
   exec_runner_add_step "debootstrap" "Debootstrap base system"                25 exec_debootstrap_step
-  exec_runner_add_step "chroot_mounts" "Chroot mounts (/dev,/proc,/sys,/run)" 8 exec_chroot_mounts_step
-  exec_runner_add_step "chroot_dns"    "Chroot DNS (resolv.conf)"             2 exec_chroot_dns_step
+  exec_runner_add_step "chroot_mounts" "Chroot mounts (/dev,/proc,/sys,/run)" 8  exec_chroot_mounts_step
+  exec_runner_add_step "chroot_dns"    "Chroot DNS (resolv.conf)"             2  exec_chroot_dns_step
 
 
   exec_runner_run "Installer" "Starting execution...\nLog: ${LOG_FILE}" || return 1
