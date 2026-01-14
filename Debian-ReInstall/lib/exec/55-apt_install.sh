@@ -46,14 +46,20 @@ exec_apt_install_all() {
   exec_in_chroot apt-get update || return 1
 
   exec_progress 35 "Installing base packages..."
-  exec_in_chroot apt-get install -y --no-install-recommends "$(exec_csv_to_space "$APT_BASE_PACKAGES")" || return 1
+  local -a base_packages
+  exec_csv_to_array "$APT_BASE_PACKAGES" base_packages
+  exec_in_chroot apt-get install -y --no-install-recommends "${base_packages[@]}" || return 1
 
   exec_progress 45 "Installing extra packages..."
-  exec_in_chroot apt-get install -y --no-install-recommends "$(exec_csv_to_space "$APT_EXTRA_PACKAGES")" || return 1
+  local -a extra_packages
+  exec_csv_to_array "$APT_EXTRA_PACKAGES" extra_packages
+  exec_in_chroot apt-get install -y --no-install-recommends "${extra_packages[@]}" || return 1
 
   if [[ "${LVM_MODE}" != "none" ]]; then
     exec_progress 55 "Installing LVM packages..."
-    exec_in_chroot apt-get install -y --no-install-recommends "$(exec_csv_to_space "$APT_LVM_PACKAGES")" || return 1
+    local -a lvm_packages
+    exec_csv_to_array "$APT_LVM_PACKAGES" lvm_packages
+    exec_in_chroot apt-get install -y --no-install-recommends "${lvm_packages[@]}" || return 1
   fi
 
   exec_progress 65 "Installing kernel..."
@@ -74,9 +80,11 @@ exec_apt_install_all() {
 
 # ---------- helpers ----------
 
-exec_csv_to_space() {
-  # "a,b,c" -> "a b c"
-  echo "$1" | tr ',' ' ' | awk '{$1=$1;print}'
+exec_csv_to_array() {
+  # "a,b,c" -> array("a" "b" "c")
+  local csv="$1"
+  local -n out_array="$2"
+  IFS=',' read -r -a out_array <<<"$csv"
 }
 
 exec_apt_write_sources_list() {
@@ -121,7 +129,9 @@ exec_apt_install_kernel() {
 exec_apt_install_grub() {
   case "${BOOT_MODE}" in
     uefi)
-      exec_in_chroot apt-get install -y --no-install-recommends "$(exec_csv_to_space "$APT_GRUB_PACKAGES_UEFI")" || return 1
+      local -a grub_packages
+      exec_csv_to_array "$APT_GRUB_PACKAGES_UEFI" grub_packages
+      exec_in_chroot apt-get install -y --no-install-recommends "${grub_packages[@]}" || return 1
 
       # Ensure EFI dir exists (it is mounted already by step 6 if UEFI)
       exec_in_chroot mkdir -p /boot/efi || true
@@ -131,7 +141,9 @@ exec_apt_install_grub() {
       exec_in_chroot update-grub || return 1
       ;;
     biosgpt|biosmbr)
-      exec_in_chroot apt-get install -y --no-install-recommends "$(exec_csv_to_space "$APT_GRUB_PACKAGES_BIOS")" || return 1
+      local -a grub_packages
+      exec_csv_to_array "$APT_GRUB_PACKAGES_BIOS" grub_packages
+      exec_in_chroot apt-get install -y --no-install-recommends "${grub_packages[@]}" || return 1
       # Install to disk (MBR for biosmbr, protective MBR for biosgpt)
       exec_in_chroot grub-install --target=i386-pc --recheck "${DISK}" || return 1
       exec_in_chroot update-grub || return 1

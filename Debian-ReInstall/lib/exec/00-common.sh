@@ -96,6 +96,7 @@ exec_refresh_parttable() {
     exec_try blockdev --rereadpt "$disk"
   fi
   if command -v udevadm >/dev/null 2>&1; then
+    exec_try udevadm trigger --subsystem-match=block --action=add
     exec_try udevadm settle
   fi
   return 0
