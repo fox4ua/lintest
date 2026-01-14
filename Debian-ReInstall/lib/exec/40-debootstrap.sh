@@ -90,15 +90,13 @@ exec_debootstrap() {
   )
 
   log "[>] ${cmd[*]}"
+  local rc=0
   {
     echo "----- debootstrap begin $(date -Is) -----"
-    "${cmd[@]}"
-    rc=$?
+    "${cmd[@]}" || rc=$?
     echo "----- debootstrap end $(date -Is) rc=${rc} -----"
-    exit "${rc}"
   } >>"${LOG_FILE}" 2>&1
 
-  local rc=$?
   if (( rc != 0 )); then
     log "[!] debootstrap: failed rc=${rc}"
     ui_msg "Debootstrap failed (rc=${rc}).\n\nLast log lines:\n$(tail -n 120 "${LOG_FILE}" 2>/dev/null || true)"
