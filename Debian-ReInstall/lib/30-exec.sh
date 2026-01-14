@@ -20,14 +20,9 @@ source "$EXEC_DIR/40-debootstrap.sh"
 # ---- step wrappers for runner ----
 
 exec_release_disk_step() {
-  if (( DISK_NEEDS_RELEASE )) && (( DISK_RELEASE_APPROVED )); then
-    exec_progress 0 "Releasing disk..."
-    exec_release_disk "$DISK" || return 1
-    exec_progress 100 "Disk released."
-  else
-    log "[=] disk_release: skipped (needs_release=${DISK_NEEDS_RELEASE} approved=${DISK_RELEASE_APPROVED})"
-    exec_progress 100 "Disk release skipped."
-  fi
+  exec_progress 0 "Releasing disk (unmount/swapoff/dm/LVM)..."
+  exec_release_disk "$DISK" || return 1
+  exec_progress 100 "Disk released."
   return 0
 }
 
