@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 # shellcheck shell=bash
 
-# lib/exec/05-mount.sh
-#
 # Mounts target filesystem tree into TARGET_DIR:
 #   ROOT_DEV  -> ${TARGET_DIR}
 #   PART_BOOT -> ${TARGET_DIR}/boot    (if set)

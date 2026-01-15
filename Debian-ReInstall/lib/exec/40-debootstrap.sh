@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 # shellcheck shell=bash
 
-# lib/exec/06-debootstrap.sh
-#
 # Runs debootstrap into TARGET_DIR.
 #
 # Requires variables:

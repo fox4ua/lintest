@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 # shellcheck shell=bash
 
-# lib/exec/09-apt_install.sh
-#
 # Requires:
 #   TARGET_DIR, LOG_FILE
 #   DEBIAN_SUITE, DEBIAN_MIRROR

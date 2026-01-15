@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 # shellcheck shell=bash
 
-# lib/exec/03-lvm.sh
-
 exec_lvm_create() {
   : "${LVM_MODE:?}"
   : "${VG_NAME:?}"

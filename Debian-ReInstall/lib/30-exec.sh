@@ -17,6 +17,11 @@ source "$EXEC_DIR/40-debootstrap.sh"
 source "$EXEC_DIR/45-chroot_mounts.sh"
 source "$EXEC_DIR/50-chroot_dns.sh"
 source "$EXEC_DIR/55-apt_install.sh"
+source "$EXEC_DIR/60-network.sh"
+source "$EXEC_DIR/65-fstab.sh"
+source "$EXEC_DIR/70-rootpass.sh"
+source "$EXEC_DIR/75-services.sh"
+source "$EXEC_DIR/80-cleanup.sh"
 # ---- step wrappers for runner ----
 
 exec_release_disk_step() {
@@ -74,6 +79,16 @@ exec_apt_install_step() {
   return 0
 }
 
+exec_network_step()   { exec_network_configure || return 1; }
+
+exec_fstab_step()     { exec_fstab_write || return 1; }
+
+exec_rootpass_step()  { exec_rootpass_set || return 1; }
+
+exec_services_step()  { exec_services_enable || return 1; }
+
+exec_cleanup_step()   { exec_cleanup_all || return 1; }
+
 # ---- main entry ----
 
 execute_install() {
@@ -118,7 +133,11 @@ execute_install() {
   exec_runner_add_step "chroot_mounts" "Chroot mounts (/dev,/proc,/sys,/run)" 8  exec_chroot_mounts_step
   exec_runner_add_step "chroot_dns"    "Chroot DNS (resolv.conf)"             2  exec_chroot_dns_step
   exec_runner_add_step "apt" "APT + base packages + kernel + GRUB"            25 exec_apt_install_step
-
+  exec_runner_add_step "network"   "Configure network"                        6  exec_network_step
+  exec_runner_add_step "fstab"     "Write /etc/fstab"                         3  exec_fstab_step
+  exec_runner_add_step "rootpass"  "Set root password"                        2  exec_rootpass_step
+  exec_runner_add_step "services"  "Enable basic services"                    2  exec_services_step
+  exec_runner_add_step "cleanup"   "APT clean + unmount"                      2  exec_cleanup_step
   exec_runner_run "Installer" "Starting execution...\nLog: ${LOG_FILE}" || return 1
 
   ui_msg "Execution completed (steps: release + partition).\n\nNext: filesystems + mount + debootstrap + chroot.\n\nLog: ${LOG_FILE}"

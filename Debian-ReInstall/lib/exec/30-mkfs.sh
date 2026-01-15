@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 # shellcheck shell=bash
 
-# lib/exec/04-mkfs.sh
-#
 # Creates filesystems:
 # - EFI (vfat) on PART_EFI (if set)
 # - /boot (ext4) on PART_BOOT (if set)
