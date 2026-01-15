@@ -77,11 +77,13 @@ exec_release_mounts_tree() {
   while IFS= read -r mp; do
     [[ -n "$mp" && "$mp" != "/" ]] || continue
     log "[>] umount ${mp}"
-    if umount "$mp"; then
+    if exec_run umount "$mp"; then
       :
     else
       log "[!] umount failed, trying lazy: ${mp}"
-      umount -l "$mp" || log "[!] lazy umount failed: ${mp}"
+      if ! exec_run umount -l "$mp"; then
+        log "[!] lazy umount failed: ${mp}"
+      fi
     fi
   done < <(
     lsblk -rno MOUNTPOINT "$disk" 2>/dev/null \
