@@ -26,8 +26,16 @@ exec_mkfs_all() {
     blkid
     mkfs.ext4
   )
+  local mkfs_vfat_cmd=""
   if [[ -n "${PART_EFI:-}" ]]; then
-    tools+=(mkfs.vfat)
+    if command -v mkfs.vfat >/dev/null 2>&1; then
+      mkfs_vfat_cmd="mkfs.vfat"
+    elif command -v mkfs.fat >/dev/null 2>&1; then
+      mkfs_vfat_cmd="mkfs.fat"
+    else
+      mkfs_vfat_cmd="mkfs.vfat"
+    fi
+    tools+=("${mkfs_vfat_cmd}")
   fi
   if [[ -n "${PART_SWAP:-}" ]]; then
     tools+=(mkswap)
@@ -64,7 +72,7 @@ exec_mkfs_all() {
   if [[ -n "${PART_EFI:-}" ]]; then
     exec_progress 20 "Formatting EFI (vfat)..."
     exec_try wipefs -a "${PART_EFI}"
-    exec_run mkfs.vfat -F 32 -n EFI "${PART_EFI}" || return 1
+    exec_run "${mkfs_vfat_cmd}" -F 32 -n EFI "${PART_EFI}" || return 1
   else
     log "[=] mkfs: EFI skipped (no PART_EFI)"
   fi
