@@ -20,13 +20,19 @@ exec_mkfs_all() {
   : "${LVM_MODE:?}"
   : "${BOOT_MODE:?}"
 
-  exec_require_tools \
-    findmnt \
-    wipefs \
-    blkid \
-    mkfs.ext4 \
-    mkfs.vfat \
-    mkswap || return 1
+  local -a tools=(
+    findmnt
+    wipefs
+    blkid
+    mkfs.ext4
+  )
+  if [[ -n "${PART_EFI:-}" ]]; then
+    tools+=(mkfs.vfat)
+  fi
+  if [[ -n "${PART_SWAP:-}" ]]; then
+    tools+=(mkswap)
+  fi
+  exec_require_tools "${tools[@]}" || return 1
 
   local root_dev=""
   if [[ "${LVM_MODE}" == "none" ]]; then
