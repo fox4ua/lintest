@@ -19,7 +19,7 @@
 : "${APT_NONINTERACTIVE:=1}"
 
 # packages installed inside target
-: "${APT_BASE_PACKAGES:=apt-utils,ca-certificates,locales,dialog,udev,netbase,ifupdown,iproute2,isc-dhcp-client,openssh-server,curl,wget,gnupg}"
+: "${APT_BASE_PACKAGES:=apt-utils,ca-certificates,locales,dialog,udev,netbase,ifupdown,iproute2,isc-dhcp-client,openssh-server,curl,wget,gnupg,systemd-sysv}"
 : "${APT_EXTRA_PACKAGES:=sudo,less,vim-tiny,chrony}"
 : "${APT_LVM_PACKAGES:=lvm2,thin-provisioning-tools}"
 : "${APT_GRUB_PACKAGES_UEFI:=grub-efi-amd64,efibootmgr}"
