@@ -40,12 +40,51 @@ exec_chroot_dns_apply() {
     done < <(grep -E '^\s*nameserver\s+' "$target_rc" || true)
 
     if (( has_public == 0 )); then
+      local alt_rc
+      for alt_rc in /run/systemd/resolve/resolv.conf /run/NetworkManager/resolv.conf /run/resolvconf/resolv.conf; do
+        [[ -s "$alt_rc" ]] || continue
+        if ! grep -qE '^\s*nameserver\s+' "$alt_rc"; then
+          continue
+        fi
+        local alt_public=0
+        while read -r _ ns _; do
+          [[ -z "$ns" ]] && continue
+          if [[ "$ns" == 127.* || "$ns" == "::1" || "$ns" == "0.0.0.0" ]]; then
+            continue
+          fi
+          alt_public=1
+          break
+        done < <(grep -E '^\s*nameserver\s+' "$alt_rc" || true)
+        if (( alt_public == 1 )); then
+          exec_try cp -f "$alt_rc" "$target_rc"
+          log "[=] chroot_dns: copied resolver from ${alt_rc}"
+          has_public=1
+          break
+        fi
+      done
+    fi
+
+    if (( has_public == 0 )); then
       log "[!] chroot_dns: resolv.conf has only localhost nameservers; using fallback"
       printf 'nameserver %s\n' ${CHROOT_DNS_FALLBACK_SERVERS} >"$target_rc"
     fi
   else
     log "[!] chroot_dns: host resolv.conf has no nameserver; using fallback"
-    printf 'nameserver %s\n' ${CHROOT_DNS_FALLBACK_SERVERS} >"$target_rc"
+    local alt_rc
+    local alt_used=0
+    for alt_rc in /run/systemd/resolve/resolv.conf /run/NetworkManager/resolv.conf /run/resolvconf/resolv.conf; do
+      [[ -s "$alt_rc" ]] || continue
+      if ! grep -qE '^\s*nameserver\s+' "$alt_rc"; then
+        continue
+      fi
+      exec_try cp -f "$alt_rc" "$target_rc"
+      log "[=] chroot_dns: copied resolver from ${alt_rc}"
+      alt_used=1
+      break
+    done
+    if (( alt_used == 0 )); then
+      printf 'nameserver %s\n' ${CHROOT_DNS_FALLBACK_SERVERS} >"$target_rc"
+    fi
   fi
 
   exec_try chmod 644 "$target_rc"

@@ -45,9 +45,25 @@ exec_debootstrap() {
 
   # If https mirror, ensure CA bundle exists on host
   if [[ "${DEBIAN_MIRROR}" =~ ^https:// ]] && [[ ! -s /etc/ssl/certs/ca-certificates.crt ]]; then
-    log "[!] debootstrap: https mirror but CA bundle missing on host"
-    ui_msg "HTTPS mirror selected, but CA certificates are missing in rescue environment.\nInstall ca-certificates (host) or use http mirror.\nLog: ${LOG_FILE}"
-    return 1
+    if command -v apt-get >/dev/null 2>&1; then
+      exec_progress 5 "Installing ca-certificates on host..."
+      export DEBIAN_FRONTEND=noninteractive
+      if ! exec_run apt-get update; then
+        log "[!] debootstrap: failed to update package lists for ca-certificates"
+        ui_msg "HTTPS mirror selected, but package lists failed to update.\nInstall ca-certificates (host) or use http mirror.\nLog: ${LOG_FILE}"
+        return 1
+      fi
+      if ! exec_run apt-get install -y --no-install-recommends ca-certificates; then
+        log "[!] debootstrap: failed to install ca-certificates"
+        ui_msg "HTTPS mirror selected, but ca-certificates install failed.\nInstall ca-certificates (host) or use http mirror.\nLog: ${LOG_FILE}"
+        return 1
+      fi
+    fi
+    if [[ ! -s /etc/ssl/certs/ca-certificates.crt ]]; then
+      log "[!] debootstrap: https mirror but CA bundle missing on host"
+      ui_msg "HTTPS mirror selected, but CA certificates are missing in rescue environment.\nInstall ca-certificates (host) or use http mirror.\nLog: ${LOG_FILE}"
+      return 1
+    fi
   fi
 
   local arch="${DEBIAN_ARCH:-$(dpkg --print-architecture)}"
