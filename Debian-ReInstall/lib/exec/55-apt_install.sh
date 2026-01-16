@@ -43,6 +43,9 @@ exec_apt_install_all() {
   exec_progress 15 "Preparing APT lists permissions..."
   exec_apt_prepare_lists_dir || return 1
 
+  exec_progress 16 "Preparing APT sandbox..."
+  exec_apt_prepare_sandbox || return 1
+
   exec_progress 20 "apt-get update..."
   exec_in_chroot apt-get update || return 1
 
@@ -150,7 +153,6 @@ EOF
   return 0
 }
 
-
 exec_apt_prepare_lists_dir() {
   exec_in_chroot sh -c '
     mkdir -p /var/lib/apt/lists/partial
@@ -169,6 +171,35 @@ exec_apt_prepare_lists_dir() {
       chmod 755 /var/cache/apt/archives/partial
     fi
   ' || return 1
+  return 0
+}
+
+exec_apt_prepare_sandbox() {
+  # Fix APT sandbox warnings ("Download is performed unsandboxed as root") by
+  # ensuring partial dirs are owned by _apt inside chroot.
+  exec_in_chroot sh -c '
+set -e
+
+# Create _apt user if missing (best-effort)
+if ! id _apt >/dev/null 2>&1; then
+  if command -v useradd >/dev/null 2>&1; then
+    useradd -r -d /nonexistent -s /usr/sbin/nologin _apt >/dev/null 2>&1 || true
+  fi
+fi
+
+mkdir -p /var/lib/apt/lists /var/cache/apt/archives
+mkdir -p /var/lib/apt/lists/partial /var/cache/apt/archives/partial
+
+# Parent dirs must be accessible
+chmod 755 /var/lib/apt/lists /var/cache/apt/archives || true
+
+# partial dirs should be accessible only to _apt (if present)
+if id _apt >/dev/null 2>&1; then
+  chown _apt:root /var/lib/apt/lists/partial /var/cache/apt/archives/partial || true
+fi
+chmod 700 /var/lib/apt/lists/partial /var/cache/apt/archives/partial || true
+' || return 1
+
   return 0
 }
 
