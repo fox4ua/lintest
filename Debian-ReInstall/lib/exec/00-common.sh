@@ -95,6 +95,11 @@ exec_refresh_parttable() {
   if command -v partx >/dev/null 2>&1; then
     if exec_run partx -u "$disk"; then
       success=1
+    else
+      exec_try partx -d "$disk"
+      if exec_run partx -a "$disk"; then
+        success=1
+      fi
     fi
   fi
   if command -v blockdev >/dev/null 2>&1; then
