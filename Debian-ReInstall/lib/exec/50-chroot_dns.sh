@@ -7,6 +7,8 @@
 exec_chroot_dns_apply() {
   : "${TARGET_DIR:?TARGET_DIR is required}"
   : "${LOG_FILE:?LOG_FILE is required}"
+  : "${CHROOT_DNS_FORCE_FALLBACK:=0}"
+  : "${CHROOT_DNS_FALLBACK_SERVERS:=1.1.1.1 8.8.8.8}"
 
   exec_require_tools cp chmod chown grep cat rm mkdir || return 1
 
@@ -18,7 +20,10 @@ exec_chroot_dns_apply() {
     exec_try rm -f "$target_rc"
   fi
 
-  if [[ -s /etc/resolv.conf ]] && grep -qE '^\s*nameserver\s+' /etc/resolv.conf; then
+  if (( CHROOT_DNS_FORCE_FALLBACK == 1 )); then
+    log "[!] chroot_dns: forcing fallback nameservers"
+    printf 'nameserver %s\n' ${CHROOT_DNS_FALLBACK_SERVERS} >"$target_rc"
+  elif [[ -s /etc/resolv.conf ]] && grep -qE '^\s*nameserver\s+' /etc/resolv.conf; then
     exec_try cp -f /etc/resolv.conf "$target_rc"
     log "[=] chroot_dns: copied host resolv.conf"
 
@@ -36,17 +41,11 @@ exec_chroot_dns_apply() {
 
     if (( has_public == 0 )); then
       log "[!] chroot_dns: resolv.conf has only localhost nameservers; using fallback"
-      cat >"$target_rc" <<EOF
-nameserver 1.1.1.1
-nameserver 8.8.8.8
-EOF
+      printf 'nameserver %s\n' ${CHROOT_DNS_FALLBACK_SERVERS} >"$target_rc"
     fi
   else
     log "[!] chroot_dns: host resolv.conf has no nameserver; using fallback"
-    cat >"$target_rc" <<EOF
-nameserver 1.1.1.1
-nameserver 8.8.8.8
-EOF
+    printf 'nameserver %s\n' ${CHROOT_DNS_FALLBACK_SERVERS} >"$target_rc"
   fi
 
   exec_try chmod 644 "$target_rc"
