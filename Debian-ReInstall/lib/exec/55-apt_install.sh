@@ -118,6 +118,10 @@ exec_apt_install_retry() {
       return 1
     fi
     log "[!] apt-get $* failed (attempt ${attempt}/${APT_RETRY_ATTEMPTS}); re-running apt-get update before retry."
+    if declare -F exec_chroot_dns_apply >/dev/null 2>&1; then
+      log "[!] Re-applying chroot resolv.conf before retry."
+      exec_chroot_dns_apply || true
+    fi
     exec_in_chroot apt-get update || true
     sleep "${APT_RETRY_DELAY}"
     attempt=$((attempt + 1))
