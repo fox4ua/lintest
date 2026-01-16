@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 ui_init() {
-  local -a required_cmds=(dialog lsblk ip findmnt pvs swapon mountpoint curl)
+  local -a required_cmds=(dialog lsblk ip findmnt pvs swapon mountpoint curl debootstrap)
   local -a missing_cmds=()
   local cmd
 
@@ -35,6 +35,7 @@ ui_init() {
         pvs) add_pkg lvm2 ;;
         curl) add_pkg curl ;;
         sgdisk) add_pkg gdisk ;;
+        debootstrap) add_pkg debootstrap ;;
       esac
     done
 
