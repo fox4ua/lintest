@@ -109,6 +109,26 @@ APT::Get::Fix-Missing "true";
 EOF
   fi
 
+  # Prevent service start attempts in chroot.
+  if [[ ! -f "${TARGET_DIR}/usr/sbin/policy-rc.d" ]]; then
+    mkdir -p "${TARGET_DIR}/usr/sbin" || true
+    cat >"${TARGET_DIR}/usr/sbin/policy-rc.d" <<'EOF'
+#!/bin/sh
+exit 101
+EOF
+    chmod +x "${TARGET_DIR}/usr/sbin/policy-rc.d"
+  fi
+
+  # Provide a minimal systemctl stub to avoid noisy postinst warnings in chroot.
+  if [[ ! -x "${TARGET_DIR}/bin/systemctl" && ! -x "${TARGET_DIR}/usr/bin/systemctl" ]]; then
+    mkdir -p "${TARGET_DIR}/bin" || true
+    cat >"${TARGET_DIR}/bin/systemctl" <<'EOF'
+#!/bin/sh
+exit 0
+EOF
+    chmod +x "${TARGET_DIR}/bin/systemctl"
+  fi
+
   # Ensure /etc/environment has DEBIAN_FRONTEND for some postinst scripts
   cat >"${TARGET_DIR}/etc/environment" <<EOF
 DEBIAN_FRONTEND=noninteractive
