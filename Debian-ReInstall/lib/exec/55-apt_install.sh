@@ -246,6 +246,7 @@ exec_apt_install_kernel() {
   return 0
 }
 
+
 exec_apt_install_grub() {
   case "${BOOT_MODE}" in
     uefi)
