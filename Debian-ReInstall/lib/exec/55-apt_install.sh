@@ -40,6 +40,9 @@ exec_apt_install_all() {
   exec_progress 10 "Configuring APT (noninteractive)..."
   exec_apt_set_noninteractive || return 1
 
+  exec_progress 15 "Preparing APT lists permissions..."
+  exec_apt_prepare_lists_dir || return 1
+
   exec_progress 20 "apt-get update..."
   exec_in_chroot apt-get update || return 1
 
@@ -134,6 +137,22 @@ EOF
 DEBIAN_FRONTEND=noninteractive
 EOF
 
+  return 0
+}
+
+
+exec_apt_prepare_lists_dir() {
+  exec_in_chroot sh -c '
+    mkdir -p /var/lib/apt/lists/partial
+    if id -u _apt >/dev/null 2>&1; then
+      chown -R _apt:root /var/lib/apt/lists
+      chmod 755 /var/lib/apt/lists
+      chmod 700 /var/lib/apt/lists/partial
+    else
+      chmod 755 /var/lib/apt/lists
+      chmod 755 /var/lib/apt/lists/partial
+    fi
+  ' || return 1
   return 0
 }
 
