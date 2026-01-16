@@ -174,20 +174,18 @@ exec_partition_mbr() {
     if (( root_gib == 0 )); then
       exec_run sfdisk "$disk" <<EOF_SFDISK
 label: dos
-unit: MiB
 
-1 : start=1, size=${boot_mib}, type=83, bootable
-2 : size=${swap_mib}, type=82
+1 : start=1MiB, size=${boot_mib}MiB, type=83, bootable
+2 : size=${swap_mib}MiB, type=82
 3 : type=${ptype_root}
 EOF_SFDISK
     else
       exec_run sfdisk "$disk" <<EOF_SFDISK
 label: dos
-unit: MiB
 
-1 : start=1, size=${boot_mib}, type=83, bootable
-2 : size=${swap_mib}, type=82
-3 : size=${root_mib}, type=${ptype_root}
+1 : start=1MiB, size=${boot_mib}MiB, type=83, bootable
+2 : size=${swap_mib}MiB, type=82
+3 : size=${root_mib}MiB, type=${ptype_root}
 EOF_SFDISK
     fi
     PART_BOOT="$(exec_part_path "$disk" 1)"
@@ -201,18 +199,16 @@ EOF_SFDISK
     if (( root_gib == 0 )); then
       exec_run sfdisk "$disk" <<EOF_SFDISK
 label: dos
-unit: MiB
 
-1 : start=1, size=${boot_mib}, type=83, bootable
+1 : start=1MiB, size=${boot_mib}MiB, type=83, bootable
 2 : type=${ptype_root}
 EOF_SFDISK
     else
       exec_run sfdisk "$disk" <<EOF_SFDISK
 label: dos
-unit: MiB
 
-1 : start=1, size=${boot_mib}, type=83, bootable
-2 : size=${root_mib}, type=${ptype_root}
+1 : start=1MiB, size=${boot_mib}MiB, type=83, bootable
+2 : size=${root_mib}MiB, type=${ptype_root}
 EOF_SFDISK
     fi
     PART_BOOT="$(exec_part_path "$disk" 1)"
