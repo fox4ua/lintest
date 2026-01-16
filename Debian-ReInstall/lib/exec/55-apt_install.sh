@@ -17,6 +17,8 @@
 
 : "${APT_COMPONENTS:=main}"
 : "${APT_NONINTERACTIVE:=1}"
+: "${APT_RETRY_ATTEMPTS:=3}"
+: "${APT_RETRY_DELAY:=5}"
 
 # packages installed inside target
 : "${APT_BASE_PACKAGES:=apt-utils,ca-certificates,locales,dialog,udev,netbase,ifupdown,iproute2,isc-dhcp-client,openssh-server,curl,wget,gnupg,systemd-sysv}"
@@ -47,23 +49,23 @@ exec_apt_install_all() {
   exec_apt_prepare_sandbox || return 1
 
   exec_progress 20 "apt-get update..."
-  exec_in_chroot apt-get update || return 1
+  exec_apt_get_retry update || return 1
 
   exec_progress 35 "Installing base packages..."
   local -a base_packages
   exec_csv_to_array "$APT_BASE_PACKAGES" base_packages
-  exec_in_chroot apt-get install -y --no-install-recommends "${base_packages[@]}" || return 1
+  exec_apt_install_retry install -y --no-install-recommends "${base_packages[@]}" || return 1
 
   exec_progress 45 "Installing extra packages..."
   local -a extra_packages
   exec_csv_to_array "$APT_EXTRA_PACKAGES" extra_packages
-  exec_in_chroot apt-get install -y --no-install-recommends "${extra_packages[@]}" || return 1
+  exec_apt_install_retry install -y --no-install-recommends "${extra_packages[@]}" || return 1
 
   if [[ "${LVM_MODE}" != "none" ]]; then
     exec_progress 55 "Installing LVM packages..."
     local -a lvm_packages
     exec_csv_to_array "$APT_LVM_PACKAGES" lvm_packages
-    exec_in_chroot apt-get install -y --no-install-recommends "${lvm_packages[@]}" || return 1
+    exec_apt_install_retry install -y --no-install-recommends "${lvm_packages[@]}" || return 1
   fi
 
   exec_progress 65 "Installing kernel..."
@@ -89,6 +91,37 @@ exec_csv_to_array() {
   local csv="$1"
   local -n out_array="$2"
   IFS=',' read -r -a out_array <<<"$csv"
+}
+
+exec_apt_get_retry() {
+  local attempt=1
+  while (( attempt <= APT_RETRY_ATTEMPTS )); do
+    if exec_in_chroot apt-get "$@"; then
+      return 0
+    fi
+    if (( attempt == APT_RETRY_ATTEMPTS )); then
+      return 1
+    fi
+    log "[!] apt-get $* failed (attempt ${attempt}/${APT_RETRY_ATTEMPTS}); retrying in ${APT_RETRY_DELAY}s..."
+    sleep "${APT_RETRY_DELAY}"
+    attempt=$((attempt + 1))
+  done
+}
+
+exec_apt_install_retry() {
+  local attempt=1
+  while (( attempt <= APT_RETRY_ATTEMPTS )); do
+    if exec_in_chroot apt-get "$@"; then
+      return 0
+    fi
+    if (( attempt == APT_RETRY_ATTEMPTS )); then
+      return 1
+    fi
+    log "[!] apt-get $* failed (attempt ${attempt}/${APT_RETRY_ATTEMPTS}); re-running apt-get update before retry."
+    exec_in_chroot apt-get update || true
+    sleep "${APT_RETRY_DELAY}"
+    attempt=$((attempt + 1))
+  done
 }
 
 exec_apt_write_sources_list() {
@@ -206,7 +239,10 @@ chmod 700 /var/lib/apt/lists/partial /var/cache/apt/archives/partial || true
 exec_apt_install_kernel() {
   # Prefer metapackage linux-image-amd64 on amd64, otherwise generic linux-image
   # This is adequate for Debian 11/12/13.
-  exec_in_chroot sh -c 'apt-get install -y --no-install-recommends linux-image-amd64 || apt-get install -y --no-install-recommends linux-image' || return 1
+  if exec_apt_install_retry install -y --no-install-recommends linux-image-amd64; then
+    return 0
+  fi
+  exec_apt_install_retry install -y --no-install-recommends linux-image || return 1
   return 0
 }
 
@@ -215,7 +251,7 @@ exec_apt_install_grub() {
     uefi)
       local -a grub_packages
       exec_csv_to_array "$APT_GRUB_PACKAGES_UEFI" grub_packages
-      exec_in_chroot apt-get install -y --no-install-recommends "${grub_packages[@]}" || return 1
+      exec_apt_install_retry install -y --no-install-recommends "${grub_packages[@]}" || return 1
 
       # Ensure EFI dir exists (it is mounted already by step 6 if UEFI)
       exec_in_chroot mkdir -p /boot/efi || true
@@ -227,7 +263,7 @@ exec_apt_install_grub() {
     biosgpt|biosmbr)
       local -a grub_packages
       exec_csv_to_array "$APT_GRUB_PACKAGES_BIOS" grub_packages
-      exec_in_chroot apt-get install -y --no-install-recommends "${grub_packages[@]}" || return 1
+      exec_apt_install_retry install -y --no-install-recommends "${grub_packages[@]}" || return 1
       # Install to disk (MBR for biosmbr, protective MBR for biosgpt)
       exec_in_chroot grub-install --target=i386-pc --recheck "${DISK}" || return 1
       exec_in_chroot update-grub || return 1
