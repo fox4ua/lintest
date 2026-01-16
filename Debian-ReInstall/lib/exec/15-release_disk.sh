@@ -56,14 +56,61 @@ exec_dev_depends_on_disk() {
 exec_release_swap_deps() {
   local disk="$1"
   local s
+  local -a swap_devs=()
 
   while IFS= read -r s; do
     [[ -n "$s" ]] || continue
     [[ -b "$s" ]] || continue
     if exec_dev_depends_on_disk "$s" "$disk"; then
+      swap_devs+=("$s")
       exec_try swapoff "$s"
     fi
   done < <(swapon --show=NAME --noheadings 2>/dev/null | awk '{$1=$1;print}' || true)
+
+  if command -v lsblk >/dev/null 2>&1; then
+    while IFS= read -r s; do
+      [[ -n "$s" ]] || continue
+      [[ -b "$s" ]] || continue
+      if exec_dev_depends_on_disk "$s" "$disk"; then
+        swap_devs+=("$s")
+        exec_try swapoff "$s"
+      fi
+    done < <(lsblk -ln -o PATH,FSTYPE "$disk" 2>/dev/null | awk '$2 == "swap" {print $1}')
+  fi
+
+  if (( ${#swap_devs[@]} > 0 )); then
+    exec_wait_for_swapoff "$disk"
+  fi
+
+  return 0
+}
+
+exec_wait_for_swapoff() {
+  local disk="$1"
+  local timeout="${2:-10}"
+  local start="$SECONDS"
+  local s
+  local active
+
+  [[ -r /proc/swaps ]] || return 0
+
+  while (( SECONDS - start < timeout )); do
+    active=0
+    while IFS= read -r s; do
+      [[ -n "$s" ]] || continue
+      if exec_dev_depends_on_disk "$s" "$disk"; then
+        active=1
+        break
+      fi
+    done < <(tail -n +2 /proc/swaps 2>/dev/null | awk '{print $1}')
+
+    if (( active == 0 )); then
+      return 0
+    fi
+    sleep 1
+  done
+
+  log "[!] swapoff: timed out waiting for swaps to detach from ${disk}"
 
   return 0
 }
