@@ -114,21 +114,22 @@ exec_release_mounts_targetdir() {
   return 0
 }
 
-exec_release_dm_on_disk() {
+exec_release_lvm_vgs_on_disk() {
   local disk="$1"
-  local name type pk
+  local vg
 
-  while IFS= read -r name type pk; do
-    [[ -n "$name" ]] || continue
-    if [[ "$type" == "lvm" || "$type" == "dm" ]]; then
-      log "[>] dmsetup remove -f ${name} (pk=${pk:-})"
-      exec_try dmsetup remove -f "$name"
-    fi
-  done < <(lsblk -rno NAME,TYPE,PKNAME "$disk" 2>/dev/null | awk 'NF')
+  while IFS= read -r vg; do
+    [[ -n "$vg" ]] || continue
+    log "[>] vgchange -an ${vg} (disk=${disk})"
+    exec_try vgchange -an "${vg}"
+  done < <(
+    pvs --noheadings -o vg_name,pv_name 2>/dev/null \
+      | awk -v d="$disk" '$2 ~ "^"d {print $1}' \
+      | sort -u
+  )
 
   return 0
 }
-
 
 exec_release_dm_on_disk() {
   local disk="$1"
