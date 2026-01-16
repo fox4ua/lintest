@@ -84,20 +84,31 @@ exec_part_path() {
 
 exec_refresh_parttable() {
   local disk="$1"
+  local success=0
   [[ -n "$disk" ]] || return 1
 
   if command -v partprobe >/dev/null 2>&1; then
-    exec_try partprobe "$disk"
+    if exec_run partprobe "$disk"; then
+      success=1
+    fi
   fi
   if command -v partx >/dev/null 2>&1; then
-    exec_try partx -u "$disk"
+    if exec_run partx -u "$disk"; then
+      success=1
+    fi
   fi
   if command -v blockdev >/dev/null 2>&1; then
-    exec_try blockdev --rereadpt "$disk"
+    if exec_run blockdev --rereadpt "$disk"; then
+      success=1
+    fi
   fi
   if command -v udevadm >/dev/null 2>&1; then
     exec_try udevadm trigger --subsystem-match=block --action=add
     exec_try udevadm settle
+  fi
+  if (( success == 0 )); then
+    log "[!] partition: failed to reload partition table for ${disk}"
+    return 1
   fi
   return 0
 }

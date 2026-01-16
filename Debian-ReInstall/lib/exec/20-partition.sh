@@ -249,7 +249,11 @@ exec_partition_wait_devices() {
     fi
 
     # Force re-scan + udev settle, then retry.
-    exec_refresh_parttable "$disk"
+    if ! exec_refresh_parttable "$disk"; then
+      log "[!] partition: unable to refresh partition table for ${disk}"
+      ui_msg "Failed to reload the partition table for ${disk}.\nThe device may be busy; reboot and retry.\n\nSee log: ${LOG_FILE}"
+      return 1
+    fi
     sleep 1
   done
 
