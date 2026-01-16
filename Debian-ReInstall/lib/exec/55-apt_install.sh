@@ -144,13 +144,19 @@ EOF
 exec_apt_prepare_lists_dir() {
   exec_in_chroot sh -c '
     mkdir -p /var/lib/apt/lists/partial
+    mkdir -p /var/cache/apt/archives/partial
     if id -u _apt >/dev/null 2>&1; then
       chown -R _apt:root /var/lib/apt/lists
+      chown -R _apt:root /var/cache/apt/archives
       chmod 755 /var/lib/apt/lists
       chmod 700 /var/lib/apt/lists/partial
+      chmod 755 /var/cache/apt/archives
+      chmod 700 /var/cache/apt/archives/partial
     else
       chmod 755 /var/lib/apt/lists
       chmod 755 /var/lib/apt/lists/partial
+      chmod 755 /var/cache/apt/archives
+      chmod 755 /var/cache/apt/archives/partial
     fi
   ' || return 1
   return 0
