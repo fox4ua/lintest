@@ -9,6 +9,9 @@ exec_chroot_dns_apply() {
   : "${LOG_FILE:?LOG_FILE is required}"
   : "${CHROOT_DNS_FORCE_FALLBACK:=0}"
   : "${CHROOT_DNS_FALLBACK_SERVERS:=1.1.1.1 8.8.8.8}"
+  : "${NET4_DNS:=}"
+  : "${NET6_DNS:=}"
+  : "${NET_FALLBACK_DNS:=}"
 
   exec_require_tools cp chmod chown grep cat rm mkdir || return 1
 
@@ -20,9 +23,19 @@ exec_chroot_dns_apply() {
     exec_try rm -f "$target_rc"
   fi
 
+  local fallback_servers=""
+  if [[ -n "${NET4_DNS}" || -n "${NET6_DNS}" ]]; then
+    fallback_servers="${NET4_DNS} ${NET6_DNS}"
+  elif [[ -n "${NET_FALLBACK_DNS}" ]]; then
+    fallback_servers="${NET_FALLBACK_DNS}"
+  else
+    fallback_servers="${CHROOT_DNS_FALLBACK_SERVERS}"
+  fi
+  fallback_servers="$(echo "${fallback_servers}" | awk '{$1=$1;print}')"
+
   if (( CHROOT_DNS_FORCE_FALLBACK == 1 )); then
-    log "[!] chroot_dns: forcing fallback nameservers"
-    printf 'nameserver %s\n' ${CHROOT_DNS_FALLBACK_SERVERS} >"$target_rc"
+    log "[!] chroot_dns: forcing fallback nameservers (${fallback_servers})"
+    printf 'nameserver %s\n' ${fallback_servers} >"$target_rc"
   elif [[ -s /etc/resolv.conf ]] && grep -qE '^\s*nameserver\s+' /etc/resolv.conf; then
     exec_try cp -f /etc/resolv.conf "$target_rc"
     log "[=] chroot_dns: copied host resolv.conf"
@@ -63,10 +76,9 @@ exec_chroot_dns_apply() {
         fi
       done
     fi
-
     if (( has_public == 0 )); then
       log "[!] chroot_dns: resolv.conf has only localhost nameservers; using fallback"
-      printf 'nameserver %s\n' ${CHROOT_DNS_FALLBACK_SERVERS} >"$target_rc"
+      printf 'nameserver %s\n' ${fallback_servers} >"$target_rc"
     fi
   else
     log "[!] chroot_dns: host resolv.conf has no nameserver; using fallback"
@@ -83,7 +95,7 @@ exec_chroot_dns_apply() {
       break
     done
     if (( alt_used == 0 )); then
-      printf 'nameserver %s\n' ${CHROOT_DNS_FALLBACK_SERVERS} >"$target_rc"
+      printf 'nameserver %s\n' ${fallback_servers} >"$target_rc"
     fi
   fi
 
