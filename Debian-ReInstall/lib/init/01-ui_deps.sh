@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 ui_init() {
-  local -a required_cmds=(dialog lsblk ip findmnt pvs swapon mountpoint curl debootstrap)
+  local -a required_cmds=(dialog lsblk ip findmnt pvs swapon mountpoint curl debootstrap mkfs.vfat)
   local -a missing_cmds=()
   local cmd
 
@@ -36,6 +36,7 @@ ui_init() {
         curl) add_pkg curl ;;
         sgdisk) add_pkg gdisk ;;
         debootstrap) add_pkg debootstrap ;;
+        mkfs.vfat) add_pkg dosfstools ;;
       esac
     done
 
