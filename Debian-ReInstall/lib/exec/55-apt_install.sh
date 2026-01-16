@@ -104,8 +104,8 @@ exec_apt_get_retry() {
     fi
     log "[!] apt-get $* failed (attempt ${attempt}/${APT_RETRY_ATTEMPTS}); retrying in ${APT_RETRY_DELAY}s..."
     if declare -F exec_chroot_dns_apply >/dev/null 2>&1; then
-      log "[!] Forcing fallback DNS before retry."
-      CHROOT_DNS_FORCE_FALLBACK=1 exec_chroot_dns_apply || true
+      log "[!] Re-applying chroot resolv.conf before retry."
+      exec_chroot_dns_apply || true
     fi
     sleep "${APT_RETRY_DELAY}"
     attempt=$((attempt + 1))
