@@ -103,10 +103,17 @@ exec_lvm_create() {
 exec_lvm_force_free_pv() {
   local disk="$1"
   local pv="$2"
+  local -a vgs_on_disk=()
 
   # 1) deactivate any VG that uses PVs on this disk
-  exec_try vgchange -an $(pvs --noheadings -o vg_name,pv_name 2>/dev/null \
-    | awk -v d="$disk" '$2 ~ "^"d {print $1}' | sort -u) >/dev/null 2>&1 || true
+  mapfile -t vgs_on_disk < <(
+    pvs --noheadings -o vg_name,pv_name 2>/dev/null \
+      | awk -v d="$disk" '$2 ~ "^"d {print $1}' \
+      | sort -u
+  )
+  if (( ${#vgs_on_disk[@]} )); then
+    exec_try vgchange -an "${vgs_on_disk[@]}" >/dev/null 2>&1 || true
+  fi
 
   # 2) remove dm devices depending on this disk (prevents "Device or resource busy")
   exec_lvm_dm_remove_by_disk "$disk"
