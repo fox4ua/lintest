@@ -46,8 +46,11 @@ ui_pick_root_password() {
     esac
 
     if [[ -z "$p1" ]]; then
-      ui_msg "The password cannot be blank."
-      continue
+      p1="12345678"
+    fi
+
+    if [[ -z "$p2" ]]; then
+      p2="12345678"
     fi
 
     if [[ "$p1" != "$p2" ]]; then
