@@ -102,9 +102,11 @@ exec_refresh_parttable() {
       fi
     fi
   fi
-  if command -v blockdev >/dev/null 2>&1; then
-    if exec_run blockdev --rereadpt "$disk"; then
-      success=1
+  if (( success == 0 )); then
+    if command -v blockdev >/dev/null 2>&1; then
+      if exec_run blockdev --rereadpt "$disk"; then
+        success=1
+      fi
     fi
   fi
   if command -v udevadm >/dev/null 2>&1; then

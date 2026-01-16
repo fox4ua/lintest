@@ -45,7 +45,10 @@ ui_progress_set() {
   if [[ ! -e "/proc/$$/fd/3" ]]; then
     return 0
   fi
-  printf '%s\nXXX\n%s\nXXX\n' "$percent" "$msg" >&3
+  if ! { : >&3; } 2>/dev/null; then
+    return 0
+  fi
+  printf '%s\nXXX\n%s\nXXX\n' "$percent" "$msg" >&3 2>/dev/null || true
 }
 
 ui_progress_close() {

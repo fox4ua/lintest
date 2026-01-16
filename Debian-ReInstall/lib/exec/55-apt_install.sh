@@ -132,6 +132,16 @@ EOF
     chmod +x "${TARGET_DIR}/bin/systemctl"
   fi
 
+  # Provide systemd-tmpfiles stub to avoid postinst errors in chroot.
+  if [[ ! -x "${TARGET_DIR}/bin/systemd-tmpfiles" && ! -x "${TARGET_DIR}/usr/bin/systemd-tmpfiles" ]]; then
+    mkdir -p "${TARGET_DIR}/bin" || true
+    cat >"${TARGET_DIR}/bin/systemd-tmpfiles" <<'EOF'
+#!/bin/sh
+exit 0
+EOF
+    chmod +x "${TARGET_DIR}/bin/systemd-tmpfiles"
+  fi
+
   # Ensure /etc/environment has DEBIAN_FRONTEND for some postinst scripts
   cat >"${TARGET_DIR}/etc/environment" <<EOF
 DEBIAN_FRONTEND=noninteractive

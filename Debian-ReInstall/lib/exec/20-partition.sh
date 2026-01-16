@@ -40,7 +40,7 @@ exec_partition_disk() {
   fi
 
   if command -v wipefs >/dev/null 2>&1; then
-    exec_try wipefs -a "$disk"
+    exec_try wipefs -a -f "$disk"
   fi
 
   exec_progress 15 "Creating partition table..."

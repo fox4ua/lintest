@@ -88,9 +88,9 @@ exec_mkfs_all() {
 
   # Log UUIDs (for future fstab)
   exec_progress 90 "Reading UUIDs..."
-  exec_try blkid "${PART_EFI:-}"  || true
-  exec_try blkid "${PART_BOOT:-}" || true
-  exec_try blkid "${PART_SWAP:-}" || true
+  [[ -z "${PART_EFI:-}" ]]  || exec_try blkid "${PART_EFI}"  || true
+  [[ -z "${PART_BOOT:-}" ]] || exec_try blkid "${PART_BOOT}" || true
+  [[ -z "${PART_SWAP:-}" ]] || exec_try blkid "${PART_SWAP}" || true
   exec_try blkid "${root_dev}"    || true
 
   ROOT_DEV="$root_dev"

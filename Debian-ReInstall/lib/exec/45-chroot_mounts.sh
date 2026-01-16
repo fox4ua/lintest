@@ -93,9 +93,12 @@ exec_umount_if_mounted() {
 exec_in_chroot() {
   : "${TARGET_DIR:?TARGET_DIR is required}"
   log "[>] chroot: $*"
-  chroot "${TARGET_DIR}" /usr/bin/env -i \
-    HOME=/root \
-    TERM="${TERM:-xterm}" \
-    PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
-    "$@" >>"${LOG_FILE}" 2>&1
+  (
+    exec__close_extra_fds
+    chroot "${TARGET_DIR}" /usr/bin/env -i \
+      HOME=/root \
+      TERM="${TERM:-xterm}" \
+      PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+      "$@" >>"${LOG_FILE}" 2>&1
+  )
 }
