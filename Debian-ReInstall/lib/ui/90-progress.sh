@@ -42,6 +42,9 @@ ui_progress_open() {
 ui_progress_set() {
   local percent="$1"
   local msg="${2:-}"
+  if [[ ! -e "/proc/$$/fd/3" ]]; then
+    return 0
+  fi
   printf '%s\nXXX\n%s\nXXX\n' "$percent" "$msg" >&3
 }
 
