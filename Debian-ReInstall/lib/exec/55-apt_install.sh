@@ -55,7 +55,10 @@ exec_apt_install_all() {
   local -a base_packages
   exec_csv_to_array "$APT_BASE_PACKAGES" base_packages
   exec_apt_install_retry install -y --no-install-recommends "${base_packages[@]}" || return 1
-
+  if declare -F exec_chroot_dns_apply >/dev/null 2>&1; then
+    exec_progress 40 "Re-applying chroot DNS after base packages..."
+    exec_chroot_dns_apply || true
+  fi
   exec_progress 45 "Installing extra packages..."
   local -a extra_packages
   exec_csv_to_array "$APT_EXTRA_PACKAGES" extra_packages
