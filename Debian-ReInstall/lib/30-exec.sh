@@ -140,6 +140,6 @@ execute_install() {
   exec_runner_add_step "cleanup"   "APT clean + unmount"                      2  exec_cleanup_step
   exec_runner_run "Installer" "Starting execution...\nLog: ${LOG_FILE}" || return 1
 
-  ui_msg "Execution completed (steps: release + partition).\n\nNext: filesystems + mount + debootstrap + chroot.\n\nLog: ${LOG_FILE}"
+  ui_msg "Execution completed.\n\nLog: ${LOG_FILE}"
   return 0
 }
