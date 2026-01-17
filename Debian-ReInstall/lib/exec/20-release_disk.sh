@@ -97,8 +97,7 @@ disk_release_verify_clean() {
       pvs --noheadings -o pv_name,vg_name 2>/dev/null \
         | awk '{$1=$1;print}' \
         | awk -v d="$disk" '$1 ~ "^"d {print $2}' \
-        | sort -u
-        || true
+        | sort -u || true
     )
   fi
 
