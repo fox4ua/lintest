@@ -54,14 +54,32 @@ ui_pick_mirror() {
   fi
 
   # базовая валидация
-  if ! [[ "$mirror" =~ ^https?://[^[:space:]]+$ ]]; then
-    ui_msg "Incorrect mirror URL:\n$mirror"
-    return 2
-  fi
-  if ! mirror_probe_suite "$mirror" "${DEBIAN_SUITE:-}"; then
-    ui_msg "The mirror is unavailable or does not contain the selected version Debian.\n\nSuite: ${DEBIAN_SUITE:-unknown}\nMirror: $mirror\n\n${MIRROR_PROBE_ERR:-}"
-    return 2
-  fi
-  printf -v "$out_mirror" "%s" "$mirror"
-  return 0
+  while true; do
+    if ! [[ "$mirror" =~ ^https?://[^[:space:]]+$ ]]; then
+      ui_msg "Incorrect mirror URL:\n$mirror"
+    elif ! mirror_probe_suite "$mirror" "${DEBIAN_SUITE:-}"; then
+      ui_msg "The mirror is unavailable or does not contain the selected version Debian.\n\nSuite: ${DEBIAN_SUITE:-unknown}\nMirror: $mirror\n\n${MIRROR_PROBE_ERR:-}"
+    else
+      printf -v "$out_mirror" "%s" "$mirror"
+      return 0
+    fi
+
+    mirror="$(
+      ui_dialog dialog --clear --stdout \
+        --title "Debian mirror" \
+        --ok-label "Continue" \
+        --cancel-label "Cancel" \
+        --help-button --help-label "Back" \
+        --inputbox "Enter the URL of the Debian mirror (example: http://deb.debian.org/debian):" 10 74 "$mirror"
+    )"
+    rc=$?
+    ui_clear
+
+    case "$rc" in
+      0) : ;;
+      2) return 2 ;;
+      1|255) return 1 ;;
+      *) return 1 ;;
+    esac
+  done
 }

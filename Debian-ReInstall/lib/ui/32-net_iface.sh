@@ -11,7 +11,9 @@ ui_pick_net_iface() {
   # Собираем интерфейсы кроме lo
   while IFS= read -r ifn; do
     [[ -n "$ifn" ]] || continue
-
+    ifn="${ifn%@*}"
+    [[ "$ifn" == "lo" ]] && continue
+    
     # state (UP/DOWN)
     local st mac
     st="$(cat "/sys/class/net/$ifn/operstate" 2>/dev/null || echo "?")"
