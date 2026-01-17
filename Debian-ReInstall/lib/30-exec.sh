@@ -38,11 +38,14 @@ execute_install() {
 
   exec_log_config
   exec_require_tools \
+    lsblk \
     findmnt \
     swapon \
     umount \
     swapoff \
     pvs \
+    lvs \
+    lvchange \
     vgchange \
     dialog || return 1
 
