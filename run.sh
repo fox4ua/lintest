@@ -4,7 +4,7 @@ umask 077
 
 REPO_OWNER="fox4ua"
 REPO_NAME="lintest"
-BRANCH="main"
+BRANCH="bug"
 SUBDIR="Debian-ReInstall"
 
 DEST_DIR="/root/${SUBDIR}"
@@ -26,7 +26,7 @@ apt_install_if_missing() {
   if ((${#pkgs[@]})); then
     have apt-get || die "apt-get not found; install: ${pkgs[*]} manually."
     export DEBIAN_FRONTEND=noninteractive
-    apt-get update -y
+    apt-get update
     apt-get install -y "${pkgs[@]}"
   fi
 }
