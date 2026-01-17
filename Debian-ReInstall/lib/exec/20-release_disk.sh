@@ -108,6 +108,14 @@ exec_release_lvm() {
   uniq="$(printf '%s\n' "${vgs[@]}" | sort -u)"
   while IFS= read -r vg; do
     [[ -n "$vg" ]] || continue
-    exec_try vgchange -an "$vg"
+    log "[>] vgchange -an ${vg}"
+    if ! vgchange -an "$vg"; then
+      local rc=$?
+      if (( rc == 5 )); then
+        log "[=] disk_release: vgchange -an ${vg} skipped (already inactive or not found)"
+      else
+        log "[!] disk_release: vgchange -an ${vg} failed rc=${rc}"
+      fi
+    fi
   done <<<"$uniq"
 }
