@@ -8,7 +8,8 @@ ui_progress_open() {
   local h="${3:-10}"
   local w="${4:-70}"
 
-  UI_GAUGE_FIFO="$(mktemp -u "/tmp/gauge.XXXXXX")"
+  UI_GAUGE_DIR="$(mktemp -d -t gauge.XXXXXX)"
+  UI_GAUGE_FIFO="${UI_GAUGE_DIR}/fifo"
   mkfifo "$UI_GAUGE_FIFO"
 
   dialog --clear --title "$title" --gauge "$msg" "$h" "$w" 0 <"$UI_GAUGE_FIFO" &
@@ -30,5 +31,6 @@ ui_progress_close() {
   exec 3>&- || true
   [[ -n "${UI_GAUGE_PID:-}" ]] && wait "$UI_GAUGE_PID" 2>/dev/null || true
   [[ -n "${UI_GAUGE_FIFO:-}" ]] && rm -f "$UI_GAUGE_FIFO" || true
-  unset UI_GAUGE_PID UI_GAUGE_FIFO
+  [[ -n "${UI_GAUGE_DIR:-}" ]] && rmdir "$UI_GAUGE_DIR" 2>/dev/null || true
+  unset UI_GAUGE_PID UI_GAUGE_FIFO UI_GAUGE_DIR
 }
