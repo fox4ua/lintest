@@ -30,7 +30,7 @@ ui_init() {
     for cmd in "${missing_cmds[@]}"; do
       case "$cmd" in
         dialog) add_pkg dialog ;;
-        lsblk|findmnt|swapon) add_pkg util-linux ;;
+        lsblk|findmnt|mountpoint|swapon) add_pkg util-linux ;;
         ip) add_pkg iproute2 ;;
         pvs) add_pkg lvm2 ;;
         curl) add_pkg curl ;;

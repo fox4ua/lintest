@@ -160,8 +160,9 @@ ui_show_net_current() {
 
   case "$rc" in
     0) return 0 ;;
+    1) return 2 ;;     # no = Back
     3) return 1 ;;     # extra = Cancel
-    1|255) return 2 ;; # cancel/esc = Back
+    255) return 1 ;;   # esc = Cancel
     *) return 1 ;;
   esac
 }
