@@ -20,8 +20,8 @@ ui_pick_net_iface() {
     mac="$(cat "/sys/class/net/$ifn/address" 2>/dev/null || echo "-")"
 
     items+=("$ifn" "state=${st} mac=${mac}")
-  done < <(ip -o link show 2>/dev/null | awk -F': ' '{print $2}' | grep -v '^lo$' || true)
-
+  done < <(ip -o link show 2>/dev/null | awk -F': ' '{print $2}' | awk '{print $1}' | sed 's/@.*//' | grep -v '^lo$' || true)
+  
   if [[ ${#items[@]} -eq 0 ]]; then
     ui_msg "No network interfaces found (except lo)."
     return 1

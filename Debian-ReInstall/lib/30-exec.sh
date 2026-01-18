@@ -8,7 +8,7 @@ source "$EXEC_DIR/00-common.sh"
 source "$EXEC_DIR/10-runner.sh"
 
 # exec steps (подключай по мере реализации)
-source "$EXEC_DIR/20-release_disk.sh"
+source "$EXEC_DIR/15-release_disk.sh"
 # source "$EXEC_DIR/02-partition.sh"
 # source "$EXEC_DIR/03-mkfs.sh"
 # source "$EXEC_DIR/04-mount.sh"
