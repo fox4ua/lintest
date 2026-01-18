@@ -9,6 +9,7 @@ source "$EXEC_DIR/10-runner.sh"
 
 # exec steps (подключай по мере реализации)
 source "$EXEC_DIR/15-release_disk.sh"
+source "$EXEC_DIR/20-partition.sh"
 # source "$EXEC_DIR/02-partition.sh"
 # source "$EXEC_DIR/03-mkfs.sh"
 # source "$EXEC_DIR/04-mount.sh"
@@ -28,6 +29,11 @@ exec_release_disk_step() {
     # mark as done quickly
     exec_progress 100 "Disk release skipped."
   fi
+  return 0
+}
+
+exec_partition_step() {
+  exec_partition_disk "$DISK" || return 1
   return 0
 }
 
@@ -58,7 +64,8 @@ execute_install() {
   # Build runner plan
   exec_runner_reset
   exec_runner_add_step "release" "Release disk (umount/swapoff/LVM off)" 10 exec_release_disk_step
-
+  exec_runner_add_step "partition" "Partition disk (GPT/MBR)"                 20 exec_partition_step
+  
   # Далее будут добавляться по мере реализации:
   # exec_runner_add_step "partition" "Partitioning" 20 exec_partition_step
   # exec_runner_add_step "fs" "Create filesystems" 15 exec_mkfs_step
