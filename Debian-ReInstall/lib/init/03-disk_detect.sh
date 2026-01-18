@@ -4,12 +4,17 @@ disk_resolve_parent_disk() {
   local node="$1"
   local base
   local parent
+  local type
+  local guard=0
 
   node="$(readlink -f "$node" 2>/dev/null || echo "$node")"
-  base="$(basename "$node")"
 
-  if command -v lsblk >/dev/null 2>&1; then
-    local type
+  if ! command -v lsblk >/dev/null 2>&1; then
+    return 1
+  fi
+
+  while (( guard < 16 )); do
+    base="$(basename "$node")"
     type="$(lsblk -no TYPE "$node" 2>/dev/null | head -n1 || true)"
     if [[ "$type" == "disk" ]]; then
       printf '%s\n' "$base"
@@ -17,12 +22,10 @@ disk_resolve_parent_disk() {
     fi
 
     parent="$(lsblk -no PKNAME "$node" 2>/dev/null | head -n1 || true)"
-    if [[ -n "$parent" ]]; then
-      printf '%s\n' "$parent"
-      return 0
-    fi
-  fi
-
+    [[ -n "$parent" ]] || break
+    node="/dev/$parent"
+    ((guard++))
+  done
   return 1
 }
 

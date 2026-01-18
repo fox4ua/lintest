@@ -41,6 +41,7 @@ main() {
   else
     have curl || die "curl not found."
     have tar  || die "tar not found."
+    have gzip || die "gzip not found."
   fi
 
   # Backup existing directory (idempotent)
@@ -82,4 +83,3 @@ main() {
 }
 
 main "$@"
-
