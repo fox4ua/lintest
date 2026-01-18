@@ -20,8 +20,16 @@ ui_pick_net6_mode() {
   ui_clear
 
   case "$rc" in
-    0) printf -v "$out" "%s" "$choice"; return 0 ;;
+    0) : ;;
     2) return 2 ;;
     *) return 1 ;;
   esac
+
+  case "$choice" in
+    dhcp|static) : ;;
+    *) ui_msg "Incorrect IPv6 mode selection: $choice"; return 2 ;;
+  esac
+
+  printf -v "$out" "%s" "$choice"
+  return 0
 }
