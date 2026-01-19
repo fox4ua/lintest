@@ -32,7 +32,7 @@ ui_pick_net4_static() {
       *) return 1 ;;
     esac
 
-    addr="$(echo "$addr" | awk '{$1=$1;print}')"
+    addr="$(ui_trim "$addr")"
     if ! [[ "$addr" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}/([0-9]|[12][0-9]|3[0-2])$ ]]; then
       ui_msg "Incorrect IP/CIDR: $addr"
       continue
@@ -66,7 +66,7 @@ ui_pick_net4_static() {
       *) return 1 ;;
     esac
 
-    gw="$(echo "$gw" | awk '{$1=$1;print}')"
+    gw="$(ui_trim "$gw")"
     if ! [[ "$gw" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
       ui_msg "Incorrect Gateway: $gw"
       continue
@@ -98,7 +98,7 @@ ui_pick_net4_static() {
       *) return 1 ;;
     esac
 
-    dns="$(echo "$dns" | awk '{$1=$1;print}')"
+    dns="$(ui_trim "$dns")"
     if [[ -n "$dns" ]]; then
       local ip
       for ip in $dns; do

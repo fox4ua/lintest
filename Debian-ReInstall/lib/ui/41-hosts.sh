@@ -32,7 +32,7 @@ ui_pick_hosts() {
       *) return 1 ;;
     esac
 
-    domain="$(echo "$domain" | awk '{$1=$1;print}')"
+    domain="$(ui_trim "$domain")"
 
     # domain can be empty; validate only if non-empty
     if [[ -z "$domain" ]]; then
@@ -67,7 +67,7 @@ ui_pick_hosts() {
       *) return 1 ;;
     esac
 
-    fqdn="$(echo "$fqdn" | awk '{$1=$1;print}')"
+    fqdn="$(ui_trim "$fqdn")"
 
     # fqdn can be empty; validate only if non-empty
     if [[ -z "$fqdn" ]]; then

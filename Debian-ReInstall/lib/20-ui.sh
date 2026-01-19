@@ -43,6 +43,14 @@ ui_clear() {
   dialog --clear
   clear
 }
+
+ui_trim() {
+  local value="${1:-}"
+  value="${value#"${value%%[![:space:]]*}"}"
+  value="${value%"${value##*[![:space:]]}"}"
+  printf '%s' "$value"
+}
+
 # ВАЖНО:
 # - временно отключает errexit/errtrace и ERR trap
 # - возвращает реальный exit code dialog (0/1/2/255/…)

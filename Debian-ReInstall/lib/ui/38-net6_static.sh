@@ -30,7 +30,7 @@ ui_pick_net6_static() {
       *) return 1 ;;
     esac
 
-    addr="$(echo "$addr" | awk '{$1=$1;print}')"
+    addr="$(ui_trim "$addr")"
     if [[ -z "$addr" || "$addr" != */* || "$addr" != *:* ]]; then
       ui_msg "Incorrect IPv6/CIDR: $addr"
       continue
@@ -63,7 +63,7 @@ ui_pick_net6_static() {
       *) return 1 ;;
     esac
 
-    gw="$(echo "$gw" | awk '{$1=$1;print}')"
+    gw="$(ui_trim "$gw")"
     if [[ -z "$gw" || "$gw" == */* || "$gw" != *:* ]]; then
       ui_msg "Incorrect IPv6 Gateway: $gw"
       continue
@@ -90,7 +90,7 @@ ui_pick_net6_static() {
       *) return 1 ;;
     esac
 
-    dns="$(echo "$dns" | awk '{$1=$1;print}')"
+    dns="$(ui_trim "$dns")"
     if [[ -n "$dns" ]]; then
       local ip
       for ip in $dns; do

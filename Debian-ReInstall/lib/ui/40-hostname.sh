@@ -28,7 +28,7 @@ ui_pick_hostname() {
     esac
 
     # trim
-    val="$(echo "$val" | awk '{$1=$1;print}')"
+    val="$(ui_trim "$val")"
 
     # validation: 1..63, starts/ends alnum, inside alnum or '-'
     if ! [[ "$val" =~ ^[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?$ ]]; then
