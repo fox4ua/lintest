@@ -14,6 +14,7 @@ source "$EXEC_DIR/25-lvm.sh"
 source "$EXEC_DIR/30-mkfs.sh"
 source "$EXEC_DIR/35-mount.sh"
 source "$EXEC_DIR/40-debootstrap.sh"
+source "$EXEC_DIR/45-chroot_mounts.sh"
 
 # ---- step wrappers for runner ----
 
@@ -92,7 +93,7 @@ execute_install() {
   exec_runner_add_step "mkfs" "Create filesystems (EFI/boot/root/swap)"       15 exec_mkfs_step
   exec_runner_add_step "mount" "Mount target filesystem tree"                 10 exec_mount_step
   exec_runner_add_step "debootstrap" "Debootstrap base system"                25 exec_debootstrap_step
-
+  exec_runner_add_step "chroot_mounts" "Chroot mounts (/dev,/proc,/sys,/run)" 8  exec_chroot_mounts_step
   exec_runner_run "Installer" "Starting execution...\nLog: ${LOG_FILE}" || return 1
 
   ui_msg "Execution completed.\nLog: ${LOG_FILE}"

@@ -32,14 +32,14 @@ exec_require_tools() {
 exec_run() {
   # Log command line as it will be executed.
   log "[>] $*"
-  "$@"
+  "$@" >>"$LOG_FILE" 2>&1
 }
 
 exec_try() {
   # Best-effort command. Non-zero rc is logged but not fatal.
   local rc
   log "[>] $*"
-  "$@" || rc=$?
+  "$@" >>"$LOG_FILE" 2>&1 || rc=$?
   rc=${rc:-0}
   if (( rc != 0 )); then
     log "[!] command failed rc=${rc}: $*"
