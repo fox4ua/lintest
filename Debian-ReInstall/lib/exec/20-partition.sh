@@ -47,10 +47,10 @@ exec_partition_disk() {
 
   case "$BOOT_MODE" in
     uefi|biosgpt)
-      exec_partition_gpt "$disk"
+      exec_partition_gpt "$disk" || return 1
       ;;
     biosmbr)
-      exec_partition_mbr "$disk"
+      exec_partition_mbr "$disk" || return 1
       ;;
     *)
       log "[!] partition: unknown BOOT_MODE=${BOOT_MODE}"

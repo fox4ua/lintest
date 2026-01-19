@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 # shellcheck shell=bash
 
-# lib/exec/10-runner.sh
-#
 # Unified exec runner with step progress (dialog gauge if ui_progress_* exists).
 #
 # Requires:
