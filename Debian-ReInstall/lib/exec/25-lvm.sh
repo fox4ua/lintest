@@ -22,7 +22,7 @@ exec_lvm_create() {
   fi
 
   exec_progress 0 "Preparing LVM tools..."
-  exec_require_tools pvcreate vgcreate vgchange lvcreate pvs vgs lvs pvscan vgscan dmsetup || return 1
+  exec_require_tools pvcreate vgcreate vgchange lvcreate lvremove pvs vgs lvs pvscan vgscan dmsetup || return 1
 
   exec_progress 10 "Ensuring PV is free (deactivate + dm cleanup + wipefs)..."
   exec_lvm_force_free_pv "${DISK}" "${PART_PV}" || return 1
@@ -46,7 +46,13 @@ exec_lvm_create() {
     fi
     # VG exists on this disk (stale) -> make sure it's inactive and remove LVs (best-effort), then vgremove.
     exec_try vgchange -an "${VG_NAME}"
-    exec_try lvremove -fy "${VG_NAME}" >/dev/null 2>&1 || true
+    if command -v lvs >/dev/null 2>&1 && command -v lvremove >/dev/null 2>&1; then
+      local lv_path
+      while IFS= read -r lv_path; do
+        [[ -n "$lv_path" ]] || continue
+        exec_try lvremove -fy "$lv_path" >/dev/null 2>&1 || true
+      done < <(lvs --noheadings -o lv_path -S "vg_name=${VG_NAME}" 2>/dev/null | awk '{$1=$1;print}' || true)
+    fi
     exec_try vgremove -fy "${VG_NAME}" >/dev/null 2>&1 || true
   fi
 
