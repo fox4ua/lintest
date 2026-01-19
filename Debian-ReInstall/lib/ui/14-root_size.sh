@@ -33,6 +33,10 @@ ui_pick_root_size() {
 
     # 0 = остаток
     if (( val == 0 )); then
+      if [[ "${LVM_MODE:-}" == "thin" ]]; then
+        ui_msg "LVM thin mode requires a fixed root size (GiB > 0)."
+        continue
+      fi
       printf -v "$out_root" "%s" "0"
       return 0
     fi
