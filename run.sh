@@ -78,6 +78,8 @@ main() {
   fi
 
   echo "[+] Running installer: ${DEST_DIR}/install.sh"
+  rm -rf "$tmp"
+  trap - EXIT
   cd "$DEST_DIR"
   exec ./install.sh
 }
