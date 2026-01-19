@@ -12,6 +12,7 @@ source "$EXEC_DIR/15-release_disk.sh"
 source "$EXEC_DIR/20-partition.sh"
 source "$EXEC_DIR/25-lvm.sh"
 source "$EXEC_DIR/30-mkfs.sh"
+source "$EXEC_DIR/35-mount.sh"
 
 # ---- step wrappers for runner ----
 
@@ -48,6 +49,11 @@ exec_mkfs_step() {
   return 0
 }
 
+exec_mount_step() {
+  exec_mount_target || return 1
+  return 0
+}
+
 # ---- main entry ----
 
 execute_install() {
@@ -78,7 +84,7 @@ execute_install() {
   exec_runner_add_step "partition" "Partition disk (GPT/MBR)"                 20 exec_partition_step
   exec_runner_add_step "lvm" "Create LVM (PV/VG/LV root)"                     15 exec_lvm_step
   exec_runner_add_step "mkfs" "Create filesystems (EFI/boot/root/swap)"       15 exec_mkfs_step
-
+  exec_runner_add_step "mount" "Mount target filesystem tree"                 10 exec_mount_step
 
   exec_runner_run "Installer" "Starting execution...\nLog: ${LOG_FILE}" || return 1
 
