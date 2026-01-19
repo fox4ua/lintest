@@ -5,6 +5,41 @@
 # Produces variables for next steps:
 #   PART_EFI, PART_BIOS_GRUB, PART_BOOT, PART_SWAP, PART_ROOT, PART_PV
 
+exec_part_path() {
+  local disk="$1"
+  local part_num="$2"
+
+  [[ -n "$disk" && -n "$part_num" ]] || return 1
+
+  if [[ "$disk" =~ [0-9]$ ]]; then
+    printf '%s\n' "${disk}p${part_num}"
+  else
+    printf '%s\n' "${disk}${part_num}"
+  fi
+}
+
+exec_refresh_parttable() {
+  local disk="$1"
+  [[ -n "$disk" ]] || return 1
+
+  if command -v partprobe >/dev/null 2>&1; then
+    exec_try partprobe "$disk"
+  elif command -v blockdev >/dev/null 2>&1; then
+    exec_try blockdev --rereadpt "$disk"
+  elif command -v sfdisk >/dev/null 2>&1; then
+    exec_try sfdisk -R "$disk"
+  else
+    log "[!] partition: no tool to refresh partition table"
+    return 1
+  fi
+
+  if command -v udevadm >/dev/null 2>&1; then
+    exec_try udevadm settle
+  fi
+
+  return 0
+}
+
 exec_partition_disk() {
   local disk="$1"
 

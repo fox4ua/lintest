@@ -46,3 +46,20 @@ exec_try() {
   fi
   return 0
 }
+exec_wait_for_path() {
+  local path="$1"
+  local timeout="${2:-30}"
+  local start="$SECONDS"
+
+  [[ -n "$path" ]] || return 1
+
+  while (( SECONDS - start < timeout )); do
+    if [[ -e "$path" ]]; then
+      return 0
+    fi
+    sleep 1
+  done
+
+  log "[!] wait: path not found after ${timeout}s: ${path}"
+  return 1
+}
