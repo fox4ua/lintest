@@ -14,6 +14,19 @@ ui_confirm_summary() {
     root_line="${ROOT_SIZE_GIB:-} GiB"
   fi
 
+  local boot_compat_line=""
+  case "${BOOT_MODE:-}" in
+    uefi)
+      boot_compat_line="  EFI : ${EFI_SIZE_MIB:-} MiB"
+      ;;
+    biosgpt)
+      boot_compat_line="  BIOS: 2 MiB (GRUB)"
+      ;;
+    biosmbr)
+      boot_compat_line="  BIOS: MBR (GRUB)"
+      ;;
+  esac
+
   local net4_block net6_block
   if [[ "${NET4_ENABLE:-1}" == "1" ]]; then
     if [[ "${NET4_MODE:-dhcp}" == "static" ]]; then
@@ -93,6 +106,7 @@ Boot   : ${BOOT_LABEL:-}
 Disk   : ${DISK:-}
 
 Partitions:
+${boot_compat_line}
   /boot: ${BOOT_SIZE_MIB:-} MiB
   swap : ${SWAP_SIZE_GIB:-} GiB
   root : ${root_line:-}
