@@ -15,6 +15,7 @@ source "$EXEC_DIR/30-mkfs.sh"
 source "$EXEC_DIR/35-mount.sh"
 source "$EXEC_DIR/40-debootstrap.sh"
 source "$EXEC_DIR/45-chroot_mounts.sh"
+source "$EXEC_DIR/50-chroot_dns.sh"
 
 # ---- step wrappers for runner ----
 
@@ -61,6 +62,16 @@ exec_debootstrap_step() {
   return 0
 }
 
+exec_chroot_mounts_step() {
+  exec_chroot_mounts || return 1
+  return 0
+}
+
+exec_chroot_dns_step() {
+  exec_chroot_dns || return 1
+  return 0
+}
+
 # ---- main entry ----
 
 execute_install() {
@@ -89,7 +100,7 @@ execute_install() {
 
   # Build runner plan
   exec_runner_reset
-  exec_runner_add_step "release" "Release disk (umount/swapoff/LVM off)" 10 exec_release_disk_step
+  exec_runner_add_step "release" "Release disk (umount/swapoff/LVM off)"      10 exec_release_disk_step
   exec_runner_add_step "partition" "Partition disk (GPT/MBR)"                 20 exec_partition_step
   exec_runner_add_step "lvm" "Create LVM (PV/VG/LV root)"                     15 exec_lvm_step
   exec_runner_add_step "mkfs" "Create filesystems (EFI/boot/root/swap)"       15 exec_mkfs_step

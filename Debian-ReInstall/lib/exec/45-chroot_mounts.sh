@@ -5,7 +5,6 @@
 #   /dev, /dev/pts, /proc, /sys, /run -> ${TARGET_DIR}
 #
 # Public:
-#   exec_chroot_mounts_step
 #   exec_chroot_mounts
 #   exec_chroot_umounts
 #   exec_in_chroot (helper for next steps)
@@ -13,10 +12,6 @@
 # Requires variables:
 #   TARGET_DIR
 #   LOG_FILE
-
-exec_chroot_mounts_step() {
-  exec_chroot_mounts
-}
 
 exec_chroot_mounts() {
   : "${TARGET_DIR:?TARGET_DIR is required}"
