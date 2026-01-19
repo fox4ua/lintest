@@ -33,7 +33,7 @@ ui_warn_disk_busy_plan_only() {
   (( DISK_HAS_SWAP   )) && text+="• There is an active swap\n"
   (( DISK_HAS_LVM    )) && text+="• There is LVM PV\n"
   (( DISK_HAS_MD     )) && text+="• Possibly mdraid\n"
-  text+="\nThey will be disabled before marking."
+  text+="\nThe installer will attempt to disable mounts/swap/LVM and stop mdraid (if mdadm is available)."
 
   ui_dialog dialog --clear \
     --title "disk is used" \

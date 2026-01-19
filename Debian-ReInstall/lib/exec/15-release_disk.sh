@@ -53,6 +53,9 @@ disk_release_verify_clean() {
   # Verify that nothing from the disk is still mounted/swapped/active.
   local disk="$1"
   local rc=0
+  local base
+
+  base="$(basename "$disk")"
 
   # mounts
   if command -v findmnt >/dev/null 2>&1; then
@@ -101,6 +104,14 @@ disk_release_verify_clean() {
     )
   fi
 
+  # mdraid
+  if [[ -r /proc/mdstat ]]; then
+    if grep -q "$base" /proc/mdstat; then
+      log "[!] disk_release: disk is still part of mdraid: ${disk}"
+      rc=1
+    fi
+  fi
+
   return "$rc"
 }
 
@@ -126,6 +137,7 @@ exec_release_disk() {
   exec_release_swap "$disk" || rc=1
   exec_release_mounts "$disk" || rc=1
   exec_release_lvm "$disk" || rc=1
+  exec_release_md "$disk" || rc=1
 
   # Final verification: do not claim success if resources are still in use.
   if ! disk_release_verify_clean "$disk"; then
@@ -139,6 +151,45 @@ exec_release_disk() {
 
   log "[=] disk_release: done disk=$disk"
   return 0
+}
+
+exec_release_md() {
+  local disk="$1"
+  local rc=0
+  local base
+
+  [[ -r /proc/mdstat ]] || return 0
+
+  base="$(basename "$disk")"
+
+  local -a arrays=()
+  mapfile -t arrays < <(
+    awk -v base="$base" '
+      /^[[:alnum:]]+ :/ {md=$1}
+      md != "" && $0 ~ base {print md}
+    ' /proc/mdstat | sort -u
+  )
+
+  if (( ${#arrays[@]} == 0 )); then
+    return 0
+  fi
+
+  if ! command -v mdadm >/dev/null 2>&1; then
+    log "[!] disk_release: mdadm not found; cannot stop arrays: ${arrays[*]}"
+    ui_msg "Disk is part of an mdraid array (${arrays[*]}).\n\nmdadm is not available, so the array cannot be stopped automatically.\nInstall mdadm or stop the array manually, then retry.\nLog: ${LOG_FILE}"
+    return 1
+  fi
+
+  local md
+  for md in "${arrays[@]}"; do
+    log "[>] mdadm --stop /dev/${md}"
+    if ! mdadm --stop "/dev/${md}" >/dev/null 2>&1; then
+      log "[!] mdadm --stop failed: /dev/${md}"
+      rc=1
+    fi
+  done
+
+  return "$rc"
 }
 
 exec_release_swap() {
