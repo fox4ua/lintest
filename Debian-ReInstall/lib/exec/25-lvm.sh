@@ -108,7 +108,7 @@ exec_lvm_force_free_pv() {
   # 1) deactivate any VG that uses PVs on this disk
   mapfile -t vgs_on_disk < <(
     pvs --noheadings -o vg_name,pv_name 2>/dev/null \
-      | awk -v d="$disk" '$2 ~ "^"d {print $1}' \
+      | awk -v d="$disk" '$2 ~ "^"d && $1 != "" && $1 != "-" {print $1}' \
       | sort -u
   )
   if (( ${#vgs_on_disk[@]} )); then

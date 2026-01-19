@@ -94,8 +94,11 @@ exec_partition_disk() {
   esac
 
   exec_progress 80 "Reloading partition table..."
-  exec_refresh_parttable "$disk"
-
+  if ! exec_refresh_parttable "$disk"; then
+    log "[!] partition: failed to refresh partition table for ${disk}"
+    ui_msg "Failed to reload the partition table for ${disk}.\nThe device may be busy or required tools are missing.\n\nSee log: ${LOG_FILE}"
+    return 1
+  fi
   exec_progress 90 "Waiting for devices..."
   exec_partition_wait_devices "$disk" || return 1
 
