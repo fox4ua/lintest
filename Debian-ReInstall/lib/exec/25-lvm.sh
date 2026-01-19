@@ -3,9 +3,6 @@
 
 exec_lvm_create() {
   : "${LVM_MODE:?}"
-  : "${VG_NAME:?}"
-  : "${PART_PV:?}"
-  : "${DISK:?}"
 
   LV_ROOT=""
   LV_THINPOOL=""
@@ -14,6 +11,10 @@ exec_lvm_create() {
     log "[=] lvm: skipped (LVM_MODE=none)"
     return 0
   fi
+
+  : "${VG_NAME:?}"
+  : "${PART_PV:?}"
+  : "${DISK:?}"
 
   if [[ ! -b "${PART_PV}" ]]; then
     log "[!] lvm: PART_PV not found: ${PART_PV}"

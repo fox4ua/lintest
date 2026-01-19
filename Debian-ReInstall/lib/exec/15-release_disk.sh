@@ -89,7 +89,7 @@ disk_release_verify_clean() {
     while IFS= read -r vg; do
       [[ -n "$vg" && "$vg" != "-" ]] || continue
       # If any LV in VG is still active -> not clean.
-      if lvs --noheadings --separator '|' -o vg_name,lv_path,lv_active 2>/dev/null \
+      if env LVM_SUPPRESS_FD_WARNINGS=1 lvs --noheadings --separator '|' -o vg_name,lv_path,lv_active 2>/dev/null \
         | awk -F'|' '{gsub(/^[ \t]+|[ \t]+$/,"",$1); gsub(/^[ \t]+|[ \t]+$/,"",$2); gsub(/^[ \t]+|[ \t]+$/,"",$3); print $1"|"$2"|"$3}' \
         | awk -F'|' -v want="$vg" '$1==want && $3=="active" {print $2; found=1} END{exit(found?0:1)}'
       then
@@ -97,7 +97,7 @@ disk_release_verify_clean() {
         rc=1
       fi
     done < <(
-      pvs --noheadings -o pv_name,vg_name 2>/dev/null \
+      env LVM_SUPPRESS_FD_WARNINGS=1 pvs --noheadings -o pv_name,vg_name 2>/dev/null \
         | awk '{$1=$1;print}' \
         | awk -v d="$disk" '$1 ~ "^"d {print $2}' \
         | sort -u || true
@@ -224,7 +224,7 @@ exec_release_mounts() {
     return 0
   fi
 
-  # Unmount in reverse order (deepest paths first).
+  local -a root_mounts=()
   local line src tgt
   while IFS= read -r line; do
     [[ -n "$line" ]] || continue
@@ -233,26 +233,48 @@ exec_release_mounts() {
     [[ -n "$src" && -n "$tgt" ]] || continue
     [[ "$tgt" != "/" ]] || continue
     disk_release_src_on_disk "$src" || continue
+    root_mounts+=("$tgt")
+  done < <(findmnt -rn -o SOURCE,TARGET 2>/dev/null || true)
 
-    log "[>] umount ${tgt} (${src})"
-    if umount "$tgt"; then
+  if (( ${#root_mounts[@]} == 0 )); then
+    return 0
+  fi
+
+  local uniq_roots
+  uniq_roots="$(printf '%s\n' "${root_mounts[@]}" | sort -u)"
+
+  local -a targets=()
+  while IFS= read -r tgt; do
+    [[ -n "$tgt" ]] || continue
+    targets+=("$tgt")
+  done < <(
+    while IFS= read -r tgt; do
+      [[ -n "$tgt" ]] || continue
+      findmnt -rn -o TARGET -R "$tgt" 2>/dev/null || true
+    done <<<"$uniq_roots" \
+      | sort -u \
+      | awk '{print length($1), $1}' \
+      | sort -rn \
+      | awk '{print $2}'
+  )
+
+  local target
+  for target in "${targets[@]}"; do
+    [[ -n "$target" ]] || continue
+    [[ "$target" != "/" ]] || continue
+    log "[>] umount ${target}"
+    if umount "$target"; then
       :
     else
-      log "[!] umount failed, trying lazy: ${tgt}"
-      umount -l "$tgt" || true
+      log "[!] umount failed, trying lazy: ${target}"
+      umount -l "$target" || true
     fi
 
-    if findmnt -nr "$tgt" >/dev/null 2>&1; then
-      log "[!] still mounted after umount: ${tgt}"
+    if findmnt -nr "$target" >/dev/null 2>&1; then
+      log "[!] still mounted after umount: ${target}"
       rc=1
     fi
-  done < <(
-    findmnt -rn -o SOURCE,TARGET 2>/dev/null \
-      | awk '{print length($2), $0}' \
-      | sort -rn \
-      | cut -d' ' -f2- \
-      || true
-  )
+  done
 
   return "$rc"
 }
@@ -280,7 +302,10 @@ exec_release_lvm() {
     [[ "$pv" == "$disk"* ]] || continue
     [[ -n "$vg" && "$vg" != "-" ]] || continue
     vgs+=("$vg")
-  done < <(pvs --noheadings -o pv_name,vg_name 2>/dev/null | awk '{$1=$1;print}' || true)
+  done < <(
+    env LVM_SUPPRESS_FD_WARNINGS=1 pvs --noheadings -o pv_name,vg_name 2>/dev/null \
+      | awk '{$1=$1;print}' || true
+  )
 
   if [[ ${#vgs[@]} -eq 0 ]]; then
     return 0
@@ -299,26 +324,26 @@ exec_release_lvm() {
         [[ "$lvactive" == "active" ]] || continue
         [[ -n "$lvpath" ]] || continue
         log "[>] lvchange -an ${lvpath}"
-        if ! lvchange -an "$lvpath"; then
+        if ! env LVM_SUPPRESS_FD_WARNINGS=1 lvchange -an "$lvpath"; then
           log "[!] lvchange -an failed: ${lvpath}"
           rc=1
         fi
       done < <(
-        lvs --noheadings --separator '|' -o vg_name,lv_path,lv_active 2>/dev/null \
+        env LVM_SUPPRESS_FD_WARNINGS=1 lvs --noheadings --separator '|' -o vg_name,lv_path,lv_active 2>/dev/null \
           | awk -F'|' '{gsub(/^[ \t]+|[ \t]+$/,"",$1); gsub(/^[ \t]+|[ \t]+$/,"",$2); gsub(/^[ \t]+|[ \t]+$/,"",$3); print $1"|"$2"|"$3}' \
           || true
       )
     fi
 
     log "[>] vgchange -an ${vg}"
-    if ! vgchange -an "$vg"; then
+    if ! env LVM_SUPPRESS_FD_WARNINGS=1 vgchange -an "$vg"; then
       log "[!] disk_release: vgchange -an ${vg} failed"
       rc=1
     fi
 
     # Verify no active LVs remain.
     if command -v lvs >/dev/null 2>&1; then
-      if lvs --noheadings --separator '|' -o vg_name,lv_path,lv_active 2>/dev/null \
+      if env LVM_SUPPRESS_FD_WARNINGS=1 lvs --noheadings --separator '|' -o vg_name,lv_path,lv_active 2>/dev/null \
         | awk -F'|' '{gsub(/^[ \t]+|[ \t]+$/,"",$1); gsub(/^[ \t]+|[ \t]+$/,"",$2); gsub(/^[ \t]+|[ \t]+$/,"",$3); print $1"|"$2"|"$3}' \
         | awk -F'|' -v want="$vg" '$1==want && $3=="active" {print $2; found=1} END{exit(found?0:1)}'
       then
