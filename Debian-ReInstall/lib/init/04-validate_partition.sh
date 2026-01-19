@@ -2,6 +2,7 @@
 
 validate_partition_sizes() {
   local disk_bytes boot_bytes swap_bytes root_bytes required_bytes extra_bytes overhead_bytes
+  local mbr_limit_bytes
 
   disk_bytes="$(disk_get_size_bytes "$DISK" || true)"
   if [[ -z "$disk_bytes" ]]; then
@@ -23,6 +24,14 @@ validate_partition_sizes() {
       extra_bytes=0
       ;;
   esac
+
+  if [[ "$BOOT_MODE" == "biosmbr" ]]; then
+    mbr_limit_bytes=$(( 2 * 1024 * 1024 * 1024 * 1024 ))
+    if (( disk_bytes > mbr_limit_bytes )); then
+      ui_msg "Выбран Legacy BIOS + MBR, но размер диска превышает 2 TiB.\n\nMBR не поддерживает такие диски для загрузки. Выберите режим UEFI + GPT или Legacy BIOS + GPT."
+      return 1
+    fi
+  fi
   if (( ROOT_SIZE_GIB == 0 )); then
     required_bytes=$(( boot_bytes + swap_bytes + extra_bytes + overhead_bytes ))
   else

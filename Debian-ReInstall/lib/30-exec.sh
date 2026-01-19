@@ -70,9 +70,11 @@ execute_install() {
   exec_require_tools \
     lsblk \
     findmnt \
+    mount \
     swapon \
     umount \
     swapoff \
+    chroot \
     pvs \
     lvs \
     lvchange \
