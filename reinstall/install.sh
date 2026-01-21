@@ -70,9 +70,13 @@ LOG_FILE="${LOG_FILE:-/root/debootstrap_install.log}"
 ASSUME_YES="${ASSUME_YES:-0}"               # 1 = no destructive confirmation prompt
 
 # libs (step 1)
-source "$BASE_DIR/lib/00-log.sh"
-source "$BASE_DIR/lib/01-utils.sh"
-
+source "$BASE_DIR/lib/00-env.sh"
+source "$BASE_DIR/lib/10-log.sh"
+source "$BASE_DIR/lib/15-cli.sh"
+source "$BASE_DIR/lib/20-utils.sh"
+source "$BASE_DIR/lib/30-prompts.sh"
+source "$BASE_DIR/lib/35-preflight.sh"
+source "$BASE_DIR/lib/40-disk.sh"
 
 ###############################################################################
 # Helpers
@@ -82,247 +86,10 @@ trap cleanup_secrets EXIT
 
 trap 'on_err $LINENO "$BASH_COMMAND"' ERR
 
-usage() {
-  cat <<'EOF'
-Usage:
-  sudo ./debootstrap-install.sh --disk /dev/sdX [options]
-
-Options:
-  --disk /dev/sdX                (required)
-  --release bullseye|bookworm|trixie|testing|sid
-  --mirror http://deb.debian.org/debian
-  --hostname myhost
-  --boot-mode auto|uefi|bios
-
-  --lvm-mode none|lvm|thin
-  --vg-name vg0
-  --root-size 30G
-  --boot-size 256M|512M|1G|2G
-  --swap none|1G|2G|4G
-  --fs ext4|xfs|btrfs
-  --data-fs ext4|xfs|btrfs
-  --thinpool-pct-free 90         (thinpool = %FREE, default 90)
-
-  --iface ens3
-  --net dhcp|static
-  --ip 203.0.113.10/24
-  --gw 203.0.113.1
-  --dns "1.1.1.1 8.8.8.8"
-  --networkd 0|1
-
-  --root-pass 'StrongPass'       (optional; if omitted, will prompt; empty locks root)
-  --ssh-key-file /path/to/key
-  --timezone Europe/Kyiv
-  --yes
-EOF
-}
-
-prompt_root_pass() {
-  local p1 p2
-  while true; do
-    echo -n "Enter root password (leave empty to LOCK root): " >&2
-    IFS= read -r -s p1; echo >&2
-    if [[ -z "$p1" ]]; then
-      ROOT_PASS=""
-      return 0
-    fi
-    echo -n "Confirm root password: " >&2
-    IFS= read -r -s p2; echo >&2
-    [[ "$p1" == "$p2" ]] || { echo "Passwords do not match. Try again." >&2; continue; }
-    ROOT_PASS="$p1"
-    return 0
-  done
-}
-
-
-release_disk() {
-  local disk="$1"
-
-  # stop typical automounters if present (safe no-op otherwise)
-  if command -v systemctl >/dev/null 2>&1; then
-    systemctl stop udisks2.service 2>/dev/null || true
-    systemctl stop udisks2.socket  2>/dev/null || true
-  fi
-
-  # swap off anything
-  swapoff -a 2>/dev/null || true
-
-  # unmount everything on this disk (including automounts)
-  local mp
-  while IFS= read -r mp; do
-    [[ -n "$mp" ]] || continue
-    umount -lf "$mp" 2>/dev/null || true
-  done < <(lsblk -lnpo MOUNTPOINTS "$disk" | awk 'NF')
-
-  # deactivate LVM/MD/dm that might hold partitions
-  command -v vgchange >/dev/null 2>&1 && vgchange -an  >/dev/null 2>&1 || true
-  command -v lvchange >/dev/null 2>&1 && lvchange -an  >/dev/null 2>&1 || true
-  command -v mdadm    >/dev/null 2>&1 && mdadm --stop --scan >/dev/null 2>&1 || true
-  command -v dmsetup  >/dev/null 2>&1 && dmsetup remove_all >/dev/null 2>&1 || true
-
-  # settle
-  command -v partx    >/dev/null 2>&1 && partx -u "$disk" >/dev/null 2>&1 || true
-  command -v udevadm  >/dev/null 2>&1 && udevadm settle || true
-}
-
-
-prompt_lvm_mode() {
-  local ans
-  while true; do
-    echo "Select storage mode:"
-    echo "  1) без LVM"
-    echo "  2) classic LVM"
-    echo "  3) тонкий LVM (thin)"
-    read -r -p "Choose [1-3]: " ans
-    case "$ans" in
-      1) LVM_MODE="none"; return 0;;
-      2) LVM_MODE="lvm";  return 0;;
-      3) LVM_MODE="thin"; return 0;;
-      *) echo "Invalid choice. Try again." >&2;;
-    esac
-  done
-}
-
-prompt_boot_size() {
-  local ans
-  while true; do
-    echo "Select /boot size:"
-    echo "  1) 256M"
-    echo "  2) 512M"
-    echo "  3) 1G"
-    echo "  4) 2G"
-    read -r -p "Choose [1-4]: " ans
-    case "$ans" in
-      1) BOOT_SIZE="256M"; return 0;;
-      2) BOOT_SIZE="512M"; return 0;;
-      3) BOOT_SIZE="1G";   return 0;;
-      4) BOOT_SIZE="2G";   return 0;;
-      *) echo "Invalid choice. Try again." >&2;;
-    esac
-  done
-}
-
-prompt_swap_choice() {
-  local ans
-  while true; do
-    echo "Select swap:"
-    echo "  1) без swap"
-    echo "  2) 1G"
-    echo "  3) 2G"
-    echo "  4) 4G"
-    read -r -p "Choose [1-4]: " ans
-    case "$ans" in
-      1) SWAP_CHOICE="none"; return 0;;
-      2) SWAP_CHOICE="1G";   return 0;;
-      3) SWAP_CHOICE="2G";   return 0;;
-      4) SWAP_CHOICE="4G";   return 0;;
-      *) echo "Invalid choice. Try again." >&2;;
-    esac
-  done
-}
-
-fetch_release_file() {
-  local url="$1"
-  if have_cmd curl; then
-    curl -fsSL --max-time 10 "$url" >/dev/null
-  elif have_cmd wget; then
-    wget -qO- --timeout=10 "$url" >/dev/null
-  else
-    die "Missing command: curl or wget (need one for mirror check)"
-  fi
-}
-
-ensure_pkg_tools() {
-  if ! have_cmd apt-get; then
-    die "apt-get not found in rescue env. Use a rescue image with apt-get."
-  fi
-  if ! have_cmd curl && ! have_cmd wget; then
-    log "Installing curl (no curl/wget present)..."
-    apt-get update
-    apt-get install -y ca-certificates curl
-  fi
-}
-
-ensure_debootstrap() {
-  if have_cmd debootstrap; then return 0; fi
-  ensure_pkg_tools
-  log "debootstrap not found. Installing debootstrap..."
-  apt-get update
-  apt-get install -y debootstrap
-  have_cmd debootstrap || die "Failed to install debootstrap"
-}
-
-ensure_lvm_tools() {
-  if [[ "$LVM_MODE" == "none" ]]; then return 0; fi
-  if have_cmd pvcreate && have_cmd vgcreate && have_cmd lvcreate && have_cmd lvs && have_cmd vgs; then return 0; fi
-  ensure_pkg_tools
-  log "LVM tools not found. Installing lvm2..."
-  apt-get update
-  apt-get install -y lvm2
-  have_cmd pvcreate || die "Failed to install lvm2"
-}
-
-kernel_reread_pt() {
-  local disk="$1"
-  local expected="${2:-3}"
-  partx -u "$disk" >/dev/null 2>&1 || partx -a "$disk" >/dev/null 2>&1 || true
-  have_cmd udevadm && udevadm settle || true
-
-  local i parts_count
-  for i in {1..40}; do
-    parts_count="$(lsblk -lnpo NAME,TYPE "$disk" 2>/dev/null | awk '$2=="part"{c++} END{print c+0}')"
-    [[ "$parts_count" -ge "$expected" ]] && return 0
-    sleep 0.2
-  done
-  return 1
-}
-
-resolve_part_by_label() {
-  local label="$1"
-  blkid -t "PARTLABEL=$label" -o device 2>/dev/null | head -n1 || true
-}
-
-list_disk_parts() {
-  local disk="$1"
-  lsblk -lnpo NAME,TYPE "$disk" 2>/dev/null | awk '$2=="part"{print $1}'
-}
-
 ###############################################################################
 # CLI parse
 ###############################################################################
-while [[ $# -gt 0 ]]; do
-  case "$1" in
-    --disk) DISK="$2"; shift 2;;
-    --release) RELEASE="$2"; shift 2;;
-    --mirror) MIRROR="$2"; shift 2;;
-    --hostname) HOSTNAME="$2"; shift 2;;
-    --boot-mode) BOOT_MODE="$2"; shift 2;;
-
-    --lvm-mode) LVM_MODE="$2"; shift 2;;
-    --vg-name) VG_NAME="$2"; shift 2;;
-    --root-size) ROOT_SIZE="$2"; shift 2;;
-    --boot-size) BOOT_SIZE="$2"; shift 2;;
-    --swap) SWAP_CHOICE="$2"; shift 2;;
-    --fs) ROOT_FS="$2"; shift 2;;
-    --data-fs) DATA_FS="$2"; shift 2;;
-    --thinpool-pct-free) THINPOOL_PCT_FREE="$2"; shift 2;;
-
-    --iface) IFACE="$2"; shift 2;;
-    --net) NET_MODE="$2"; shift 2;;
-    --ip) IP_ADDR="$2"; shift 2;;
-    --gw) GW_ADDR="$2"; shift 2;;
-    --dns) DNS_ADDR="$2"; shift 2;;
-    --networkd) USE_NETWORKD="$2"; shift 2;;
-
-    --root-pass) ROOT_PASS="$2"; shift 2;;
-    --ssh-key-file) SSH_KEY_FILE="$2"; shift 2;;
-    --timezone) TIMEZONE="$2"; shift 2;;
-    --yes) ASSUME_YES="1"; shift 1;;
-
-    -h|--help) usage; exit 0;;
-    *) die "Unknown arg: $1";;
-  esac
-done
+parse_args "$@"
 
 ###############################################################################
 # Preflight
@@ -364,16 +131,10 @@ case "$DATA_FS" in
 esac
 
 # Boot mode
-if [[ "$BOOT_MODE" == "auto" ]]; then
-  [[ -d /sys/firmware/efi ]] && BOOT_MODE="uefi" || BOOT_MODE="bios"
-fi
-[[ "$BOOT_MODE" == "uefi" || "$BOOT_MODE" == "bios" ]] || die "BOOT_MODE must be auto|uefi|bios"
+preflight_detect_boot_mode
 
 # Interface
-if [[ -z "$IFACE" ]]; then
-  IFACE="$(ip -o link show 2>/dev/null | awk -F': ' '$2 !~ /^(lo|docker|veth|br-|virbr|tun|tap)/ {print $2; exit}')"
-fi
-[[ -n "$IFACE" ]] || die "Could not auto-detect IFACE; set --iface"
+preflight_detect_iface
 
 # Storage mode
 if [[ -z "$LVM_MODE" ]]; then prompt_lvm_mode; fi
@@ -420,26 +181,17 @@ fi
 ensure_debootstrap
 ensure_lvm_tools
 
+# Time sanity
+preflight_check_time
+
 # DNS/mirror sanity
-log "Checking DNS resolution..."
-getent ahostsv4 deb.debian.org >/dev/null 2>&1 || die "DNS failed for deb.debian.org (fix /etc/resolv.conf in rescue)"
-log "Checking mirror reachability: $MIRROR (release=$RELEASE)"
-fetch_release_file "$MIRROR/dists/$RELEASE/Release" || die "Mirror not reachable or release not found"
+preflight_check_dns_mirror
 
 # Prevent installing on current root disk
-root_src="$(findmnt -no SOURCE / || true)"
-root_base=""
-if [[ -n "$root_src" && -b "$root_src" ]]; then
-  root_base="$(lsblk -no PKNAME "$root_src" 2>/dev/null || true)"
-fi
-if [[ -n "$root_base" && "/dev/$root_base" == "$DISK" ]]; then
-  die "Refusing to install onto current root disk: $DISK"
-fi
+preflight_refuse_if_current_root_disk
 
 # Validate static net
-if [[ "$NET_MODE" == "static" ]]; then
-  [[ -n "$IP_ADDR" && -n "$GW_ADDR" ]] || die "Static net requires --ip (CIDR) and --gw"
-fi
+preflight_validate_static_net
 
 # Destructive confirm
 log "Selected:"
