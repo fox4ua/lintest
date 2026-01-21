@@ -71,14 +71,12 @@ ASSUME_YES="${ASSUME_YES:-0}"               # 1 = no destructive confirmation pr
 
 # libs (step 1)
 source "$BASE_DIR/lib/00-log.sh"
+source "$BASE_DIR/lib/01-utils.sh"
 
 
 ###############################################################################
 # Helpers
 ###############################################################################
-have_cmd() { command -v "$1" >/dev/null 2>&1; }
-need_cmd() { have_cmd "$1" || die "Missing command: $1"; }
-
 cleanup_secrets() { unset ROOT_PASS || true; }
 trap cleanup_secrets EXIT
 
@@ -117,16 +115,6 @@ Options:
   --timezone Europe/Kyiv
   --yes
 EOF
-}
-
-confirm() {
-  local msg="$1"
-  if [[ "$ASSUME_YES" == "1" ]]; then
-    log "Auto-confirm: $msg"
-    return 0
-  fi
-  read -r -p "$msg [y/N]: " ans
-  [[ "${ans,,}" == "y" || "${ans,,}" == "yes" ]]
 }
 
 prompt_root_pass() {
@@ -231,22 +219,6 @@ prompt_swap_choice() {
       *) echo "Invalid choice. Try again." >&2;;
     esac
   done
-}
-
-valid_size() { [[ "$1" =~ ^[0-9]+[kKmMgGtT]$ ]]; }
-
-parse_size_to_bytes() {
-  local s="$1" n unit mul
-  n="${s%[kKmMgGtT]}"
-  unit="${s:${#s}-1:1}"
-  case "${unit^^}" in
-    K) mul=1024 ;;
-    M) mul=$((1024*1024)) ;;
-    G) mul=$((1024*1024*1024)) ;;
-    T) mul=$((1024*1024*1024*1024)) ;;
-    *) die "Bad size unit: $s" ;;
-  esac
-  echo $(( n * mul ))
 }
 
 fetch_release_file() {
