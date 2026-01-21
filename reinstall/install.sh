@@ -26,50 +26,6 @@ export BASE_DIR
 # If debootstrap/lvm tools are missing, script will install them using apt-get (from rescue env).
 # Destroys ALL data on target disk. Run from rescue/live environment as root.
 
-###############################################################################
-# Config (override via env or CLI args)
-###############################################################################
-DISK="${DISK:-}"
-RELEASE="${RELEASE:-bookworm}"              # bullseye|bookworm|trixie|testing|sid
-MIRROR="${MIRROR:-http://deb.debian.org/debian}"
-HOSTNAME="${HOSTNAME:-debian}"
-ARCH="${ARCH:-amd64}"
-
-BOOT_MODE="${BOOT_MODE:-auto}"              # auto|uefi|bios
-EFI_SIZE="${EFI_SIZE:-512M}"                # fixed for UEFI
-BOOT_SIZE="${BOOT_SIZE:-}"                  # 256M|512M|1G|2G (if empty -> prompt)
-SWAP_CHOICE="${SWAP_CHOICE:-}"              # none|1G|2G|4G (if empty -> prompt)
-ROOT_SIZE="${ROOT_SIZE:-}"                  # e.g. 30G (if empty -> prompt)
-
-ROOT_FS="${ROOT_FS:-ext4}"                  # ext4|xfs|btrfs
-DATA_FS="${DATA_FS:-$ROOT_FS}"              # default same as root
-
-# Storage mode: none|lvm|thin (if empty -> prompt)
-LVM_MODE="${LVM_MODE:-}"
-VG_NAME="${VG_NAME:-vg0}"
-LV_ROOT_NAME="${LV_ROOT_NAME:-root}"
-LV_SWAP_NAME="${LV_SWAP_NAME:-swap}"
-LV_DATA_NAME="${LV_DATA_NAME:-data}"
-THINPOOL_NAME="${THINPOOL_NAME:-thinpool}"
-THINPOOL_PCT_FREE="${THINPOOL_PCT_FREE:-90}"  # thinpool = 90%FREE (headroom)
-
-NET_MODE="${NET_MODE:-dhcp}"                # dhcp|static
-IFACE="${IFACE:-}"                          # e.g. ens3
-IP_ADDR="${IP_ADDR:-}"                      # e.g. 203.0.113.10/24
-GW_ADDR="${GW_ADDR:-}"                      # e.g. 203.0.113.1
-DNS_ADDR="${DNS_ADDR:-1.1.1.1 8.8.8.8}"
-USE_NETWORKD="${USE_NETWORKD:-0}"           # 1 = systemd-networkd, 0 = ifupdown
-
-ROOT_PASS="${ROOT_PASS:-}"                  # if empty -> prompt; empty input locks root
-SSH_KEY_FILE="${SSH_KEY_FILE:-}"            # path to public key or authorized_keys for root
-TIMEZONE="${TIMEZONE:-UTC}"
-
-TARGET="${TARGET:-/mnt/target}"
-LOG_FILE="${LOG_FILE:-/root/debootstrap_install.log}"
-
-ASSUME_YES="${ASSUME_YES:-0}"               # 1 = no destructive confirmation prompt
-USE_DIALOG="${USE_DIALOG:-1}"               # 1 = dialog UI if available, 0 = CLI prompts
-
 # libs (step 1)
 source "$BASE_DIR/lib/00-env.sh"
 source "$BASE_DIR/lib/10-log.sh"
@@ -81,7 +37,10 @@ source "$BASE_DIR/lib/40-disk.sh"
 source "$BASE_DIR/lib/45-partition.sh"
 source "$BASE_DIR/lib/50-storage.sh"
 source "$BASE_DIR/lib/55-mount.sh"
-source "$BASE_DIR/lib/10-config.sh"
+source "$BASE_DIR/lib/60-config.sh"
+source "$BASE_DIR/lib/65-chroot.sh"
+source "$BASE_DIR/lib/70-grub.sh"
+source "$BASE_DIR/lib/75-debootstrap.sh"
 
 ###############################################################################
 # Helpers
@@ -219,16 +178,11 @@ fi
 ###############################################################################
 mount_cleanup_target_if_mounted "$TARGET"
 
-log "Releasing locks (best-effort)..."
-swapoff -a || true
-have_cmd vgchange && vgchange -an >/dev/null 2>&1 || true
-have_cmd lvchange && lvchange -an >/dev/null 2>&1 || true
-have_cmd mdadm && mdadm --stop --scan >/dev/null 2>&1 || true
-have_cmd kpartx && kpartx -d "$DISK" >/dev/null 2>&1 || true
+log "Releasing locks for $DISK (umount/swapoff/LVM/MD/dm/kpartx)..."
+release_disk "$DISK"
 
 log "Wiping signatures and partition table on $DISK..."
-wipefs -a "$DISK"
-sgdisk --zap-all "$DISK"
+disk_wipe_all "$DISK"
 
 ###############################################################################
 # Partitioning (GPT) + resolve device paths
@@ -253,8 +207,7 @@ mount_enable_swap
 ###############################################################################
 # Debootstrap
 ###############################################################################
-log "Running debootstrap..."
-debootstrap --arch="$ARCH" --variant=minbase "$RELEASE" "$TARGET" "$MIRROR"
+debootstrap_run
 
 ###############################################################################
 # Base config
@@ -269,183 +222,14 @@ mount_chroot_binds
 ###############################################################################
 # Chroot provisioning
 ###############################################################################
-log "Provisioning system inside chroot..."
-cat >"$TARGET/root/provision.sh" <<'EOS'
-#!/usr/bin/env bash
-set -Eeuo pipefail
-export DEBIAN_FRONTEND=noninteractive
-
-BOOT_MODE="${BOOT_MODE}"
-IFACE="${IFACE}"
-NET_MODE="${NET_MODE}"
-IP_ADDR="${IP_ADDR}"
-GW_ADDR="${GW_ADDR}"
-DNS_ADDR="${DNS_ADDR}"
-USE_NETWORKD="${USE_NETWORKD}"
-TIMEZONE="${TIMEZONE}"
-LVM_MODE="${LVM_MODE}"
-
-apt-get update
-
-pkgs=(
-  linux-image-amd64
-  ca-certificates
-  curl
-  vim-tiny
-  sudo
-  locales
-  tzdata
-  openssh-server
-  less
-  iproute2
-  iputils-ping
-  gnupg
-)
-
-if [[ "$USE_NETWORKD" == "1" ]]; then
-  pkgs+=(systemd-resolved)
-else
-  pkgs+=(ifupdown)
-fi
-
-if [[ "$BOOT_MODE" == "uefi" ]]; then
-  pkgs+=(grub-efi-amd64 efibootmgr)
-else
-  pkgs+=(grub-pc)
-fi
-
-if [[ "$LVM_MODE" != "none" ]]; then
-  pkgs+=(lvm2)
-fi
-
-apt-get install -y "${pkgs[@]}"
-
-# Locale
-sed -i 's/^# *en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen || true
-locale-gen || true
-update-locale LANG=en_US.UTF-8 || true
-
-# Timezone
-ln -sf "/usr/share/zoneinfo/$TIMEZONE" /etc/localtime
-dpkg-reconfigure -f noninteractive tzdata || true
-
-# Network config
-if [[ "$USE_NETWORKD" == "1" ]]; then
-  systemctl enable systemd-networkd
-  systemctl enable systemd-resolved
-
-  mkdir -p /etc/systemd/network
-  cat >"/etc/systemd/network/10-wan.network" <<EOF
-[Match]
-Name=$IFACE
-
-[Network]
-EOF
-
-  if [[ "$NET_MODE" == "dhcp" ]]; then
-    echo "DHCP=yes" >>"/etc/systemd/network/10-wan.network"
-  else
-    {
-      echo "Address=$IP_ADDR"
-      echo "Gateway=$GW_ADDR"
-      for d in $DNS_ADDR; do echo "DNS=$d"; done
-    } >>"/etc/systemd/network/10-wan.network"
-  fi
-
-  ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf || true
-else
-  cat >/etc/network/interfaces <<EOF
-auto lo
-iface lo inet loopback
-
-auto $IFACE
-EOF
-
-  if [[ "$NET_MODE" == "dhcp" ]]; then
-    cat >>/etc/network/interfaces <<EOF
-iface $IFACE inet dhcp
-EOF
-  else
-    addr="${IP_ADDR%/*}"
-    cidr="${IP_ADDR#*/}"
-    netmask=""
-    if command -v python3 >/dev/null 2>&1; then
-      netmask="$(python3 - <<PY
-import ipaddress
-n = ipaddress.IPv4Network("0.0.0.0/" + "$cidr")
-print(str(n.netmask))
-PY
-)"
-    fi
-    if [[ -z "$netmask" ]]; then
-      netmask="255.255.255.0"
-      echo "WARN: netmask defaulted to $netmask (install python3 or set manually)" >&2
-    fi
-
-    cat >>/etc/network/interfaces <<EOF
-iface $IFACE inet static
-  address $addr
-  netmask $netmask
-  gateway $GW_ADDR
-  dns-nameservers $DNS_ADDR
-EOF
-  fi
-fi
-
-# SSH: root login via keys by default
-sed -i 's/^#\?PermitRootLogin .*/PermitRootLogin prohibit-password/' /etc/ssh/sshd_config || true
-systemctl enable ssh
-
-# LVM root: update initramfs
-if [[ "$LVM_MODE" != "none" ]]; then
-  update-initramfs -u -k all || true
-fi
-
-apt-get clean
-rm -f /root/provision.sh
-EOS
-
-chmod +x "$TARGET/root/provision.sh"
-
-chroot "$TARGET" /usr/bin/env \
-  BOOT_MODE="$BOOT_MODE" IFACE="$IFACE" NET_MODE="$NET_MODE" \
-  IP_ADDR="$IP_ADDR" GW_ADDR="$GW_ADDR" DNS_ADDR="$DNS_ADDR" USE_NETWORKD="$USE_NETWORKD" \
-  TIMEZONE="$TIMEZONE" LVM_MODE="$LVM_MODE" \
-  /root/provision.sh
-
-###############################################################################
-# Set/lock root password (fed via stdin)
-###############################################################################
-if [[ -n "${ROOT_PASS}" ]]; then
-  log "Setting root password..."
-  printf 'root:%s\n' "$ROOT_PASS" | chroot "$TARGET" chpasswd
-else
-  log "Locking root password..."
-  chroot "$TARGET" passwd -l root >/dev/null 2>&1 || true
-fi
-unset ROOT_PASS
-
-###############################################################################
-# SSH keys (copy from host)
-###############################################################################
-if [[ -n "$SSH_KEY_FILE" ]]; then
-  log "Installing SSH keys for root from $SSH_KEY_FILE..."
-  mkdir -p "$TARGET/root/.ssh"
-  chmod 700 "$TARGET/root/.ssh"
-  cat "$SSH_KEY_FILE" >>"$TARGET/root/.ssh/authorized_keys"
-  chmod 600 "$TARGET/root/.ssh/authorized_keys"
-fi
+chroot_provision_system
+chroot_set_root_password
+chroot_install_ssh_keys
 
 ###############################################################################
 # Install GRUB
 ###############################################################################
-log "Installing GRUB..."
-if [[ "$BOOT_MODE" == "uefi" ]]; then
-  chroot "$TARGET" grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=debian --recheck --no-nvram
-else
-  chroot "$TARGET" grub-install --target=i386-pc --recheck "$DISK"
-fi
-chroot "$TARGET" update-grub
+grub_install_and_update
 
 ###############################################################################
 # Cleanup mounts

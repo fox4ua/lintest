@@ -29,13 +29,20 @@ release_disk() {
   command -v lvchange >/dev/null 2>&1 && lvchange -an  >/dev/null 2>&1 || true
   command -v mdadm    >/dev/null 2>&1 && mdadm --stop --scan >/dev/null 2>&1 || true
   command -v dmsetup  >/dev/null 2>&1 && dmsetup remove_all >/dev/null 2>&1 || true
+  command -v kpartx   >/dev/null 2>&1 && kpartx -d "$disk" >/dev/null 2>&1 || true
 
   # settle
   command -v partx    >/dev/null 2>&1 && partx -u "$disk" >/dev/null 2>&1 || true
   command -v udevadm  >/dev/null 2>&1 && udevadm settle || true
 }
 
-
+disk_wipe_all() {
+  local disk="$1"
+  wipefs -a "$disk"
+  sgdisk --zap-all "$disk"
+  command -v partx   >/dev/null 2>&1 && partx -u "$disk" >/dev/null 2>&1 || true
+  command -v udevadm >/dev/null 2>&1 && udevadm settle || true
+}
 
 kernel_reread_pt() {
   local disk="$1"
