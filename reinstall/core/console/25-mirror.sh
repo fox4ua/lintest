@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-# Выбор Debian mirror
-# Возвраты:
-#   0 -> выбран/введён mirror
-#   1 -> Cancel
 ui_pick_debian_mirror_console() {
   local out_var="$1"
   local default_mirror="http://deb.debian.org/debian"
@@ -14,7 +10,6 @@ ui_pick_debian_mirror_console() {
     echo "Debian mirror:"
     echo "  1) Use default: ${default_mirror}"
     echo "  2) Enter custom mirror"
-    echo "  0) Cancel"
     printf "Choose [1-2, 0=Cancel]: "
     read -r ans
 

@@ -5,13 +5,15 @@ ui_print_summary() {
   echo
   echo "================ SUMMARY ================"
   echo "DISK         : ${DISK}"
-
+  echo "BOOT_MODE    : ${BOOT_MODE}"
+  echo "LVM_MODE     : ${LVM_MODE}"
+  if [[ "${LVM_MODE}" == "lvm" || "${LVM_MODE}" == "thin" ]]; then
+    echo "VG_NAME      : ${VG_NAME}"
+  fi
 
   echo "MIRROR       : ${DEBIAN_MIRROR}"
 
   echo "UI_MODE      : ${UI_MODE}"
-  echo "BOOT_MODE    : ${BOOT_MODE}"
-  echo "LVM_MODE     : ${LVM_MODE}"
   echo "BOOT_SIZE    : ${BOOT_SIZE}"
   echo "SWAP         : ${SWAP_CHOICE}"
   echo "ROOT_SIZE    : ${ROOT_SIZE}"
