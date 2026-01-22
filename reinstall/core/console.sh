@@ -13,6 +13,10 @@ LVM_MODE="${LVM_MODE:-}"     # none|lvm|thin
 VG_NAME="${VG_NAME:-}"
 THINPOOL_NAME="${THINPOOL_NAME:-}"
 THINPOOL_PERCENT="${THINPOOL_PERCENT:-}"
+ROOT_FS="${ROOT_FS:-ext4}"
+DATA_FS="${DATA_FS:-ext4}"
+
+
 
 DEBIAN_MAJOR="${DEBIAN_MAJOR:-}"
 DEBIAN_CODENAME="${DEBIAN_CODENAME:-}"
@@ -38,19 +42,21 @@ die(){ echo "ERROR: $*" >&2; exit 1; }
 # shellcheck source=/dev/null
 source "$DIALOGS_DIR/10-disk.sh"
 source "$DIALOGS_DIR/15-boot-mode.sh"
-source "$DIALOGS_DIR/40-lvm-mode.sh"
-source "$DIALOGS_DIR/45-vg-name.sh"
-source "$DIALOGS_DIR/46-thinpool-name.sh"
-source "$DIALOGS_DIR/47-thinpool-percent.sh"
-
+source "$DIALOGS_DIR/20-lvm-mode.sh"
+source "$DIALOGS_DIR/21-vg-name.sh"
+source "$DIALOGS_DIR/22-thinpool-name.sh"
+source "$DIALOGS_DIR/23-thinpool-percent.sh"
+source "$DIALOGS_DIR/30-root-fs.sh"
+source "$DIALOGS_DIR/31-data-fs.sh"
+source "$DIALOGS_DIR/50-boot-size.sh"
+source "$DIALOGS_DIR/60-swap.sh"
+source "$DIALOGS_DIR/70-root-size.sh"
 
 source "$DIALOGS_DIR/20-release.sh"
 source "$DIALOGS_DIR/25-mirror.sh"
-source "$DIALOGS_DIR/50-boot-size.sh"
-source "$DIALOGS_DIR/60-swap.sh"
 
 
-source "$DIALOGS_DIR/70-root-size.sh"
+
 source "$DIALOGS_DIR/80-root-pass.sh"
 source "$DIALOGS_DIR/90-summary.sh"
 
@@ -64,9 +70,9 @@ validate_config() {
     # при no-lvm VG_NAME должен быть пустым
     VG_NAME=""
   fi
+  case "$ROOT_FS" in ext4|xfs|btrfs) :;; *) die "Invalid ROOT_FS=$ROOT_FS";; esac
+  case "$DATA_FS" in ext4|xfs|btrfs) :;; *) die "Invalid DATA_FS=$DATA_FS";; esac
 
-
-  [[ -n "$UI_MODE" ]] || die "UI_MODE is empty"
   [[ -n "$BOOT_MODE" ]] || die "BOOT_MODE is empty"
   [[ -n "$DISK" ]] || die "DISK is empty"
   case "$BOOT_MODE" in auto|uefi|bios) :;; *) die "Invalid BOOT_MODE=$BOOT_MODE";; esac
@@ -83,15 +89,15 @@ main() {
   ui_pick_disk_console DISK
   # choose boot mode
   ui_pick_boot_mode_console BOOT_MODE
-  
+  #
   ui_pick_lvm_mode_console LVM_MODE || exit 0
-
+  #
   if [[ "$LVM_MODE" == "lvm" || "$LVM_MODE" == "thin" ]]; then
     ui_pick_vg_name_console VG_NAME || exit 0
   else
     VG_NAME=""   # чтобы не тянуть мусор, когда LVM не используется
   fi
-  
+  #
   if [[ "$LVM_MODE" == "thin" ]]; then
     ui_pick_thinpool_name_console THINPOOL_NAME || exit 0
     ui_pick_thinpool_percent_console THINPOOL_PERCENT || exit 0
@@ -99,8 +105,16 @@ main() {
     THINPOOL_NAME=""
     THINPOOL_PERCENT=""
   fi
+  #
+  ui_pick_root_fs_console ROOT_FS || exit 0
   
+  ui_pick_data_fs_console DATA_FS || exit 0
+
+  ui_pick_boot_size_console BOOT_SIZE
   
+  ui_pick_swap_console SWAP_CHOICE
+
+  ui_pick_root_size_console ROOT_SIZE
   
   # choose debian release
   ui_pick_debian_release_console DEBIAN_MAJOR DEBIAN_CODENAME
@@ -111,11 +125,7 @@ main() {
   
   
   
-  ui_pick_boot_size_console BOOT_SIZE
-  
-  ui_pick_swap_console SWAP_CHOICE
 
-  ui_pick_root_size_console ROOT_SIZE
 
 
 

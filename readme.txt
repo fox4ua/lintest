@@ -33,7 +33,7 @@ Thin-LVM (thinpool 95%VG, root virtual size авто или указать):
     --vg-name vg0 — имя volume group для LVM.
     --thinpool-name
     --thinpool-pct-free 90 — процент свободного места под thinpool (по умолчанию 90%).
-    --fs ext4|xfs|btrfs — ФС для root.
+    --root-fs ext4|xfs|btrfs — ФС для root.
     --data-fs ext4|xfs|btrfs — ФС для data‑раздела.
 
     --boot-size 256M|512M|1G|2G — размер /boot (если не указан, скрипт попросит).
