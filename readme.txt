@@ -34,11 +34,12 @@ Thin-LVM (thinpool 95%VG, root virtual size авто или указать):
     --thinpool-name
     --thinpool-pct-free 90 — процент свободного места под thinpool (по умолчанию 90%).
     --root-fs ext4|xfs|btrfs — ФС для root.
-    --data-fs ext4|xfs|btrfs — ФС для data‑раздела.
-
     --boot-size 256M|512M|1G|2G — размер /boot (если не указан, скрипт попросит).
     --swap none|1G|2G|4G — размер swap или none。
     --root-size 30G — размер root‑раздела/тома.
+    --data-fs ext4|xfs|btrfs — ФС для data‑раздела.
+
+
 
 
 --release bullseye|bookworm|trixie|testing|sid — релиз Debian.

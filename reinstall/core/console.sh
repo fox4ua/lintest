@@ -111,12 +111,27 @@ main() {
   ui_pick_swap_console SWAP_CHOICE || exit 0
   # choose
   ui_pick_root_fs_console ROOT_FS || exit 0
-  #
-  ui_pick_root_size_console ROOT_SIZE
+  # input
+  ui_pick_root_size_console ROOT_SIZE || exit 0
 
 
   # choose
+# BOOT_MODE может быть auto -> используй effective как ранее
+boot_mode_effective="$BOOT_MODE"
+if [[ "$BOOT_MODE" == "auto" ]]; then
+  if [[ -d /sys/firmware/efi ]]; then
+    boot_mode_effective="uefi"
+  else
+    boot_mode_effective="bios"
+  fi
+fi
+
+# если root “съел всё” (или почти всё) — пропускаем data-fs
+if has_space_for_data_fs "$DISK" "$ROOT_SIZE" "$boot_mode_effective" "$EFI_SIZE" "$BOOT_SIZE" "$SWAP_SIZE" 1; then
   ui_pick_data_fs_console DATA_FS || exit 0
+else
+  DATA_FS=""   # не спрашиваем
+fi
 
 
 
@@ -127,13 +142,6 @@ main() {
 
 
 
-
-
-
-
-
-
-  # 2) Дальше — отдельные диалоги, каждый заполняет одну группу параметров
 
 
   # Пароль: пустой = LOCK root; но обязательно выставляем ROOT_PASS_SET=1
