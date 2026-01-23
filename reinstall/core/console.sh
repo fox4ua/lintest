@@ -39,6 +39,8 @@ die(){ echo "ERROR: $*" >&2; exit 1; }
 
 # ===== load dialogs =====
 source "$BASE_DIR/init/10-disk-checks.sh"
+source "$BASE_DIR/init/20-size-checks.sh"
+source "$BASE_DIR/init/25-iface-detect.sh"
 
 # shellcheck source=/dev/null
 source "$DIALOGS_DIR/10-disk.sh"
@@ -110,6 +112,11 @@ main() {
   ui_pick_boot_size_console BOOT_SIZE || exit 0
   # choose swap size
   ui_pick_swap_console SWAP_CHOICE || exit 0
+  if [[ "$SWAP_CHOICE" == "none" ]]; then
+    SWAP_SIZE="0"
+  else
+    SWAP_SIZE="$SWAP_CHOICE"
+  fi
   # choose
   ui_pick_root_fs_console ROOT_FS || exit 0
   # input

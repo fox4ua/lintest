@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+
+if ! declare -F log >/dev/null; then
+  log() { printf '%s\n' "$*" >&2; }
+fi
+
 disk_resolve_parent_disk() {
   local node="$1"
   local base parent type guard=0
@@ -193,4 +198,43 @@ disk_validate_choice() {
   fi
 
   return 0
+}
+
+has_space_for_data_fs() {
+  local disk="$1"
+  local root_size="$2"
+  local boot_mode="${3:-bios}"
+  local efi_size="${4:-256M}"
+  local boot_size="${5:-512M}"
+  local swap_size="${6:-0}"
+  local min_data_gb="${7:-1}"
+
+  local disk_bytes root_bytes reserved_bytes free_bytes min_data_bytes
+
+  disk_bytes="$(disk_size_bytes "$disk" 2>/dev/null || true)"
+  if [[ -z "$disk_bytes" || ! "$disk_bytes" =~ ^[0-9]+$ || "$disk_bytes" -le 0 ]]; then
+    return 1
+  fi
+
+  root_bytes="$(size_to_bytes "$root_size" 2>/dev/null || true)"
+  if [[ -z "$root_bytes" || ! "$root_bytes" =~ ^[0-9]+$ || "$root_bytes" -le 0 ]]; then
+    return 1
+  fi
+
+  reserved_bytes="$(calc_reserved_bytes "$boot_mode" "$efi_size" "$boot_size" "$swap_size" 2>/dev/null || true)"
+  if [[ -z "$reserved_bytes" || ! "$reserved_bytes" =~ ^[0-9]+$ ]]; then
+    return 1
+  fi
+
+  free_bytes=$(( disk_bytes - reserved_bytes - root_bytes ))
+  if (( free_bytes < 0 )); then
+    free_bytes=0
+  fi
+
+  min_data_bytes=$(( min_data_gb * 1024 * 1024 * 1024 ))
+  if (( free_bytes >= min_data_bytes )); then
+    return 0
+  fi
+
+  return 1
 }
