@@ -60,9 +60,12 @@ ui_pick_root_size_console() {
   free_bytes=$(( disk_bytes - reserved_bytes ))
   (( free_bytes < 0 )) && free_bytes=0
 
-  # max in GiB (floor), минимум 1
+  # max in GiB (floor)
   max_gb=$(( free_bytes / (1024 * 1024 * 1024) ))
-  (( max_gb < 1 )) && max_gb=1
+  if (( max_gb < 1 )); then
+    echo "ERROR: not enough free space for root (need at least 1 GiB)."
+    return 1
+  fi
 
   while true; do
     echo "Root size (--root-size) [GB only]"

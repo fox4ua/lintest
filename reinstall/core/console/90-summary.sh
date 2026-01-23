@@ -20,8 +20,20 @@ ui_print_summary() {
   echo "ROOT_SIZE       : ${ROOT_SIZE}"
 
 
-  echo "MIRROR       : ${DEBIAN_MIRROR}"
+  if [[ -n "${DATA_FS}" ]]; then
+    echo "DATA_FS         : ${DATA_FS}"
+  else
+    echo "DATA_FS         : (none)"
+  fi
 
+
+  echo "DEBIAN_MAJOR : ${DEBIAN_MAJOR}"
+  echo "DEBIAN_REL   : ${DEBIAN_CODENAME}"
+  echo "MIRROR       : ${DEBIAN_MIRROR}"
+  echo "HOSTNAME     : ${HOSTNAME}"
+  if [[ -n "${HOSTS_FQDN}" ]]; then
+    echo "HOSTS_FQDN   : ${HOSTS_FQDN}"
+  fi
 
   if [[ -n "${ROOT_PASS}" ]]; then
     echo "ROOT_PASS    : ***set***"

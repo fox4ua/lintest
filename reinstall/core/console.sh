@@ -24,7 +24,8 @@ DEBIAN_CODENAME="${DEBIAN_CODENAME:-}"
 DEBIAN_MIRROR="${DEBIAN_MIRROR:-}"
 HOSTNAME="${HOSTNAME:-}"
 HOSTS_FQDN="${HOSTS_FQDN:-}"
-
+IFACE="${IFACE:-}"
+NET4_MODE="${NET4_MODE:-dhcp}"
 
 
 
@@ -59,6 +60,8 @@ source "$DIALOGS_DIR/40-release.sh"
 source "$DIALOGS_DIR/45-mirror.sh"
 source "$DIALOGS_DIR/50-hostname.sh"
 source "$DIALOGS_DIR/51-hosts-fqdn.sh"
+source "$DIALOGS_DIR/60-iface.sh"
+source "$DIALOGS_DIR/61-net4-mode.sh"
 
 source "$DIALOGS_DIR/80-root-pass.sh"
 source "$DIALOGS_DIR/90-summary.sh"
@@ -73,8 +76,20 @@ validate_config() {
     # при no-lvm VG_NAME должен быть пустым
     VG_NAME=""
   fi
+  if [[ "$LVM_MODE" == "thin" ]]; then
+    [[ -n "$THINPOOL_NAME" ]] || die "THINPOOL_NAME is empty (required for thin)"
+    [[ "$THINPOOL_NAME" =~ ^[A-Za-z0-9_][A-Za-z0-9._+-]*$ ]] || die "Invalid THINPOOL_NAME=$THINPOOL_NAME"
+    [[ "$THINPOOL_PERCENT" =~ ^[0-9]+$ ]] || die "Invalid THINPOOL_PERCENT=$THINPOOL_PERCENT"
+    (( THINPOOL_PERCENT >= 50 && THINPOOL_PERCENT <= 98 )) || die "Invalid THINPOOL_PERCENT=$THINPOOL_PERCENT (expected 50..98)"
+  else
+    THINPOOL_NAME=""
+    THINPOOL_PERCENT=""
+  fi
   case "$ROOT_FS" in ext4|xfs|btrfs) :;; *) die "Invalid ROOT_FS=$ROOT_FS";; esac
-  case "$DATA_FS" in ext4|xfs|btrfs) :;; *) die "Invalid DATA_FS=$DATA_FS";; esac
+  [[ -n "$DATA_FS" ]] && case "$DATA_FS" in ext4|xfs|btrfs) :;; *) die "Invalid DATA_FS=$DATA_FS";; esac
+
+  [[ -n "$DEBIAN_MAJOR" ]] || die "DEBIAN_MAJOR is empty"
+  [[ -n "$DEBIAN_CODENAME" ]] || die "DEBIAN_CODENAME is empty"
 
   [[ -n "$BOOT_MODE" ]] || die "BOOT_MODE is empty"
   [[ -n "$DISK" ]] || die "DISK is empty"
@@ -83,6 +98,15 @@ validate_config() {
   case "$BOOT_SIZE" in 256M|512M|1G) :;; *) die "Invalid BOOT_SIZE=$BOOT_SIZE";; esac
   case "$SWAP_CHOICE" in none|1G|2G|4G) :;; *) die "Invalid SWAP_CHOICE=$SWAP_CHOICE";; esac
   [[ "$ROOT_SIZE" =~ ^[0-9]+[GM]$ ]] || die "Invalid ROOT_SIZE=$ROOT_SIZE (пример: 30G)"
+  [[ -n "$HOSTNAME" ]] || die "HOSTNAME is empty"
+  [[ "$HOSTNAME" =~ ^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$ ]] || die "Invalid HOSTNAME=$HOSTNAME"
+  if [[ -n "$HOSTS_FQDN" ]]; then
+    if [[ ${#HOSTS_FQDN} -le 253 ]] && [[ "$HOSTS_FQDN" == *.* ]]; then
+      [[ "$HOSTS_FQDN" =~ ^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)$ ]] || die "Invalid HOSTS_FQDN=$HOSTS_FQDN"
+    else
+      die "Invalid HOSTS_FQDN=$HOSTS_FQDN"
+    fi
+  fi
   # ROOT_PASS может быть пустым (LOCK root) — это ок, но важно различать "не задано"
   [[ "$ROOT_PASS_SET" == "1" ]] || die "ROOT_PASS not set (should be set, even if empty)"
 }
@@ -144,13 +168,23 @@ fi
 
 
   # choose debian release
-  ui_pick_debian_release_console DEBIAN_MAJOR DEBIAN_CODENAME
+  ui_pick_debian_release_console DEBIAN_MAJOR DEBIAN_CODENAME || exit 0
   # choose debian mirror
   ui_pick_debian_mirror_console DEBIAN_MIRROR || exit 0
 
 ui_pick_hostname_console HOSTNAME || exit 0
 
 ui_pick_hosts_fqdn_console HOSTS_FQDN || exit 0
+
+ui_pick_iface_console IFACE || exit 0
+
+ui_pick_net4_mode_console NET4_MODE || exit 0
+
+
+
+
+
+
 
 
   # Пароль: пустой = LOCK root; но обязательно выставляем ROOT_PASS_SET=1
