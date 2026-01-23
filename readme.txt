@@ -50,31 +50,17 @@ Thin-LVM (thinpool 95%VG, root virtual size авто или указать):
     --hostname myhost — имя хоста.
 
 
-
-
-
-
-
-
-
     --iface ens3 — сетевой интерфейс.
 
     --net dhcp|static — режим сети.
 
     --ip 203.0.113.10/24 — IP для static‑режима.
-
     --gw 203.0.113.1 — шлюз для static‑режима.
-
     --dns "1.1.1.1 8.8.8.8" — DNS‑серверы.
-
     --networkd 0|1 — использовать systemd-networkd (1) или ifupdown (0).
-
     --root-pass 'StrongPass' — пароль root (если не указан, будет запрос; пустое значение блокирует root).
-
     --ssh-key-file /path/to/key — публичный ключ для root.
-
     --timezone Europe/Kyiv — таймзона.
-
     --yes — авто‑подтверждение разрушительных операций.
 
 

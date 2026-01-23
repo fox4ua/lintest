@@ -10,6 +10,10 @@ ui_print_summary() {
   if [[ "${LVM_MODE}" == "lvm" || "${LVM_MODE}" == "thin" ]]; then
     echo "VG_NAME      : ${VG_NAME}"
   fi
+  if [[ "${LVM_MODE}" == "thin" ]]; then
+    echo "THINPOOL_NAME      : ${THINPOOL_NAME}"
+    echo "THINPOOL_PERCENT   : ${THINPOOL_PERCENT}"
+  fi
 
   echo "MIRROR       : ${DEBIAN_MIRROR}"
 
