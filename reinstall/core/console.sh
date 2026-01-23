@@ -26,7 +26,10 @@ HOSTNAME="${HOSTNAME:-}"
 HOSTS_FQDN="${HOSTS_FQDN:-}"
 IFACE="${IFACE:-}"
 NET4_MODE="${NET4_MODE:-dhcp}"
-
+NET4_MODE="${NET4_MODE:-dhcp}"
+IP4_CIDR="${IP4_CIDR:-}"
+GW4="${GW4:-}"
+DNS4="${DNS4:-}"
 
 
 
@@ -42,6 +45,7 @@ die(){ echo "ERROR: $*" >&2; exit 1; }
 source "$BASE_DIR/init/10-disk-checks.sh"
 source "$BASE_DIR/init/20-size-checks.sh"
 source "$BASE_DIR/init/25-iface-detect.sh"
+source "$BASE_DIR/init/30-net4-detect.sh"
 
 # shellcheck source=/dev/null
 source "$DIALOGS_DIR/10-disk.sh"
@@ -62,7 +66,9 @@ source "$DIALOGS_DIR/50-hostname.sh"
 source "$DIALOGS_DIR/51-hosts-fqdn.sh"
 source "$DIALOGS_DIR/60-iface.sh"
 source "$DIALOGS_DIR/61-net4-mode.sh"
-
+source "$DIALOGS_DIR/62-ipv4-ip.sh"
+source "$DIALOGS_DIR/63-ipv4-gw.sh"
+source "$DIALOGS_DIR/64-ipv4-dns.sh"
 source "$DIALOGS_DIR/80-root-pass.sh"
 source "$DIALOGS_DIR/90-summary.sh"
 
@@ -180,7 +186,15 @@ ui_pick_iface_console IFACE || exit 0
 
 ui_pick_net4_mode_console NET4_MODE || exit 0
 
-
+if [[ "$NET4_MODE" == "dhcp" ]]; then
+  IP4_CIDR=""
+  GW4=""
+  DNS4=""
+else
+  ui_pick_net4_ip_console IP4_CIDR || exit 0
+  ui_pick_net4_gw_console GW4 || exit 0
+  ui_pick_net4_dns_console DNS4 || exit 0
+fi
 
 
 
