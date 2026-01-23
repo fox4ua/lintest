@@ -7,17 +7,17 @@ export BASE_DIR
 
 # ===== config storage =====
 # Можно заменить на ассоц.массив CFG[], но оставляем переменные для совместимости с вашим проектом.
-DISK="${DISK:-}"             # /dev/sda
-BOOT_MODE="${BOOT_MODE:-}"   # uefi|bios (legacy)
-LVM_MODE="${LVM_MODE:-}"     # none|lvm|thin
-VG_NAME="${VG_NAME:-}"
-THINPOOL_NAME="${THINPOOL_NAME:-}"
-THINPOOL_PERCENT="${THINPOOL_PERCENT:-}"
-ROOT_FS="${ROOT_FS:-ext4}"      # ext4|xfs|btrfs
-DATA_FS="${DATA_FS:-ext4}"      # ext4|xfs|btrfs
-BOOT_SIZE="${BOOT_SIZE:-}"      # 256M|512M|1G
-SWAP_CHOICE="${SWAP_CHOICE:-}"  # none|1G|2G|4G
-
+DISK="${DISK:-}"                          # /dev/sda
+BOOT_MODE="${BOOT_MODE:-}"                # uefi|bios (legacy)
+LVM_MODE="${LVM_MODE:-}"                  # none|lvm|thin
+VG_NAME="${VG_NAME:-}"                    #
+THINPOOL_NAME="${THINPOOL_NAME:-}"        #
+THINPOOL_PERCENT="${THINPOOL_PERCENT:-}"  #
+BOOT_SIZE="${BOOT_SIZE:-}"                # 256M|512M|1G
+SWAP_CHOICE="${SWAP_CHOICE:-}"            # none|1G|2G|4G
+ROOT_FS="${ROOT_FS:-ext4}"                # ext4|xfs|btrfs
+ROOT_SIZE="${ROOT_SIZE:-}"                # 30G etc
+DATA_FS="${DATA_FS:-ext4}"                # ext4|xfs|btrfs
 
 DEBIAN_MAJOR="${DEBIAN_MAJOR:-}"
 DEBIAN_CODENAME="${DEBIAN_CODENAME:-}"
@@ -27,9 +27,7 @@ DEBIAN_MIRROR="${DEBIAN_MIRROR:-}"
 
 
 
-UI_MODE="${UI_MODE:-}"       # none|console|dialog (пока делаем console)
 
-ROOT_SIZE="${ROOT_SIZE:-}"   # 30G etc
 ROOT_PASS="${ROOT_PASS:-}"
 ROOT_PASS_SET="${ROOT_PASS_SET:-0}" # 0=не задано, 1=задано (в т.ч. пустое)
 
@@ -46,12 +44,11 @@ source "$DIALOGS_DIR/20-lvm-mode.sh"
 source "$DIALOGS_DIR/21-vg-name.sh"
 source "$DIALOGS_DIR/22-thinpool-name.sh"
 source "$DIALOGS_DIR/23-thinpool-percent.sh"
-source "$DIALOGS_DIR/30-root-fs.sh"
-source "$DIALOGS_DIR/31-data-fs.sh"
-source "$DIALOGS_DIR/32-boot-size.sh"
-source "$DIALOGS_DIR/33-swap.sh"
-
-source "$DIALOGS_DIR/70-root-size.sh"
+source "$DIALOGS_DIR/30-boot-size.sh"
+source "$DIALOGS_DIR/31-swap.sh"
+source "$DIALOGS_DIR/32-root-fs.sh"
+source "$DIALOGS_DIR/33-root-size.sh"
+source "$DIALOGS_DIR/34-data-fs.sh"
 
 source "$DIALOGS_DIR/40-release.sh"
 source "$DIALOGS_DIR/45-mirror.sh"
@@ -106,16 +103,20 @@ main() {
     THINPOOL_NAME=""
     THINPOOL_PERCENT=""
   fi
+  # choose boot size
+  ui_pick_boot_size_console BOOT_SIZE || exit 0
+  # choose swap size
+  ui_pick_swap_console SWAP_CHOICE || exit 0
   # choose
   ui_pick_root_fs_console ROOT_FS || exit 0
+  #
+  ui_pick_root_size_console ROOT_SIZE
+
+
   # choose
   ui_pick_data_fs_console DATA_FS || exit 0
-  # choose boot size
-  ui_pick_boot_size_console BOOT_SIZE
-  # choose swap size
-  ui_pick_swap_console SWAP_CHOICE
 
-  ui_pick_root_size_console ROOT_SIZE
+
 
   # choose debian release
   ui_pick_debian_release_console DEBIAN_MAJOR DEBIAN_CODENAME

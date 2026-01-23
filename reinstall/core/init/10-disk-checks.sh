@@ -1,11 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-# Если в проекте есть log(), будет использован он. Иначе — тихий fallback.
-if ! declare -F log >/dev/null 2>&1; then
-  log() { :; }
-fi
-
 disk_resolve_parent_disk() {
   local node="$1"
   local base parent type guard=0
