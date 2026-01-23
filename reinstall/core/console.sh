@@ -37,6 +37,8 @@ DIALOGS_DIR="$BASE_DIR/console"
 die(){ echo "ERROR: $*" >&2; exit 1; }
 
 # ===== load dialogs =====
+source "$BASE_DIR/init/10-disk-checks.sh"
+
 # shellcheck source=/dev/null
 source "$DIALOGS_DIR/10-disk.sh"
 source "$DIALOGS_DIR/15-boot-mode.sh"

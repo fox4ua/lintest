@@ -1,15 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-# Ожидается, что эти функции уже доступны:
-# disk_list_candidates
-# disk_is_current_env_disk
-# disk_detect_usage_flags
-# disk_usage_summary
-# disk_validate_choice
-# shellcheck source=/dev/null
-source "$BASE_DIR/init/10-disk-checks.sh"
-
 # -----------------------------
 # parse one line from disk_list_candidates into: dev size model
 # supports TAB-separated or space-separated formats

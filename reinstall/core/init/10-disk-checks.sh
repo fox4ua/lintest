@@ -48,12 +48,6 @@ disk_is_current_env_disk() {
   return 1
 }
 
-disk_get_size_bytes() {
-  local disk="$1"
-  command -v lsblk >/dev/null 2>&1 || return 1
-  lsblk -bn -o SIZE "$disk" 2>/dev/null | head -n1
-}
-
 disk_list_candidates() {
   command -v lsblk >/dev/null 2>&1 || return 1
 

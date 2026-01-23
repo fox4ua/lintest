@@ -14,10 +14,10 @@ ui_print_summary() {
     echo "THINPOOL_NAME      : ${THINPOOL_NAME}"
     echo "THINPOOL_PERCENT   : ${THINPOOL_PERCENT}"
   fi
-  echo "BOOT_SIZE    : ${BOOT_SIZE}"
-  echo "SWAP         : ${SWAP_CHOICE}"
-  echo "ROOT_FS      : ${ROOT_SIZE}"
-  echo "ROOT_SIZE    : ${ROOT_SIZE}"
+  echo "BOOT_SIZE       : ${BOOT_SIZE}"
+  echo "SWAP            : ${SWAP_CHOICE}"
+  echo "ROOT_FS         : ${ROOT_FS}"
+  echo "ROOT_SIZE       : ${ROOT_SIZE}"
 
 
   echo "MIRROR       : ${DEBIAN_MIRROR}"
