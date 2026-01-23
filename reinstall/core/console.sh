@@ -22,7 +22,8 @@ DATA_FS="${DATA_FS:-ext4}"                # ext4|xfs|btrfs
 DEBIAN_MAJOR="${DEBIAN_MAJOR:-}"
 DEBIAN_CODENAME="${DEBIAN_CODENAME:-}"
 DEBIAN_MIRROR="${DEBIAN_MIRROR:-}"
-
+HOSTNAME="${HOSTNAME:-}"
+HOSTS_FQDN="${HOSTS_FQDN:-}"
 
 
 
@@ -54,8 +55,8 @@ source "$DIALOGS_DIR/34-data-fs.sh"
 
 source "$DIALOGS_DIR/40-release.sh"
 source "$DIALOGS_DIR/45-mirror.sh"
-
-
+source "$DIALOGS_DIR/50-hostname.sh"
+source "$DIALOGS_DIR/51-hosts-fqdn.sh"
 
 source "$DIALOGS_DIR/80-root-pass.sh"
 source "$DIALOGS_DIR/90-summary.sh"
@@ -140,8 +141,9 @@ fi
   # choose debian mirror
   ui_pick_debian_mirror_console DEBIAN_MIRROR || exit 0
 
+ui_pick_hostname_console HOSTNAME || exit 0
 
-
+ui_pick_hosts_fqdn_console HOSTS_FQDN || exit 0
 
 
   # Пароль: пустой = LOCK root; но обязательно выставляем ROOT_PASS_SET=1

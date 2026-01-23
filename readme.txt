@@ -49,6 +49,7 @@ Thin-LVM (thinpool 95%VG, root virtual size авто или указать):
 
 
     --hostname myhost — имя хоста.
+    --hosts myhost.exemple.com — имя хоста.
 
 
     --iface ens3 — сетевой интерфейс.

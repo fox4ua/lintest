@@ -8,7 +8,7 @@
 #   P_BOOT, P1, P_SWAP, P_ROOT, P_DATA, P_PV
 #   ROOT_SIZE, SWAP_SIZE
 #   VG_NAME, LV_ROOT_NAME, LV_SWAP_NAME, LV_DATA_NAME
-#   THINPOOL_NAME, THINPOOL_PCT_FREE
+#   THINPOOL_NAME, THINPOOL_PERCENT
 #   ROOT_FS, DATA_FS
 #   DISK
 #
@@ -79,9 +79,9 @@ storage_prepare_devices() {
     return 0
   fi
 
-  # thin: thinpool ~= THINPOOL_PCT_FREE%FREE, data is thin LV inside
-  log "Creating thinpool: ${VG_NAME}/${THINPOOL_NAME} = ${THINPOOL_PCT_FREE}%FREE"
-  lvcreate --type thin-pool -n "$THINPOOL_NAME" -l "${THINPOOL_PCT_FREE}%FREE" "$VG_NAME"
+  # thin: thinpool ~= THINPOOL_PERCENT%FREE, data is thin LV inside
+  log "Creating thinpool: ${VG_NAME}/${THINPOOL_NAME} = ${THINPOOL_PERCENT}%FREE"
+  lvcreate --type thin-pool -n "$THINPOOL_NAME" -l "${THINPOOL_PERCENT}%FREE" "$VG_NAME"
 
   local pool_bytes reserve data_vbytes
   pool_bytes="$(

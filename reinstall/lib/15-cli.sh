@@ -23,7 +23,7 @@ Options:
   --swap none|1G|2G|4G
   --fs ext4|xfs|btrfs
   --data-fs ext4|xfs|btrfs
-  --thinpool-pct-free 90         (thinpool = %FREE, default 90)
+  --thinpool-percent 90          (thinpool = %FREE, default 90)
 
   --iface ens3
   --net dhcp|static
@@ -56,7 +56,7 @@ parse_args() {
       --swap) [[ $# -ge 2 ]] || die "Missing value for --swap"; SWAP_CHOICE="$2"; shift 2;;
       --fs) [[ $# -ge 2 ]] || die "Missing value for --fs"; ROOT_FS="$2"; shift 2;;
       --data-fs) [[ $# -ge 2 ]] || die "Missing value for --data-fs"; DATA_FS="$2"; shift 2;;
-      --thinpool-pct-free) [[ $# -ge 2 ]] || die "Missing value for --thinpool-pct-free"; THINPOOL_PCT_FREE="$2"; shift 2;;
+      --thinpool-percent|--thinpool-pct-free) [[ $# -ge 2 ]] || die "Missing value for --thinpool-percent"; THINPOOL_PERCENT="$2"; shift 2;;
 
       --iface) [[ $# -ge 2 ]] || die "Missing value for --iface"; IFACE="$2"; shift 2;;
       --net) [[ $# -ge 2 ]] || die "Missing value for --net"; NET_MODE="$2"; shift 2;;

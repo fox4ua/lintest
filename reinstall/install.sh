@@ -137,8 +137,8 @@ else
 fi
 
 # thinpool pct
-if ! [[ "$THINPOOL_PCT_FREE" =~ ^[0-9]+$ ]] || (( THINPOOL_PCT_FREE < 50 || THINPOOL_PCT_FREE > 98 )); then
-  die "Invalid --thinpool-pct-free: $THINPOOL_PCT_FREE (use integer 50..98)"
+if ! [[ "$THINPOOL_PERCENT" =~ ^[0-9]+$ ]] || (( THINPOOL_PERCENT < 50 || THINPOOL_PERCENT > 98 )); then
+  die "Invalid --thinpool-percent: $THINPOOL_PERCENT (use integer 50..98)"
 fi
 
 # Ensure tools (auto-install)
@@ -164,7 +164,7 @@ log "  HOSTNAME=$HOSTNAME  IFACE=$IFACE  NET_MODE=$NET_MODE  networkd=$USE_NETWO
 log "  LVM_MODE=$LVM_MODE  VG=$VG_NAME  ROOT_SIZE=$ROOT_SIZE  BOOT_SIZE=$BOOT_SIZE  SWAP=$SWAP_CHOICE"
 log "  ROOT_FS=$ROOT_FS  DATA_FS=$DATA_FS  DATA mount=/var/lib/vz"
 if [[ "$LVM_MODE" == "thin" ]]; then
-  log "  THINPOOL_PCT_FREE=$THINPOOL_PCT_FREE (thinpool = %FREE)"
+  log "  THINPOOL_PERCENT=$THINPOOL_PERCENT (thinpool = %FREE)"
 fi
 confirm "ALL DATA ON $DISK WILL BE DESTROYED. Continue?" || die "Cancelled"
 

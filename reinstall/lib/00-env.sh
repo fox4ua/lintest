@@ -26,7 +26,7 @@ LV_ROOT_NAME="${LV_ROOT_NAME:-root}"
 LV_SWAP_NAME="${LV_SWAP_NAME:-swap}"
 LV_DATA_NAME="${LV_DATA_NAME:-data}"
 THINPOOL_NAME="${THINPOOL_NAME:-thinpool}"
-THINPOOL_PCT_FREE="${THINPOOL_PCT_FREE:-90}"  # thinpool = 90%FREE (headroom)
+THINPOOL_PERCENT="${THINPOOL_PERCENT:-90}"  # thinpool = 90%FREE (headroom)
 
 NET_MODE="${NET_MODE:-dhcp}"                # dhcp|static
 IFACE="${IFACE:-}"                          # e.g. ens3
