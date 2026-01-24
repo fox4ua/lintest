@@ -28,7 +28,6 @@ TIMEZONE="${TIMEZONE:-}"
 NETWORKD="${NETWORKD:-}"
 IFACE="${IFACE:-}"
 NET4_MODE="${NET4_MODE:-dhcp}"
-NET4_MODE="${NET4_MODE:-dhcp}"
 IP4_CIDR="${IP4_CIDR:-}"
 GW4="${GW4:-}"
 DNS4="${DNS4:-}"
@@ -72,7 +71,7 @@ source "$DIALOGS_DIR/50-hostname.sh"
 source "$DIALOGS_DIR/51-hosts-fqdn.sh"
 source "$DIALOGS_DIR/52-timezone.sh"
 
-source "$DIALOGS_DIR/80-networkd.sh"
+source "$DIALOGS_DIR/60-networkd.sh"
 source "$DIALOGS_DIR/61-iface.sh"
 source "$DIALOGS_DIR/62-net4-mode.sh"
 source "$DIALOGS_DIR/63-ipv4-ip.sh"
@@ -82,7 +81,7 @@ source "$DIALOGS_DIR/66-net6-mode.sh"
 source "$DIALOGS_DIR/67-ipv6-ip.sh"
 source "$DIALOGS_DIR/68-ipv6-gw.sh"
 source "$DIALOGS_DIR/69-ipv6-dns.sh"
-source "$DIALOGS_DIR/80-root-pass.sh"
+source "$DIALOGS_DIR/70-root-pass.sh"
 
 source "$DIALOGS_DIR/90-summary.sh"
 
@@ -239,8 +238,7 @@ fi
 unset NET6_FORBID_OFF
 
   # Пароль: пустой = LOCK root; но обязательно выставляем ROOT_PASS_SET=1
-  ui_prompt_root_pass_console ROOT_PASS ROOT_PASS_SET
-
+ui_pick_root_pass_console ROOT_PASS || exit 0
 
 
 
