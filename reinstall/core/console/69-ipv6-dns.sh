@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+# shellcheck source=/dev/null
+source "$BASE_DIR/init/23-net6-detect.sh"
+
+ui_pick_net6_dns_console() {
+  local out_var="$1"
+  local default_dns=""
+  local dns
+
+  default_dns="$(net_detect_dns_list_any 2>/dev/null || true)"
+  [[ -n "$default_dns" ]] || default_dns="1.1.1.1 2606:4700:4700::1111"
+
+  while true; do
+    echo "DNS servers (--dns6) [static only]"
+    echo "  Default: ${default_dns}"
+    echo "  Enter 0 to Cancel"
+    printf 'DNS (space-separated) [%s]: ' "$default_dns"
+    read -r dns
+
+    [[ "$dns" == "0" ]] && return 1
+    [[ -n "$dns" ]] || dns="$default_dns"
+
+    if net_validate_dns_list_any "$dns"; then
+      printf -v "$out_var" '%s' "$dns"
+      return 0
+    fi
+
+    echo "Invalid DNS list. Example: 1.1.1.1 2606:4700:4700::1111"
+    echo
+  done
+}

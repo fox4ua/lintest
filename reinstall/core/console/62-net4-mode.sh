@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-# IPv4 network mode (--net4): dhcp|static
+# IPv4 network mode (--net4): dhcp|static|off
 # empty -> default (dhcp)
 # "0" -> cancel
 # Returns: 0 ok, 1 cancel
@@ -12,7 +12,7 @@ ui_pick_net4_mode_console() {
 
   while true; do
     echo "IPv4 mode (--net4)"
-    echo "  Allowed: dhcp | static"
+    echo "  Allowed: dhcp | static | off"
     echo "  Default: ${default_mode}"
     echo "  Enter 0 to Cancel"
     printf "IPv4 mode [%s]: " "$default_mode"
@@ -24,12 +24,12 @@ ui_pick_net4_mode_console() {
     mode="$(echo "$mode" | tr '[:upper:]' '[:lower:]')"
 
     case "$mode" in
-      dhcp|static)
+      dhcp|static|off)
         printf -v "$out_var" '%s' "$mode"
         return 0
         ;;
       *)
-        echo "Invalid value. Use: dhcp or static."
+        echo "Invalid value. Use: dhcp, static or off."
         echo
         ;;
     esac
