@@ -20,7 +20,6 @@ SWAP_CHOICE="${SWAP_CHOICE:-}"            # none|1G|2G|4G
 ROOT_FS="${ROOT_FS:-ext4}"                # ext4|xfs|btrfs
 ROOT_SIZE="${ROOT_SIZE:-}"                # 30G etc
 DATA_FS="${DATA_FS:-ext4}"                # ext4|xfs|btrfs
-
 DEBIAN_MAJOR="${DEBIAN_MAJOR:-}"
 DEBIAN_CODENAME="${DEBIAN_CODENAME:-}"
 DEBIAN_MIRROR="${DEBIAN_MIRROR:-}"

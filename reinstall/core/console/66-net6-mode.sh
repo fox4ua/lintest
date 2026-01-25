@@ -37,7 +37,11 @@ ui_pick_net6_mode_console() {
         return 0
         ;;
       *)
-        echo "Invalid value. Use: auto, static${forbid_off:+ (or off if allowed)}."
+        if [[ "$forbid_off" == "1" ]]; then
+          echo "Invalid value. Use: auto or static."
+        else
+          echo "Invalid value. Use: auto, static or off."
+        fi
         echo
         ;;
     esac

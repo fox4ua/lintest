@@ -3,7 +3,6 @@ set -Eeuo pipefail
 
 ui_pick_root_fs_console() {
   local out_var="$1"
-  local default_fs="ext4"
   local ans
 
   while true; do
@@ -13,6 +12,8 @@ ui_pick_root_fs_console() {
     echo "  3) btrfs"
     printf "Choose [1-3, 0=Cancel]: "
     read -r ans
+    
+    [[ -n "$ans" ]] || ans="1"
 
     case "$ans" in
       0) return 1 ;;
