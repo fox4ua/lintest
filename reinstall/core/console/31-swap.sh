@@ -11,10 +11,11 @@ ui_pick_swap_console() {
     echo "  2) 1G"
     echo "  3) 2G"
     echo "  4) 4G"
-    printf "Choose [1-4]: "
+    printf "Choose [1-4, 0=Cancel]: "
     read -r ans
 
     case "$ans" in
+      0) return 1 ;;
       1) printf -v "$out_var" '%s' "none"; return 0 ;;
       2) printf -v "$out_var" '%s' "1G";   return 0 ;;
       3) printf -v "$out_var" '%s' "2G";   return 0 ;;

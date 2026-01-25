@@ -22,12 +22,12 @@ ui_pick_networkd_console() {
     echo "  2 = systemd-networkd"
     echo "  1 = ifupdown"
     echo "  Recommended for Debian ${DEBIAN_MAJOR}: ${rec}"
-    echo "  Enter '0' to Cancel"
+    echo "  Enter 0 to Cancel"
     printf "Use networkd [recommended=%s]: " "$rec"
     read -r ans
 
     case "$ans" in
-      0|q|Q|cancel|CANCEL) return 1 ;;
+      0) return 1 ;;
       "") ans="$rec" ;;
     esac
 
@@ -37,7 +37,7 @@ ui_pick_networkd_console() {
         return 0
         ;;
       *)
-        echo "Invalid value. Use 1 or 2 (or '0' to cancel)."
+        echo "Invalid value. Use 1 or 2 (or 0 to cancel)."
         echo
         ;;
     esac
