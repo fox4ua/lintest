@@ -1,11 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-# IPv6 mode (--net6): auto|static|off
-# empty -> default (auto)
-# "0" -> cancel
-# Uses:
-#   NET6_FORBID_OFF=1 -> disallow 'off'
 ui_pick_net6_mode_console() {
   local out_var="$1"
   local default_mode="auto"

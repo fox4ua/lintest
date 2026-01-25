@@ -9,7 +9,8 @@ ui_pick_root_size_console() {
   local disk_bytes reserved_bytes free_bytes max_gb
 
   local boot_mode_effective
-
+  local boot_mode_source
+  
   # базовые проверки контекста
   if [[ -z "${DISK:-}" ]]; then
     echo "ERROR: DISK is not set"
@@ -26,12 +27,24 @@ ui_pick_root_size_console() {
 
   # BOOT_MODE can be: uefi|bios|auto
   case "$BOOT_MODE" in
-    uefi|bios) boot_mode_effective="$BOOT_MODE" ;;
+    uefi|bios)
+      boot_mode_effective="$BOOT_MODE"
+      boot_mode_source="explicit"
+      ;;
     auto)
-      if [[ -d /sys/firmware/efi ]]; then
-        boot_mode_effective="uefi"
+      if [[ -n "${BOOT_MODE_EFFECTIVE:-}" ]]; then
+        boot_mode_effective="$BOOT_MODE_EFFECTIVE"
+        boot_mode_source="override"
+      elif [[ -n "${BOOT_MODE_AUTO_EFFECTIVE:-}" ]]; then
+        boot_mode_effective="$BOOT_MODE_AUTO_EFFECTIVE"
+        boot_mode_source="override"
       else
-        boot_mode_effective="bios"
+        if [[ -d /sys/firmware/efi ]]; then
+          boot_mode_effective="uefi"
+        else
+          boot_mode_effective="bios"
+        fi
+        boot_mode_source="local-detect"
       fi
       ;;
     *)
@@ -39,7 +52,12 @@ ui_pick_root_size_console() {
       return 1
       ;;
   esac
-
+  
+  if [[ "$boot_mode_effective" != "uefi" && "$boot_mode_effective" != "bios" ]]; then
+    echo "ERROR: invalid effective BOOT_MODE='$boot_mode_effective' (expected: uefi|bios)"
+    return 1
+  fi
+  
   # вычисляем максимум (disk - reserved)
   disk_bytes="$(disk_size_bytes "$DISK" 2>/dev/null || true)"
   if [[ -z "$disk_bytes" || ! "$disk_bytes" =~ ^[0-9]+$ || "$disk_bytes" -le 0 ]]; then
@@ -66,7 +84,7 @@ ui_pick_root_size_console() {
   while true; do
     echo "Root size (--root-size) [GB only]"
     echo "  Disk:       ${DISK}"
-    echo "  Boot mode:  ${BOOT_MODE} (effective: ${boot_mode_effective})"
+    echo "  Boot mode:  ${BOOT_MODE} (effective: ${boot_mode_effective}, source: ${boot_mode_source})"
     echo "  Reserved:   $(bytes_to_mib "$reserved_bytes") MiB (efi/boot/swap + safety)"
     echo "  Max root:   ${max_gb} GB"
     echo "  Default:    ${default_gb} GB"

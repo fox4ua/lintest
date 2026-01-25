@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-# IPv4 network mode (--net4): dhcp|static|off
-# empty -> default (dhcp)
-# "0" -> cancel
-# Returns: 0 ok, 1 cancel
 ui_pick_net4_mode_console() {
   local out_var="$1"
   local default_mode="dhcp"

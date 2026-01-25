@@ -8,10 +8,14 @@ _read_secret() {
   local val=""
 
   if command -v stty >/dev/null 2>&1; then
+    local stty_state=""
+    stty_state="$(stty -g 2>/dev/null || true)"
+    trap '[[ -n "$stty_state" ]] && stty "$stty_state"' RETURN
     printf "%s" "$prompt" >&2
     stty -echo
     IFS= read -r val
-    stty echo
+    [[ -n "$stty_state" ]] && stty "$stty_state"
+    trap - RETURN
     printf "\n" >&2
   else
     # fallback (will echo)

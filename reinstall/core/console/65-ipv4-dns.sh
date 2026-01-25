@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-# shellcheck source=/dev/null
-source "$BASE_DIR/init/22-net4-detect.sh"
-
-# --dns input (space-separated IPs), empty -> current/default, "0" -> cancel
 ui_pick_net4_dns_console() {
   local out_var="$1"
 

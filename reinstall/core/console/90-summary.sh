@@ -15,7 +15,11 @@ ui_print_summary() {
     echo "THINPOOL_PERCENT   : ${THINPOOL_PERCENT}"
   fi
   echo "BOOT_SIZE       : ${BOOT_SIZE}"
-  echo "SWAP            : ${SWAP_CHOICE}"
+  local swap_summary="${SWAP_SIZE:-${SWAP_CHOICE:-}}"
+  if [[ "$swap_summary" == "0" || -z "$swap_summary" ]]; then
+    swap_summary="none"
+  fi
+  echo "SWAP            : ${swap_summary}"
   echo "ROOT_FS         : ${ROOT_FS}"
   echo "ROOT_SIZE       : ${ROOT_SIZE}"
 

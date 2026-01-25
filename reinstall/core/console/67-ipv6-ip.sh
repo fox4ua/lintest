@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-# shellcheck source=/dev/null
-source "$BASE_DIR/init/23-net6-detect.sh"
 
 ui_pick_net6_ip_console() {
   local out_var="$1"

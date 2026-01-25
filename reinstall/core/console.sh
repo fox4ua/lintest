@@ -176,11 +176,18 @@ main() {
   # BOOT_MODE может быть auto -> используй effective как ранее
   boot_mode_effective="$BOOT_MODE"
   if [[ "$BOOT_MODE" == "auto" ]]; then
-    if [[ -d /sys/firmware/efi ]]; then
+    if [[ -n "${BOOT_MODE_EFFECTIVE:-}" ]]; then
+      boot_mode_effective="$BOOT_MODE_EFFECTIVE"
+    elif [[ -n "${BOOT_MODE_AUTO_EFFECTIVE:-}" ]]; then
+      boot_mode_effective="$BOOT_MODE_AUTO_EFFECTIVE"
+    elif [[ -d /sys/firmware/efi ]]; then
       boot_mode_effective="uefi"
     else
       boot_mode_effective="bios"
     fi
+  fi
+  if [[ "$boot_mode_effective" != "uefi" && "$boot_mode_effective" != "bios" ]]; then
+    die "Invalid effective BOOT_MODE=$boot_mode_effective"
   fi
 
   # если root “съел всё” (или почти всё) — пропускаем data-fs
