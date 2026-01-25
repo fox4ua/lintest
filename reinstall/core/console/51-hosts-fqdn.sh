@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-# FQDN for /etc/hosts (optional)
-# empty -> no FQDN
-# "0" -> cancel
-# Returns: 0 ok, 1 cancel
 ui_pick_hosts_fqdn_console() {
   local out_var="$1"
   local fqdn

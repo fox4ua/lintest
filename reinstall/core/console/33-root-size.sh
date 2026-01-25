@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-# Требуется:
-#   DISK, BOOT_MODE, EFI_SIZE, BOOT_SIZE, SWAP_SIZE
-#   source "$BASE_DIR/init/20-size-checks.sh"
-
 ui_pick_root_size_console() {
   local out_var="$1"
 

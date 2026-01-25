@@ -4,6 +4,8 @@ set -Eeuo pipefail
 BASE_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 export BASE_DIR
 
+DIALOGS_DIR="$BASE_DIR/console"
+
 
 # ===== config storage =====
 # Можно заменить на ассоц.массив CFG[], но оставляем переменные для совместимости с вашим проектом.
@@ -38,9 +40,7 @@ DNS6="${DNS6:-}"
 ROOT_PASS="${ROOT_PASS:-}"
 
 
-ROOT_PASS_SET="${ROOT_PASS_SET:-0}" # 0=не задано, 1=задано (в т.ч. пустое)
 
-DIALOGS_DIR="$BASE_DIR/console"
 
 # ===== helpers =====
 die(){ echo "ERROR: $*" >&2; exit 1; }
@@ -173,22 +173,22 @@ main() {
 
 
   # choose
-# BOOT_MODE может быть auto -> используй effective как ранее
-boot_mode_effective="$BOOT_MODE"
-if [[ "$BOOT_MODE" == "auto" ]]; then
-  if [[ -d /sys/firmware/efi ]]; then
-    boot_mode_effective="uefi"
-  else
-    boot_mode_effective="bios"
+  # BOOT_MODE может быть auto -> используй effective как ранее
+  boot_mode_effective="$BOOT_MODE"
+  if [[ "$BOOT_MODE" == "auto" ]]; then
+    if [[ -d /sys/firmware/efi ]]; then
+      boot_mode_effective="uefi"
+    else
+      boot_mode_effective="bios"
+    fi
   fi
-fi
 
-# если root “съел всё” (или почти всё) — пропускаем data-fs
-if has_space_for_data_fs "$DISK" "$ROOT_SIZE" "$boot_mode_effective" "$EFI_SIZE" "$BOOT_SIZE" "$SWAP_SIZE" 1; then
-  ui_pick_data_fs_console DATA_FS || exit 0
-else
-  DATA_FS=""   # не спрашиваем
-fi
+  # если root “съел всё” (или почти всё) — пропускаем data-fs
+  if has_space_for_data_fs "$DISK" "$ROOT_SIZE" "$boot_mode_effective" "$EFI_SIZE" "$BOOT_SIZE" "$SWAP_SIZE" 1; then
+    ui_pick_data_fs_console DATA_FS || exit 0
+  else
+    DATA_FS=""   # не спрашиваем
+  fi
 
 
 

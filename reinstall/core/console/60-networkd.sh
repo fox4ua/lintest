@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-# --networkd: 0|1
-# empty -> рекомендованный дефолт по DEBIAN_MAJOR
-# cancel -> 'q' or 'cancel'
-# Returns: 0 ok, 1 cancel
 ui_pick_networkd_console() {
   local out_var="$1"
   local ans

@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-# --timezone input
-# empty -> default (Europe/Kyiv)
-# "0" -> cancel
-# Returns: 0 ok, 1 cancel
 ui_pick_timezone_console() {
   local out_var="$1"
   local default_tz="Europe/Kyiv"

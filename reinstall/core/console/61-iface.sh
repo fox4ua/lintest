@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-# --iface input
-# empty -> default
-# "0" -> cancel
-# Returns: 0 ok, 1 cancel
 ui_pick_iface_console() {
   local out_var="$1"
   local default_iface iface

@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 
 ui_pick_boot_size_console() {
-  local __out_var="$1"
+  local out_var="$1"
   local ans
 
   while true; do
@@ -15,9 +15,9 @@ ui_pick_boot_size_console() {
 
     case "$ans" in
       0) return 1 ;;
-      1) printf -v "$__out_var" '%s' "256M"; return 0 ;;
-      2) printf -v "$__out_var" '%s' "512M"; return 0 ;;
-      3) printf -v "$__out_var" '%s' "1G";   return 0 ;;
+      1) printf -v "$out_var" '%s' "256M"; return 0 ;;
+      2) printf -v "$out_var" '%s' "512M"; return 0 ;;
+      3) printf -v "$out_var" '%s' "1G";   return 0 ;;
       *) echo "Invalid choice. Try again." ;;
     esac
   done

@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 
 ui_pick_swap_console() {
-  local __out_var="$1"
+  local out_var="$1"
   local ans
 
   while true; do
@@ -15,10 +15,10 @@ ui_pick_swap_console() {
     read -r ans
 
     case "$ans" in
-      1) printf -v "$__out_var" '%s' "none"; return 0 ;;
-      2) printf -v "$__out_var" '%s' "1G";   return 0 ;;
-      3) printf -v "$__out_var" '%s' "2G";   return 0 ;;
-      4) printf -v "$__out_var" '%s' "4G";   return 0 ;;
+      1) printf -v "$out_var" '%s' "none"; return 0 ;;
+      2) printf -v "$out_var" '%s' "1G";   return 0 ;;
+      3) printf -v "$out_var" '%s' "2G";   return 0 ;;
+      4) printf -v "$out_var" '%s' "4G";   return 0 ;;
       *) echo "Invalid choice. Try again." ;;
     esac
   done
