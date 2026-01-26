@@ -8,44 +8,41 @@ DIALOGS_DIR="$BASE_DIR/console"
 
 
 # ===== config storage =====
-# Можно заменить на ассоц.массив CFG[], но оставляем переменные для совместимости с вашим проектом.
-DISK            ="${DISK:-}"              # /dev/sda
-BOOT_MODE       ="${BOOT_MODE:-}"         # uefi|bios (legacy)
-LVM_MODE        ="${LVM_MODE:-}"          # none|lvm|thin
-VG_NAME         ="${VG_NAME:-}"           #
-THINPOOL_NAME   ="${THINPOOL_NAME:-}"     #
-THINPOOL_PERCENT="${THINPOOL_PERCENT:-}"  #
-BOOT_SIZE       ="${BOOT_SIZE:-}"         # 256|512|1024 (MiB)
-SWAP_SIZE       ="${SWAP_SIZE:-}"         # 0|1024|2048|4096 (MiB)
-ROOT_FS         ="${ROOT_FS:-ext4}"       # ext4|xfs|btrfs
-ROOT_SIZE       ="${ROOT_SIZE:-}"         # size in GiB (digits only)
-DATA_FS         ="${DATA_FS:-ext4}"       # ext4|xfs|btrfs
-DEBIAN_MAJOR    ="${DEBIAN_MAJOR:-}"
-DEBIAN_CODENAME ="${DEBIAN_CODENAME:-}"
-DEBIAN_MIRROR   ="${DEBIAN_MIRROR:-}"
-HOSTNAME        ="${HOSTNAME:-}"
-HOSTS_FQDN      ="${HOSTS_FQDN:-}"
-TIMEZONE        ="${TIMEZONE:-}"
-USE_NETWORKD    ="${USE_NETWORKD:-}"
-IFACE           ="${IFACE:-}"
-NET4_MODE       ="${NET4_MODE:-dhcp}"
-IP4_CIDR        ="${IP4_CIDR:-}"
-GW4             ="${GW4:-}"
-DNS4            ="${DNS4:-}"
-NET6_MODE       ="${NET6_MODE:-auto}"
-IP6_CIDR        ="${IP6_CIDR:-}"
-GW6             ="${GW6:-}"
-DNS6            ="${DNS6:-}"
-ROOT_PASS       ="${ROOT_PASS:-}"
-
-
-
+DISK="${DISK:-}"               # /dev/sda
+BOOT_MODE="${BOOT_MODE:-}"      # uefi|bios (legacy)
+LVM_MODE="${LVM_MODE:-}"        # none|lvm|thin
+VG_NAME="${VG_NAME:-}"          #
+THINPOOL_NAME="${THINPOOL_NAME:-}"
+THINPOOL_PERCENT="${THINPOOL_PERCENT:-}"
+BOOT_SIZE="${BOOT_SIZE:-}"      # 256|512|1024 (MiB)
+SWAP_SIZE="${SWAP_SIZE:-}"      # 0|1024|2048|4096 (MiB)
+ROOT_FS="${ROOT_FS:-ext4}"      # ext4|xfs|btrfs
+ROOT_SIZE="${ROOT_SIZE:-}"      # size in GiB (digits only)
+DATA_FS="${DATA_FS:-ext4}"      # ext4|xfs|btrfs
+DEBIAN_MAJOR="${DEBIAN_MAJOR:-}"
+DEBIAN_CODENAME="${DEBIAN_CODENAME:-}"
+DEBIAN_MIRROR="${DEBIAN_MIRROR:-}"
+HOSTNAME="${HOSTNAME:-}"
+HOSTS_FQDN="${HOSTS_FQDN:-}"
+TIMEZONE="${TIMEZONE:-}"
+USE_NETWORKD="${USE_NETWORKD:-}"
+IFACE="${IFACE:-}"
+NET4_MODE="${NET4_MODE:-dhcp}"
+IP4_CIDR="${IP4_CIDR:-}"
+GW4="${GW4:-}"
+DNS4="${DNS4:-}"
+NET6_MODE="${NET6_MODE:-auto}"
+IP6_CIDR="${IP6_CIDR:-}"
+GW6="${GW6:-}"
+DNS6="${DNS6:-}"
+ROOT_PASS="${ROOT_PASS:-}"
 
 # ===== helpers =====
 die(){ echo "ERROR: $*" >&2; exit 1; }
 
 # ===== load dialogs =====
 source "$BASE_DIR/init/10-disk-checks.sh"
+source "$BASE_DIR/init/15-boot-mode.sh"
 source "$BASE_DIR/init/20-size-checks.sh"
 source "$BASE_DIR/init/25-iface-detect.sh"
 source "$BASE_DIR/init/30-net4-detect.sh"
@@ -69,7 +66,6 @@ source "$DIALOGS_DIR/45-mirror.sh"
 source "$DIALOGS_DIR/50-hostname.sh"
 source "$DIALOGS_DIR/51-hosts-fqdn.sh"
 source "$DIALOGS_DIR/52-timezone.sh"
-
 source "$DIALOGS_DIR/60-networkd.sh"
 source "$DIALOGS_DIR/61-iface.sh"
 source "$DIALOGS_DIR/62-net4-mode.sh"
@@ -81,7 +77,6 @@ source "$DIALOGS_DIR/67-ipv6-ip.sh"
 source "$DIALOGS_DIR/68-ipv6-gw.sh"
 source "$DIALOGS_DIR/69-ipv6-dns.sh"
 source "$DIALOGS_DIR/70-root-pass.sh"
-
 source "$DIALOGS_DIR/90-summary.sh"
 # main console dialog
 main() {
@@ -109,39 +104,17 @@ main() {
   ui_pick_boot_size_console BOOT_SIZE || exit 0
   # choose swap size
   ui_pick_swap_console SWAP_SIZE || exit 0
-  # choose
+  # choose root FS
   ui_pick_root_fs_console ROOT_FS || exit 0
-  # input
+  # input root size
   ui_pick_root_size_console ROOT_SIZE || exit 0
-
-
-  # choose
-  # BOOT_MODE может быть auto -> используй effective как ранее
-  boot_mode_effective="$BOOT_MODE"
-  if [[ "$BOOT_MODE" == "auto" ]]; then
-    if [[ -n "${BOOT_MODE_EFFECTIVE:-}" ]]; then
-      boot_mode_effective="$BOOT_MODE_EFFECTIVE"
-    elif [[ -n "${BOOT_MODE_AUTO_EFFECTIVE:-}" ]]; then
-      boot_mode_effective="$BOOT_MODE_AUTO_EFFECTIVE"
-    elif [[ -d /sys/firmware/efi ]]; then
-      boot_mode_effective="uefi"
-    else
-      boot_mode_effective="bios"
-    fi
-  fi
-  if [[ "$boot_mode_effective" != "uefi" && "$boot_mode_effective" != "bios" ]]; then
-    die "Invalid effective BOOT_MODE=$boot_mode_effective"
-  fi
-
-  # если root “съел всё” (или почти всё) — пропускаем data-fs
-  if has_space_for_data_fs "$DISK" "$ROOT_SIZE" "$boot_mode_effective" "$EFI_SIZE" "$BOOT_SIZE" "$SWAP_SIZE" 1; then
+  # choose data FS
+  boot_mode_effective="$(boot_mode_effective_get)" || die "Invalid effective BOOT_MODE"
+  if has_space_for_data_fs "$boot_mode_effective" 1; then
     ui_pick_data_fs_console DATA_FS || exit 0
   else
-    DATA_FS=""   # не спрашиваем
+    DATA_FS=""
   fi
-
-
-
   # choose debian release
   ui_pick_debian_release_console DEBIAN_MAJOR DEBIAN_CODENAME || exit 0
   # choose debian mirror

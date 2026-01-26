@@ -30,9 +30,9 @@ validate_config() {
   [[ -n "$DISK" ]] || die "DISK is empty"
   case "$BOOT_MODE" in auto|uefi|bios) :;; *) die "Invalid BOOT_MODE=$BOOT_MODE";; esac
   case "$LVM_MODE" in none|lvm|thin) :;; *) die "Invalid LVM_MODE=$LVM_MODE";; esac
-  case "$BOOT_SIZE" in 256M|512M|1G) :;; *) die "Invalid BOOT_SIZE=$BOOT_SIZE";; esac
-  case "$SWAP_CHOICE" in none|1G|2G|4G) :;; *) die "Invalid SWAP_CHOICE=$SWAP_CHOICE";; esac
-  [[ "$ROOT_SIZE" =~ ^[0-9]+[GM]$ ]] || die "Invalid ROOT_SIZE=$ROOT_SIZE (пример: 30G)"
+  case "$BOOT_SIZE" in 256|512|1024) :;; *) die "Invalid BOOT_SIZE=$BOOT_SIZE (expected 256/512/1024 MiB)";; esac
+  case "$SWAP_SIZE" in 0|1024|2048|4096) :;; *) die "Invalid SWAP_SIZE=$SWAP_SIZE (expected 0/1024/2048/4096 MiB)";; esac
+  [[ "$ROOT_SIZE" =~ ^[0-9]+$ ]] || die "Invalid ROOT_SIZE=$ROOT_SIZE (пример: 30)"
   [[ -n "$HOSTNAME" ]] || die "HOSTNAME is empty"
   [[ "$HOSTNAME" =~ ^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$ ]] || die "Invalid HOSTNAME=$HOSTNAME"
   if [[ -n "$HOSTS_FQDN" ]]; then
@@ -48,6 +48,5 @@ validate_config() {
   if [[ "$NET4_MODE" == "off" && "$NET6_MODE" == "off" ]]; then
     die "Invalid config: NET4_MODE=off requires NET6_MODE!=off"
   fi
-  # ROOT_PASS может быть пустым (LOCK root) — это ок, но важно различать "не задано"
-  [[ "$ROOT_PASS_SET" == "1" ]] || die "ROOT_PASS not set (should be set, even if empty)"
+  [[ -n "${ROOT_PASS:-}" ]] || die "ROOT_PASS is empty"
 }

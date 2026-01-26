@@ -27,7 +27,6 @@ _read_secret() {
 }
 
 # --root-pass (required)
-# empty -> NOT allowed
 # "0" -> cancel
 # Returns: 0 ok, 1 cancel
 ui_pick_root_pass_console() {
@@ -35,11 +34,12 @@ ui_pick_root_pass_console() {
   local p1="" p2=""
 
   while true; do
-    echo "Root password (--root-pass) [required]"
+    echo "Root password (--root-pass)"
     echo "  Enter 0 to Cancel"
 
     _read_secret "Root password: " p1
     [[ "$p1" == "0" ]] && { p1=""; return 1; }
+
     [[ -n "$p1" ]] || { echo "Password cannot be empty."; echo; continue; }
 
     _read_secret "Confirm password: " p2
