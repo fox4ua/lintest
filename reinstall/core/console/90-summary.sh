@@ -64,7 +64,7 @@ ui_print_summary() {
   if [[ -n "${ROOT_PASS}" ]]; then
     echo "ROOT_PASS    : ***set***"
   else
-    echo "ROOT_PASS    : EMPTY (LOCK root)"
+    echo "ROOT_PASS    : NOT SET (invalid)"
   fi
   echo "========================================"
   echo

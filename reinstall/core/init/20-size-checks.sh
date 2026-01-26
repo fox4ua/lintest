@@ -10,15 +10,15 @@ has_space_for_data_fs() {
 
   [[ -n "${DISK:-}" ]] || return 1
   [[ -n "${ROOT_SIZE:-}" ]] || return 1
-  [[ -n "${EFI_SIZE:-}" ]] || EFI_SIZE="256M"
-  [[ -n "${BOOT_SIZE:-}" ]] || BOOT_SIZE="512M"
+  [[ -n "${EFI_SIZE:-}" ]] || EFI_SIZE="256"
+  [[ -n "${BOOT_SIZE:-}" ]] || BOOT_SIZE="512"
   [[ -n "${SWAP_SIZE:-}" ]] || SWAP_SIZE="0"
 
   # core calc
   local disk_bytes reserved_bytes root_bytes left_bytes min_bytes
 
   disk_bytes="$(disk_size_bytes "$DISK" 2>/dev/null || true)" || return 1
-  root_bytes="$(size_to_bytes "$ROOT_SIZE" 2>/dev/null || true)" || return 1
+  root_bytes="$(root_gb_to_bytes "$ROOT_SIZE" 2>/dev/null || true)" || return 1
   reserved_bytes="$(calc_reserved_bytes "$boot_mode" "$EFI_SIZE" "$BOOT_SIZE" "$SWAP_SIZE" 2>/dev/null || true)" || return 1
 
   left_bytes=$(( disk_bytes - reserved_bytes - root_bytes ))
