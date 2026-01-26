@@ -10,7 +10,7 @@ ui_pick_root_size_console() {
 
   local boot_mode_effective
   local boot_mode_source
-  
+
   # базовые проверки контекста
   if [[ -z "${DISK:-}" ]]; then
     echo "ERROR: DISK is not set"
@@ -21,9 +21,9 @@ ui_pick_root_size_console() {
     return 1
   fi
 
-  [[ -n "${BOOT_SIZE:-}" ]] || BOOT_SIZE="512M"
+  [[ -n "${BOOT_SIZE:-}" ]] || BOOT_SIZE="512"
   [[ -n "${SWAP_SIZE:-}" ]] || SWAP_SIZE="0"
-  [[ -n "${EFI_SIZE:-}"  ]] || EFI_SIZE="256M"
+  [[ -n "${EFI_SIZE:-}"  ]] || EFI_SIZE="256"
 
   # BOOT_MODE can be: uefi|bios|auto
   case "$BOOT_MODE" in
@@ -52,12 +52,12 @@ ui_pick_root_size_console() {
       return 1
       ;;
   esac
-  
+
   if [[ "$boot_mode_effective" != "uefi" && "$boot_mode_effective" != "bios" ]]; then
     echo "ERROR: invalid effective BOOT_MODE='$boot_mode_effective' (expected: uefi|bios)"
     return 1
   fi
-  
+
   # вычисляем максимум (disk - reserved)
   disk_bytes="$(disk_size_bytes "$DISK" 2>/dev/null || true)"
   if [[ -z "$disk_bytes" || ! "$disk_bytes" =~ ^[0-9]+$ || "$disk_bytes" -le 0 ]]; then
@@ -111,7 +111,7 @@ ui_pick_root_size_console() {
       continue
     fi
 
-    root_size="${root_gb}G"
+    root_size="$root_gb"
 
     # финальная проверка (страховка)
     if ! validate_root_fits_disk "$DISK" "$root_size" "$boot_mode_effective" "$EFI_SIZE" "$BOOT_SIZE" "$SWAP_SIZE"; then

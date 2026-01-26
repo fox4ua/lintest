@@ -344,8 +344,8 @@ has_space_for_data_fs() {
   local disk="$1"
   local root_size="$2"
   local boot_mode="${3:-bios}"
-  local efi_size="${4:-256M}"
-  local boot_size="${5:-512M}"
+  local efi_size="${4:-256}"
+  local boot_size="${5:-512}"
   local swap_size="${6:-0}"
   local min_data_gb="${7:-1}"
 
@@ -356,7 +356,7 @@ has_space_for_data_fs() {
     return 1
   fi
 
-  root_bytes="$(size_to_bytes "$root_size" 2>/dev/null || true)"
+  root_bytes="$(root_gb_to_bytes "$root_size" 2>/dev/null || true)"
   if [[ -z "$root_bytes" || ! "$root_bytes" =~ ^[0-9]+$ || "$root_bytes" -le 0 ]]; then
     return 1
   fi

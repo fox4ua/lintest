@@ -5,17 +5,18 @@ set -Eeuo pipefail
 # size helpers
 # -----------------------------
 size_to_bytes() {
-  # accepts: 512M, 1G, 30G, 1024, 30GiB, 500MiB (частично)
-  # рекомендуемый формат в проекте: 256M/512M/1G/30G
+  # accepts: 512M, 1G, 30G, 1024 (MiB), 30GiB, 500MiB (частично)
+  # рекомендуемый формат в проекте: 256/512/1024 (MiB), 30G
   local s="${1:-}"
   local n unit
 
   s="${s// /}"
   [[ -n "$s" ]] || return 1
 
-  # pure number -> bytes
+  # pure number -> MiB
   if [[ "$s" =~ ^[0-9]+$ ]]; then
-    printf '%s\n' "$s"
+    n="$s"
+    printf '%s\n' $(( n * 1024 * 1024 ))
     return 0
   fi
 
@@ -43,6 +44,14 @@ size_to_bytes() {
   esac
 }
 
+root_gb_to_bytes() {
+  local s="${1:-}"
+  if [[ -z "$s" || ! "$s" =~ ^[0-9]+$ ]]; then
+    return 1
+  fi
+  printf '%s\n' $(( s * 1024 * 1024 * 1024 ))
+}
+
 bytes_to_mib() {
   local b="${1:-0}"
   printf '%s\n' $(( (b + 1024*1024 - 1) / (1024*1024) ))
@@ -65,9 +74,9 @@ disk_size_bytes() {
 # Calculate reserved bytes (boot/efi/boot/swap + extras + safety)
 # Inputs:
 #   boot_mode: "uefi"|"bios"
-#   efi_size:  e.g. "256M" (used only if uefi)
-#   boot_size: e.g. "512M" (always present in your scheme)
-#   swap_size: "0"|"1G"|"2G"|"4G" (or empty -> 0)
+#   efi_size:  e.g. "256" (MiB, used only if uefi)
+#   boot_size: e.g. "512" (MiB, always present in your scheme)
+#   swap_size: "0"|"1024"|"2048"|"4096" (MiB, or empty -> 0)
 #   extras: optional list of size strings (each one adds to reserved)
 # Output:
 #   prints reserved bytes
@@ -86,18 +95,18 @@ calc_reserved_bytes() {
   reserved=$(( reserved + 256 * 1024 * 1024 ))
 
   if [[ "$boot_mode" == "uefi" ]]; then
-    [[ -n "$efi_size" ]] || efi_size="256M"
+    [[ -n "$efi_size" ]] || efi_size="256"
     x="$(size_to_bytes "$efi_size")" || return 1
     reserved=$(( reserved + x ))
   fi
 
   # /boot
-  [[ -n "$boot_size" ]] || boot_size="512M"
+  [[ -n "$boot_size" ]] || boot_size="512"
   x="$(size_to_bytes "$boot_size")" || return 1
   reserved=$(( reserved + x ))
 
   # swap
-  if [[ -n "${swap_size:-}" && "${swap_size:-0}" != "0" && "${swap_size:-0}" != "none" ]]; then
+  if [[ -n "${swap_size:-}" && "${swap_size:-0}" != "0" ]]; then
     x="$(size_to_bytes "$swap_size")" || return 1
     reserved=$(( reserved + x ))
   fi
@@ -117,11 +126,11 @@ calc_reserved_bytes() {
 # Validate that ROOT_SIZE fits into DISK after reserved parts.
 # Inputs:
 #   disk        : /dev/sda
-#   root_size   : e.g. 30G
+#   root_size   : e.g. 30 (GiB, digits only)
 #   boot_mode   : uefi|bios
-#   efi_size    : e.g. 256M (ignored for bios)
-#   boot_size   : e.g. 512M
-#   swap_size   : 0|1G|2G|4G
+#   efi_size    : e.g. 256 (MiB, ignored for bios)
+#   boot_size   : e.g. 512 (MiB)
+#   swap_size   : 0|1024|2048|4096 (MiB)
 #   extras...   : optional list of additional fixed sizes
 # Returns:
 #   0 ok, 1 error (prints reason)
@@ -130,8 +139,8 @@ validate_root_fits_disk() {
   local disk="$1"
   local root_size="$2"
   local boot_mode="${3:-bios}"
-  local efi_size="${4:-256M}"
-  local boot_size="${5:-512M}"
+  local efi_size="${4:-256}"
+  local boot_size="${5:-512}"
   local swap_size="${6:-0}"
   shift 6 || true
 
@@ -143,9 +152,9 @@ validate_root_fits_disk() {
     return 1
   fi
 
-  root_bytes="$(size_to_bytes "$root_size" 2>/dev/null || true)"
+  root_bytes="$(root_gb_to_bytes "$root_size" 2>/dev/null || true)"
   if [[ -z "$root_bytes" || ! "$root_bytes" =~ ^[0-9]+$ || "$root_bytes" -le 0 ]]; then
-    echo "ERROR: invalid ROOT_SIZE: '$root_size' (use like 30G, 512M)"
+    echo "ERROR: invalid ROOT_SIZE: '$root_size' (use GB number like 30)"
     return 1
   fi
 

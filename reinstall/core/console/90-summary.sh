@@ -2,32 +2,54 @@
 set -Eeuo pipefail
 
 ui_print_summary() {
+  format_gib_summary() {
+    local gib="${1:-0}"
+    if [[ -z "$gib" || ! "$gib" =~ ^[0-9]+$ ]]; then
+      printf '%s' "$gib"
+      return
+    fi
+    printf '%s GiB' "$gib"
+  }
+
+  format_mib_summary() {
+    local mib="${1:-0}"
+    if [[ -z "$mib" || ! "$mib" =~ ^[0-9]+$ ]]; then
+      printf '%s' "$mib"
+      return
+    fi
+    if (( mib % 1024 == 0 )); then
+      printf '%s GiB' $(( mib / 1024 ))
+    else
+      printf '%s MiB' "$mib"
+    fi
+  }
+
   echo
   echo "================ SUMMARY ================"
-  echo "DISK         : ${DISK}"
-  echo "BOOT_MODE    : ${BOOT_MODE}"
-  echo "LVM_MODE     : ${LVM_MODE}"
+  echo "DISK              : ${DISK}"
+  echo "BOOT_MODE         : ${BOOT_MODE}"
+  echo "LVM_MODE          : ${LVM_MODE}"
   if [[ "${LVM_MODE}" == "lvm" || "${LVM_MODE}" == "thin" ]]; then
-    echo "VG_NAME      : ${VG_NAME}"
+    echo "VG_NAME           : ${VG_NAME}"
   fi
   if [[ "${LVM_MODE}" == "thin" ]]; then
-    echo "THINPOOL_NAME      : ${THINPOOL_NAME}"
-    echo "THINPOOL_PERCENT   : ${THINPOOL_PERCENT}"
+    echo "THINPOOL_NAME     : ${THINPOOL_NAME}"
+    echo "THINPOOL_PERCENT  : ${THINPOOL_PERCENT}"
   fi
-  echo "BOOT_SIZE       : ${BOOT_SIZE}"
-  local swap_summary="${SWAP_SIZE:-${SWAP_CHOICE:-}}"
-  if [[ "$swap_summary" == "0" || -z "$swap_summary" ]]; then
+  echo "BOOT_SIZE         : $(format_mib_summary "$BOOT_SIZE")"
+
+  if [[ "$SWAP_SIZE" == "0" || -z "$SWAP_SIZE" ]]; then
     swap_summary="none"
-  fi
-  echo "SWAP            : ${swap_summary}"
-  echo "ROOT_FS         : ${ROOT_FS}"
-  echo "ROOT_SIZE       : ${ROOT_SIZE}"
-
-
-  if [[ -n "${DATA_FS}" ]]; then
-    echo "DATA_FS         : ${DATA_FS}"
   else
-    echo "DATA_FS         : (none)"
+    swap_summary="$(format_mib_summary "$SWAP_SIZE")"
+  fi
+  echo "SWAP_SIZE         : ${swap_summary}"
+  echo "ROOT_FS           : ${ROOT_FS}"
+  echo "ROOT_SIZE         : $(format_gib_summary "$ROOT_SIZE")"
+  if [[ -n "${DATA_FS}" ]]; then
+    echo "DATA_FS           : ${DATA_FS}"
+  else
+    echo "DATA_FS           : (none)"
   fi
 
 
