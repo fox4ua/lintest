@@ -1,6 +1,8 @@
 name: Temporary CI4 runtime artifact
 
 on:
+  push:
+    branches: [tmp-ci4-runtime-build-20260623]
   pull_request:
     branches: [main]
 
