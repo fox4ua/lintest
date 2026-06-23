@@ -1,0 +1,30 @@
+name: Temporary CI4 runtime artifact
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download official CodeIgniter framework
+        run: |
+          set -euo pipefail
+          curl -L --fail --retry 3 --output framework.zip \
+            https://github.com/codeigniter4/framework/archive/refs/tags/v4.6.4.zip
+          unzip -q framework.zip
+          mkdir -p artifact/system
+          cp -a framework-4.6.4/system/. artifact/system/
+          cp framework-4.6.4/LICENSE artifact/CODEIGNITER_LICENSE.txt
+          printf '%s\n' '4.6.4' > artifact/CODEIGNITER_VERSION
+      - name: Upload runtime
+        uses: actions/upload-artifact@v4
+        with:
+          name: codeigniter-4.6.4-system
+          path: artifact
+          if-no-files-found: error
+          retention-days: 1
