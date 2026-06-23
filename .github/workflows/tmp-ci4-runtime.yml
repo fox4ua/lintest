@@ -17,14 +17,16 @@ jobs:
           curl -L --fail --retry 3 --output framework.zip \
             https://github.com/codeigniter4/framework/archive/refs/tags/v4.6.4.zip
           unzip -q framework.zip
-          mkdir -p artifact/system
+          mkdir -p artifact/system artifact/reference-app
           cp -a framework-4.6.4/system/. artifact/system/
+          cp -a framework-4.6.4/app/. artifact/reference-app/
+          cp framework-4.6.4/public/index.php artifact/reference-public-index.php
           cp framework-4.6.4/LICENSE artifact/CODEIGNITER_LICENSE.txt
           printf '%s\n' '4.6.4' > artifact/CODEIGNITER_VERSION
       - name: Upload runtime
         uses: actions/upload-artifact@v4
         with:
-          name: codeigniter-4.6.4-system
+          name: codeigniter-4.6.4-runtime
           path: artifact
           if-no-files-found: error
           retention-days: 1
